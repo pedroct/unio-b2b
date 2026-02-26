@@ -336,9 +336,13 @@ function getPlanosMock(pacienteId: string): PlanoMockData[] {
     },
   ].map((plano) => {
     const extras = planoRefeicaoesExtras[plano.id] || [];
-    return extras.length > 0
-      ? { ...plano, refeicoes: [...plano.refeicoes, ...extras] }
-      : plano;
+    const todasRefeicoes = extras.length > 0
+      ? [...plano.refeicoes, ...extras]
+      : plano.refeicoes;
+    return {
+      ...plano,
+      refeicoes: todasRefeicoes.slice().sort((a, b) => a.horario.localeCompare(b.horario)),
+    };
   });
 }
 
