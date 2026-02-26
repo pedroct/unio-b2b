@@ -1,0 +1,375 @@
+# Contrato API — Consulta de Alimentos (Modal de Refeição) — UNIO
+
+**Objetivo (Frontend):** suportar a modal **“Alimento da Refeição”** da interface anexada, com:
+- seleção de origem da tabela;
+- busca por texto (lista de alimentos);
+- visualização de nutrientes do alimento selecionado;
+- cálculo para quantidade consumida.
+
+**Status:** ✅ Endpoints base implementados no backend atual.
+
+---
+
+## Base URL
+
+- Staging: `https://staging.unio.tec.br`
+
+---
+
+## Headers
+
+- `Content-Type: application/json`
+- `Authorization: Bearer <access_token>` (obrigatório em todos os endpoints deste contrato)
+
+---
+
+## Autenticação
+
+### `POST /api/auth/pair`
+
+**Request**
+```json
+{
+  "email": "email@exemplo.com",
+  "password": "senha"
+}
+```
+
+**200 Response**
+```json
+{
+  "email": "email@exemplo.com",
+  "refresh": "<jwt_refresh>",
+  "access": "<jwt_access>"
+}
+```
+
+---
+
+## Escopo funcional da modal
+
+### Coberto por API hoje
+
+1. **Busca por nome/marca (lista)**
+   - `GET /api/nutricao/alimentos/buscar`
+   - `GET /api/nutricao/tbca/alimentos`
+
+2. **Detalhe nutricional do item selecionado**
+   - `GET /api/nutricao/tbca/alimentos/{alimento_id}`
+
+3. **Catálogo de nutrientes (para UI de modo Nutrientes)**
+   - `GET /api/nutricao/tbca/nutrientes`
+
+4. **Cálculo para quantidade informada**
+   - `POST /api/nutricao/tbca/calcular`
+
+5. **Cadastro manual de novo alimento (link “Adicionar um alimento”)**
+   - `POST /api/nutricao/alimentos`
+
+### Lacunas do backend atual (não implementado)
+
+- Busca de alimentos **por perfil nutricional** (ex.: “alto em proteína e baixo em gordura”) com filtro server-side.
+- Endpoint de **medida caseira** (combo “Selecione uma medida caseira” / “Adicionar medida caseira”).
+- Segmentação dedicada por origem **TACO/IBGE/Tucunduva/Dietbox/Suplementos/Receitas/Meus alimentos** como coleções separadas.
+
+> Para essas origens, o backend atualmente suporta filtro por `fonte` no TBCA (ex.: `TBCA`, `MANUAL`, `IBGE`) e busca legado em `/alimentos/buscar`.
+
+---
+
+## Endpoints do contrato
+
+## 1) Buscar alimentos legados (lista)
+
+### `GET /api/nutricao/alimentos/buscar?q={termo}&limite={n}`
+
+**Uso na modal:** aba de lista (resultado rápido por nome/marca).
+
+**Query params**
+- `q` (obrigatório): termo de busca
+- `limite` (opcional, default: `20`)
+
+**200 Response**
+```json
+[
+  {
+    "id": 101,
+    "nome": "Frango Grelhado",
+    "marca": "",
+    "codigo_barras": null,
+    "calorias": 165.0,
+    "carboidratos": 0.0,
+    "proteinas": 31.0,
+    "gorduras": 3.6,
+    "fibras": 0.0,
+    "unidade_medida": "G"
+  }
+]
+```
+
+**Erros comuns**
+- `401 Unauthorized`
+- `422 Unprocessable Entity` (falta `q` ou tipo inválido)
+
+---
+
+## 2) Buscar alimentos TBCA (lista/paginação)
+
+### `GET /api/nutricao/tbca/alimentos?busca={termo}&grupo={codigo}&fonte={fonte}&limite={n}&offset={n}`
+
+**Uso na modal:** origem institucional (TBCA/USDA/MANUAL quando existir na base).
+
+**Query params**
+- `busca` (opcional)
+- `grupo` (opcional, ex.: `C`, `F`)
+- `fonte` (opcional, ex.: `TBCA`, `MANUAL`, `USDA`)
+- `limite` (opcional, default: `50`)
+- `offset` (opcional, default: `0`)
+
+**200 Response**
+```json
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "codigo_tbca": "BRC0009C",
+    "descricao": "Abacate, cru",
+    "nome_cientifico": "Persea americana",
+    "grupo_alimentar": {
+      "id": "f6777d8b-4f3c-4bb5-b369-e36f52e51558",
+      "codigo_tbca": "C",
+      "nome": "Frutas e derivados"
+    },
+    "fonte_dados": "TBCA"
+  }
+]
+```
+
+**Erros comuns**
+- `401 Unauthorized`
+- `422 Unprocessable Entity`
+
+---
+
+## 3) Detalhe de alimento TBCA (nutrientes)
+
+### `GET /api/nutricao/tbca/alimentos/{alimento_id}`
+
+**Uso na modal:** preencher painel de nutrientes ao selecionar alimento TBCA.
+
+**200 Response (resumo)**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "codigo_tbca": "BRC0009C",
+  "descricao": "Abacate, cru",
+  "nome_cientifico": "Persea americana",
+  "grupo_alimentar": {
+    "id": "f6777d8b-4f3c-4bb5-b369-e36f52e51558",
+    "codigo_tbca": "C",
+    "nome": "Frutas e derivados"
+  },
+  "tipo_alimento": {
+    "id": "2b6fb5f1-d4f4-4ae7-8f24-71f2fc313e23",
+    "codigo_tbca": "A",
+    "nome": "Alimento cru"
+  },
+  "fonte_dados": "TBCA",
+  "versao_fonte": "v1",
+  "valores_nutricionais": [
+    {
+      "nutriente": {
+        "id": "2b72dc2f-06db-4ea4-9de3-7418f7f0fd08",
+        "nome": "Energia",
+        "unidade_medida": "kcal",
+        "categoria": "Energia",
+        "ordem_exibicao": 1
+      },
+      "quantidade_base": 100,
+      "unidade_base": "g",
+      "valor": 76,
+      "valor_texto": null
+    }
+  ]
+}
+```
+
+**404 Response**
+```json
+{ "erro": "Alimento não encontrado" }
+```
+
+---
+
+## 4) Listar nutrientes (catálogo)
+
+### `GET /api/nutricao/tbca/nutrientes?categoria={categoria}`
+
+**Uso na modal:** popular referência da aba “Nutrientes”.
+
+**Query params**
+- `categoria` (opcional): `Energia`, `Macronutriente`, `Mineral`, `Vitamina`, `Lipidio`, `Outro`
+
+**200 Response**
+```json
+[
+  {
+    "id": "2b72dc2f-06db-4ea4-9de3-7418f7f0fd08",
+    "nome": "Energia",
+    "unidade_medida": "kcal",
+    "categoria": "Energia",
+    "ordem_exibicao": 1
+  }
+]
+```
+
+---
+
+## 5) Calcular nutrientes para quantidade informada
+
+### `POST /api/nutricao/tbca/calcular`
+
+**Uso na modal:** ao preencher `Quantidade`, recalcular macros/micronutrientes para o consumo.
+
+**Request**
+```json
+{
+  "alimento_id": "550e8400-e29b-41d4-a716-446655440000",
+  "quantidade_consumida": 150
+}
+```
+
+**200 Response (resumo)**
+```json
+{
+  "alimento": "Abacate, cru",
+  "quantidade_consumida": 150,
+  "unidade": "g",
+  "composicao": [
+    {
+      "nutriente": "Energia",
+      "categoria": "Energia",
+      "valor": 114.0,
+      "valor_texto": null,
+      "unidade": "kcal"
+    }
+  ],
+  "resumo_macros": {
+    "calorias": 114.0,
+    "proteinas": 3.0,
+    "carboidratos": 12.0,
+    "gorduras": 10.5,
+    "fibras": 9.0
+  }
+}
+```
+
+**404 Response**
+```json
+{ "erro": "Alimento não encontrado" }
+```
+
+---
+
+## 6) Criar alimento manual (CTA “Adicionar um alimento”)
+
+### `POST /api/nutricao/alimentos`
+
+**Request**
+```json
+{
+  "nome": "Panqueca caseira",
+  "calorias": 230,
+  "carboidratos": 28,
+  "proteinas": 8,
+  "gorduras": 9,
+  "fibras": 2,
+  "marca": "",
+  "codigo_barras": null,
+  "unidade_medida": "G"
+}
+```
+
+**201 Response**
+```json
+{
+  "id": 999,
+  "nome": "Panqueca caseira",
+  "marca": "",
+  "codigo_barras": null,
+  "calorias": 230.0,
+  "carboidratos": 28.0,
+  "proteinas": 8.0,
+  "gorduras": 9.0,
+  "fibras": 2.0,
+  "unidade_medida": "G"
+}
+```
+
+---
+
+## Mapeamento para os botões da modal
+
+| Grupo na UI | Estratégia com API atual |
+|---|---|
+| Todas | Combinar `GET /alimentos/buscar` + `GET /tbca/alimentos` |
+| TBCA | `GET /tbca/alimentos?fonte=TBCA` |
+| USDA | `GET /tbca/alimentos?fonte=USDA` (quando houver dados) |
+| TACO / IBGE / Tucunduva | **Não há coleção dedicada**; hoje não existe filtro oficial separado |
+| Dietbox / Suplementos / Receitas / Meus alimentos | **Não há endpoint dedicado** neste módulo |
+
+---
+
+## Contrato de normalização (adapter frontend)
+
+Para simplificar consumo na modal, o frontend pode normalizar os retornos em um DTO único:
+
+```ts
+interface FoodOption {
+  sourceType: "LEGACY" | "TBCA";
+  id: string;                 // int -> string para legado, uuid para TBCA
+  displayName: string;        // nome (legado) | descricao (TBCA)
+  brand?: string | null;      // marca (legado)
+  sourceLabel: string;        // marca/fonte_dados
+  caloriesPer100: number | null;
+  proteinPer100: number | null;
+  carbsPer100: number | null;
+  fatPer100: number | null;
+  fiberPer100: number | null;
+}
+```
+
+**Regra prática**
+- `sourceType = "LEGACY"` para `/alimentos/buscar`.
+- `sourceType = "TBCA"` para `/tbca/alimentos`.
+- Para cálculos de quantidade, priorizar `POST /tbca/calcular` quando `sourceType = "TBCA"`.
+
+---
+
+## Fluxo recomendado da modal (MVP)
+
+1. Usuário abre modal e escolhe origem (`Todas` por padrão).
+2. Front chama busca textual conforme origem:
+   - Legado: `/api/nutricao/alimentos/buscar`
+   - TBCA: `/api/nutricao/tbca/alimentos`
+3. Usuário seleciona alimento da lista.
+4. Se for TBCA, front busca detalhe (`/tbca/alimentos/{id}`) para exibir nutrientes.
+5. Usuário informa quantidade; front chama `/tbca/calcular` para prévia nutricional.
+6. Se alimento não existir, front usa `POST /api/nutricao/alimentos`.
+
+---
+
+## Erros e tratamento padronizado
+
+- `401`: redirecionar para login/refresh token.
+- `404` com `{ "erro": "Alimento não encontrado" }`: mostrar mensagem de item indisponível.
+- `422`: validar campos obrigatórios e tipos no formulário.
+- `5xx`: fallback de UI com opção de tentar novamente.
+
+---
+
+## Fonte de verdade técnica
+
+Este contrato foi consolidado com base nos endpoints e schemas reais:
+- `apps/nutricao/api.py`
+- `apps/nutricao/schemas.py`
+- `apps/nutricao/services.py`
+- `unio_be/urls.py`
