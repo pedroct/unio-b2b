@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useQueries } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   Sheet,
   SheetContent,
@@ -7,10 +7,16 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UtensilsCrossed, Flame } from "lucide-react";
 import type { PlanoAlimentar, ResumoPlanoAlimentar, DiaSemana } from "@shared/schema";
 
@@ -136,7 +142,7 @@ export function SheetPlanoAlimentar({
   pacienteId,
   pacienteNome,
 }: SheetPlanoAlimentarProps) {
-  const [tabAtiva, setTabAtiva] = useState<string>("");
+  const [planoSelecionadoId, setPlanoSelecionadoId] = useState<string>("");
 
   const { data: planosLista, isLoading: isLoadingLista } = useQuery<ResumoPlanoAlimentar[]>({
     queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "planos-alimentares"],
@@ -155,30 +161,24 @@ export function SheetPlanoAlimentar({
     (p) => p.status === "ativo" && p.diasAtivos.length > 0
   );
 
-  const planosQueries = useQueries({
-    queries: planosAtivos.map((p) => ({
-      queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "plano-alimentar", p.id, p.diasAtivos[0]],
-      queryFn: async () => {
-        const res = await fetch(
-          `/api/profissional/dashboard/pacientes/${pacienteId}/plano-alimentar?planoId=${p.id}&diaSemana=${p.diasAtivos[0]}`,
-          { credentials: "include" }
-        );
-        if (!res.ok) throw new Error("Erro ao carregar plano");
-        return res.json() as Promise<PlanoAlimentar>;
-      },
-      enabled: open && planosAtivos.length > 0,
-    })),
+  const planoIdAtual = planoSelecionadoId || planosAtivos[0]?.id || "";
+  const planoResumoAtual = planosAtivos.find((p) => p.id === planoIdAtual);
+  const diaSemanaParaQuery = planoResumoAtual?.diasAtivos[0] || "segunda";
+
+  const { data: plano, isLoading: isLoadingPlano } = useQuery<PlanoAlimentar>({
+    queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "plano-alimentar", planoIdAtual, diaSemanaParaQuery],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/profissional/dashboard/pacientes/${pacienteId}/plano-alimentar?planoId=${planoIdAtual}&diaSemana=${diaSemanaParaQuery}`,
+        { credentials: "include" }
+      );
+      if (!res.ok) throw new Error("Erro ao carregar plano");
+      return res.json();
+    },
+    enabled: open && !!planoIdAtual,
   });
 
-  const planosCompletos = planosQueries
-    .map((q) => q.data)
-    .filter(Boolean) as PlanoAlimentar[];
-
-  const isLoadingPlanos = planosQueries.some((q) => q.isLoading);
-  const isLoading = isLoadingLista || isLoadingPlanos;
-
-  const primeiroPlanoId = planosAtivos[0]?.id || "";
-  const tabCorrente = tabAtiva || primeiroPlanoId;
+  const isLoading = isLoadingLista || isLoadingPlano;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -196,7 +196,7 @@ export function SheetPlanoAlimentar({
 
         {isLoading ? (
           <SheetSkeleton />
-        ) : planosCompletos.length === 0 ? (
+        ) : planosAtivos.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <UtensilsCrossed className="h-10 w-10 text-muted-foreground/50 mb-3" />
             <p className="text-sm font-medium">Sem plano alimentar</p>
@@ -204,28 +204,29 @@ export function SheetPlanoAlimentar({
               Nenhum plano alimentar ativo para este paciente.
             </p>
           </div>
-        ) : planosCompletos.length === 1 ? (
-          <PlanoContent plano={planosCompletos[0]} pacienteNome={pacienteNome} />
         ) : (
-          <Tabs value={tabCorrente} onValueChange={setTabAtiva} data-testid="tabs-planos-sheet">
-            <TabsList className="w-full mb-4" data-testid="tabs-lista-planos">
-              {planosCompletos.map((p) => (
-                <TabsTrigger
-                  key={p.id}
-                  value={p.id}
-                  className="flex-1 text-xs"
-                  data-testid={`tab-plano-${p.id}`}
+          <>
+            {planosAtivos.length > 1 && (
+              <div className="mb-6" data-testid="seletor-plano-sheet">
+                <Select
+                  value={planoIdAtual}
+                  onValueChange={setPlanoSelecionadoId}
                 >
-                  {p.descricao.length > 30 ? p.descricao.substring(0, 30) + "..." : p.descricao}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            {planosCompletos.map((p) => (
-              <TabsContent key={p.id} value={p.id}>
-                <PlanoContent plano={p} pacienteNome={pacienteNome} />
-              </TabsContent>
-            ))}
-          </Tabs>
+                  <SelectTrigger className="w-full" data-testid="select-plano-sheet">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {planosAtivos.map((p) => (
+                      <SelectItem key={p.id} value={p.id} data-testid={`option-plano-sheet-${p.id}`}>
+                        {p.descricao}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {plano && <PlanoContent plano={plano} pacienteNome={pacienteNome} />}
+          </>
         )}
       </SheetContent>
     </Sheet>
