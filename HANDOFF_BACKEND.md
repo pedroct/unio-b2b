@@ -451,6 +451,7 @@ Todos os endpoints devem seguir o padrão:
 8. **Campos adicionais no Patient (novos):**
    - `tags: string[]` — lista de tags do paciente (ex: "Emagrecimento", "Hipertrofia", "Gestante", "Diabetes T2"). O frontend usa para filtrar e exibir badges.
    - `dataCadastro: string` — data de cadastro no formato "dd/mm/aaaa" (ex: "10/01/2026"). Exibido na coluna "Desde" da lista de pacientes.
+   - `ultimaConsulta: string` — data da última consulta no formato "dd/mm/aaaa" (ex: "25/02/2026"). Exibida na coluna "Últ. consulta" e usada no filtro de período.
 
 ---
 

@@ -42,6 +42,7 @@ export interface Patient {
   status: "active" | "inactive";
   tags: string[];
   dataCadastro: string;
+  ultimaConsulta: string;
 }
 
 export interface PatientGoals {

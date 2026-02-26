@@ -8,6 +8,7 @@ import {
   UserPlus,
   X,
   ArrowUpDown,
+  CalendarDays,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +36,15 @@ import type { Patient } from "@shared/schema";
 
 type StatusFilter = "ativos" | "todos" | "inativos";
 type SortOption = "nome-asc" | "nome-desc" | "aderencia-asc" | "aderencia-desc" | "atividade";
+type PeriodField = "dataCadastro" | "ultimaConsulta";
+
+function brDateToIso(dateStr: string): string | null {
+  const parts = dateStr.split("/");
+  if (parts.length !== 3) return null;
+  const [day, month, year] = parts.map(Number);
+  if (!day || !month || !year) return null;
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
 
 function AdherenceBadge({ value, label }: { value: number; label: string }) {
   const variant = value >= 80 ? "default" : value >= 50 ? "secondary" : "destructive";
@@ -54,6 +64,7 @@ function PatientRowSkeleton() {
       <TableCell><Skeleton className="h-5 w-12" /></TableCell>
       <TableCell><Skeleton className="h-5 w-12" /></TableCell>
       <TableCell><Skeleton className="h-3 w-20" /></TableCell>
+      <TableCell className="hidden lg:table-cell"><Skeleton className="h-3 w-20" /></TableCell>
       <TableCell className="hidden lg:table-cell"><Skeleton className="h-3 w-20" /></TableCell>
       <TableCell><Skeleton className="h-5 w-16" /></TableCell>
       <TableCell><Skeleton className="h-4 w-4" /></TableCell>
@@ -86,6 +97,9 @@ export default function PatientsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ativos");
   const [sortBy, setSortBy] = useState<SortOption>("nome-asc");
   const [tagFilter, setTagFilter] = useState("");
+  const [periodField, setPeriodField] = useState<PeriodField>("dataCadastro");
+  const [periodFrom, setPeriodFrom] = useState("");
+  const [periodTo, setPeriodTo] = useState("");
   const [, navigate] = useLocation();
 
   const { data: patients, isLoading } = useQuery<Patient[]>({
@@ -112,7 +126,8 @@ export default function PatientsPage() {
       )
     : 0;
 
-  const hasActiveFilters = search.length > 0 || tagFilter.length > 0;
+  const hasPeriodFilter = periodFrom.length > 0 || periodTo.length > 0;
+  const hasActiveFilters = search.length > 0 || tagFilter.length > 0 || hasPeriodFilter;
 
   const filtered = useMemo(() => {
     if (!patients) return [];
@@ -136,6 +151,18 @@ export default function PatientsPage() {
 
     if (tagFilter) {
       result = result.filter((p) => p.tags?.includes(tagFilter));
+    }
+
+    if (periodFrom || periodTo) {
+      result = result.filter((p) => {
+        const fieldValue = p[periodField];
+        if (!fieldValue) return true;
+        const iso = brDateToIso(fieldValue);
+        if (!iso) return true;
+        if (periodFrom && iso < periodFrom) return false;
+        if (periodTo && iso > periodTo) return false;
+        return true;
+      });
     }
 
     switch (sortBy) {
@@ -182,11 +209,13 @@ export default function PatientsPage() {
     }
 
     return result;
-  }, [patients, statusFilter, search, tagFilter, sortBy]);
+  }, [patients, statusFilter, search, tagFilter, sortBy, periodFrom, periodTo, periodField]);
 
   function clearFilters() {
     setSearch("");
     setTagFilter("");
+    setPeriodFrom("");
+    setPeriodTo("");
   }
 
   return (
@@ -294,6 +323,57 @@ export default function PatientsPage() {
         </div>
       </div>
 
+      <div
+        className="flex flex-col gap-3 sm:flex-row sm:items-end rounded-lg border bg-card p-4"
+        data-testid="filter-periodo"
+      >
+        <CalendarDays className="h-4 w-4 text-muted-foreground mt-1 hidden sm:block" />
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-muted-foreground">Período por</label>
+          <Select value={periodField} onValueChange={(v) => setPeriodField(v as PeriodField)}>
+            <SelectTrigger className="w-[180px] h-9" data-testid="select-periodo-campo">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="dataCadastro" data-testid="option-periodo-cadastro">Data de cadastro</SelectItem>
+              <SelectItem value="ultimaConsulta" data-testid="option-periodo-consulta">Última consulta</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-muted-foreground">De</label>
+          <Input
+            type="date"
+            value={periodFrom}
+            onChange={(e) => setPeriodFrom(e.target.value)}
+            className="w-[160px] h-9"
+            data-testid="input-periodo-de"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-muted-foreground">Até</label>
+          <Input
+            type="date"
+            value={periodTo}
+            onChange={(e) => setPeriodTo(e.target.value)}
+            className="w-[160px] h-9"
+            data-testid="input-periodo-ate"
+          />
+        </div>
+        {hasPeriodFilter && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9"
+            onClick={() => { setPeriodFrom(""); setPeriodTo(""); }}
+            data-testid="button-limpar-periodo"
+          >
+            <X className="h-3.5 w-3.5 mr-1" />
+            Limpar
+          </Button>
+        )}
+      </div>
+
       {isLoading ? (
         <div className="rounded-md border">
           <Table>
@@ -306,6 +386,7 @@ export default function PatientsPage() {
                 <TableHead>Treino</TableHead>
                 <TableHead>Última atividade</TableHead>
                 <TableHead className="hidden lg:table-cell">Desde</TableHead>
+                <TableHead className="hidden lg:table-cell">Últ. consulta</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
@@ -345,6 +426,7 @@ export default function PatientsPage() {
                 <TableHead>Treino</TableHead>
                 <TableHead>Última atividade</TableHead>
                 <TableHead className="hidden lg:table-cell">Desde</TableHead>
+                <TableHead className="hidden lg:table-cell">Últ. consulta</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
@@ -430,6 +512,14 @@ export default function PatientsPage() {
                       data-testid={`text-desde-${patient.id}`}
                     >
                       {patient.dataCadastro}
+                    </span>
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    <span
+                      className="text-xs text-muted-foreground"
+                      data-testid={`text-ultima-consulta-${patient.id}`}
+                    >
+                      {patient.ultimaConsulta}
                     </span>
                   </TableCell>
                   <TableCell>
