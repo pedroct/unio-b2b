@@ -31,6 +31,7 @@ client/src/
       biometry-tab.tsx          - Body composition evolution charts
       training-tab.tsx          - Training sessions, volume, RPE
       aba-plano-alimentar.tsx   - Plano alimentar com refeições e nutrientes
+      modal-dias-semana.tsx     - Modal para editar dias ativos do plano alimentar
   pages/
     login.tsx            - Login page (Registro + UF / CPF)
     patients.tsx         - Patient list with adherence status
@@ -55,3 +56,4 @@ shared/
 - GET /api/profissional/dashboard/pacientes/:id/biometria — Biometry
 - GET /api/profissional/dashboard/pacientes/:id/treinamento — Training
 - GET /api/profissional/dashboard/pacientes/:id/plano-alimentar?diaSemana=segunda — Meal Plan
+- PUT /api/profissional/dashboard/pacientes/:id/plano-alimentar/dias — Update active days

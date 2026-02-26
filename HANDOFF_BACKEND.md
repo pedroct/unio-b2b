@@ -526,6 +526,42 @@ Retorna o plano alimentar do paciente para o dia da semana selecionado.
 
 ---
 
+## 10.1. Atualizar Dias Ativos do Plano Alimentar
+
+### `PUT /api/profissional/dashboard/pacientes/{id}/plano-alimentar/dias`
+
+Atualiza quais dias da semana o plano alimentar está ativo. Se nenhum dia for selecionado, o plano é considerado inativo.
+
+**Request Body:**
+```json
+{
+  "diasAtivos": ["segunda", "terca", "quarta", "quinta", "sexta"]
+}
+```
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `diasAtivos` | string[] | Array de dias da semana ativos. Valores possíveis: `segunda`, `terca`, `quarta`, `quinta`, `sexta`, `sabado`, `domingo` |
+
+**Response (200):**
+```json
+{
+  "diasAtivos": ["segunda", "terca", "quarta", "quinta", "sexta"]
+}
+```
+
+**Error (400):**
+```json
+{ "message": "diasAtivos deve ser um array." }
+```
+
+**Notas:**
+- O campo `diasAtivos` também é retornado em `GET /api/.../plano-alimentar` como parte do objeto `PlanoAlimentar`
+- O campo `dataCriacao` (string, formato "dd/mm/aaaa") também foi adicionado ao `PlanoAlimentar`
+- Se `diasAtivos` for um array vazio, o plano é considerado inativo no frontend
+
+---
+
 ## 11. Mapa Visual de Rotas
 
 ```
@@ -539,6 +575,7 @@ GET  /api/profissional/dashboard/pacientes/{id}/nutricao   → Nutrição
 GET  /api/profissional/dashboard/pacientes/{id}/biometria  → Biometria
 GET  /api/profissional/dashboard/pacientes/{id}/treinamento    → Treinamento
 GET  /api/profissional/dashboard/pacientes/{id}/plano-alimentar → Plano Alimentar
+PUT  /api/profissional/dashboard/pacientes/{id}/plano-alimentar/dias → Dias Ativos do Plano
 ```
 
 ---

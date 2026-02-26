@@ -88,5 +88,16 @@ export async function registerRoutes(
     return res.json(plano);
   });
 
+  app.put("/api/profissional/dashboard/pacientes/:id/plano-alimentar/dias", async (req, res) => {
+    const { diasAtivos } = req.body;
+    if (!Array.isArray(diasAtivos)) {
+      return res.status(400).json({ message: "diasAtivos deve ser um array." });
+    }
+    const validos = ["segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo"];
+    const diasValidados = [...new Set(diasAtivos.filter((d: string) => validos.includes(d)))];
+    const updated = await storage.updateDiasAtivos(req.params.id, diasValidados as any);
+    return res.json({ diasAtivos: updated });
+  });
+
   return httpServer;
 }

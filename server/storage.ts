@@ -170,6 +170,15 @@ function generateTrainingSessions() {
   return sessions;
 }
 
+const planoDiasAtivos: Record<string, DiaSemana[]> = {};
+
+function getDiasAtivos(pacienteId: string): DiaSemana[] {
+  if (!planoDiasAtivos[pacienteId]) {
+    planoDiasAtivos[pacienteId] = ["segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo"];
+  }
+  return planoDiasAtivos[pacienteId];
+}
+
 function generatePlanoAlimentar(pacienteId: string, diaSemana: DiaSemana): PlanoAlimentar {
   const refeicoesPorDia: Record<string, PlanoAlimentar["refeicoes"]> = {
     segunda: [
@@ -302,9 +311,11 @@ function generatePlanoAlimentar(pacienteId: string, diaSemana: DiaSemana): Plano
   return {
     id: `plano-${pacienteId}-${diaSemana}`,
     pacienteId,
-    descricao: "Dieta Hiperproteica (modelo de cardápio importado)",
-    status: "ativo",
+    descricao: "Dieta Hiperproteica (modelo de cardápio Dietbox) (importado)",
+    status: "ativo" as const,
     diaSemana,
+    diasAtivos: getDiasAtivos(pacienteId),
+    dataCriacao: "26/02/2026",
     refeicoes: refeicoes!,
     nutrientes: nutrientesPorDia[diaSemana] || nutrientesPorDia["default"]!,
   };
@@ -321,6 +332,7 @@ export interface IStorage {
   getPatientBiometry(patientId: string): Promise<BiometrySummary | undefined>;
   getPatientTraining(patientId: string): Promise<TrainingSummary | undefined>;
   getPlanoAlimentar(pacienteId: string, diaSemana: DiaSemana): Promise<PlanoAlimentar | undefined>;
+  updateDiasAtivos(pacienteId: string, diasAtivos: DiaSemana[]): Promise<DiaSemana[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -464,6 +476,11 @@ export class MemStorage implements IStorage {
     const patient = patients.find((p) => p.id === pacienteId);
     if (!patient) return undefined;
     return generatePlanoAlimentar(pacienteId, diaSemana);
+  }
+
+  async updateDiasAtivos(pacienteId: string, diasAtivos: DiaSemana[]): Promise<DiaSemana[]> {
+    planoDiasAtivos[pacienteId] = diasAtivos;
+    return diasAtivos;
   }
 }
 

@@ -196,6 +196,8 @@ export interface PlanoAlimentar {
   descricao: string;
   status: "ativo" | "rascunho";
   diaSemana: DiaSemana;
+  diasAtivos: DiaSemana[];
+  dataCriacao: string;
   refeicoes: Refeicao[];
   nutrientes: NutrientesPlano;
 }
