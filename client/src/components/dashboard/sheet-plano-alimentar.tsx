@@ -108,6 +108,13 @@ function PlanoContent({
             </div>
 
             <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-xs text-muted-foreground">
+                  <th className="px-4 py-1.5 text-left font-medium">Alimento</th>
+                  <th className="px-2 py-1.5 text-center font-medium w-14">Qtd.</th>
+                  <th className="px-4 py-1.5 text-left font-medium">Unidade</th>
+                </tr>
+              </thead>
               <tbody className="divide-y">
                 {refeicao.alimentos.map((alimento) => (
                   <tr
@@ -117,14 +124,12 @@ function PlanoContent({
                     <td className="px-4 py-2.5 text-foreground">
                       {alimento.nome}
                     </td>
-                    <td className="px-2 py-2.5 text-muted-foreground whitespace-nowrap">
+                    <td className="px-2 py-2.5 text-center text-foreground tabular-nums">
                       {alimento.quantidade}
                     </td>
-                    {alimento.grupo && (
-                      <td className="px-4 py-2.5 text-xs text-muted-foreground text-right whitespace-nowrap">
-                        {alimento.grupo}
-                      </td>
-                    )}
+                    <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
+                      {alimento.unidade}
+                    </td>
                   </tr>
                 ))}
               </tbody>

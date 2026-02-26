@@ -450,33 +450,40 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
                 </div>
               </CardHeader>
               <Separator />
-              <CardContent className="pt-3">
-                <ul className="space-y-1.5">
-                  {refeicao.alimentos.map((alimento) => (
-                    <li
-                      key={alimento.id}
-                      className="flex items-start gap-2 text-sm"
-                      data-testid={`item-alimento-${alimento.id}`}
-                    >
-                      <span className="text-muted-foreground mt-0.5">•</span>
-                      <span>
-                        <span className="text-foreground">{alimento.nome}</span>
-                        <span className="text-muted-foreground ml-1">
-                          — {alimento.quantidade}
-                        </span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="px-0 mt-3"
-                  data-testid={`button-substituir-${refeicao.id}`}
-                >
-                  <ArrowRightLeft className="h-3 w-3 mr-1.5" />
-                  Adicionar Substituta
-                </Button>
+              <CardContent className="pt-0 px-0">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-xs text-muted-foreground">
+                      <th className="px-4 py-2 text-left font-medium">Alimento</th>
+                      <th className="px-3 py-2 text-center font-medium w-16">Qtd.</th>
+                      <th className="px-4 py-2 text-left font-medium">Unidade</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {refeicao.alimentos.map((alimento) => (
+                      <tr
+                        key={alimento.id}
+                        data-testid={`item-alimento-${alimento.id}`}
+                        className="hover:bg-muted/30 transition-colors"
+                      >
+                        <td className="px-4 py-2.5 text-foreground">{alimento.nome}</td>
+                        <td className="px-3 py-2.5 text-center text-foreground tabular-nums">{alimento.quantidade}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">{alimento.unidade}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="px-4 pb-1">
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="px-0 mt-2"
+                    data-testid={`button-substituir-${refeicao.id}`}
+                  >
+                    <ArrowRightLeft className="h-3 w-3 mr-1.5" />
+                    Adicionar Substituta
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}

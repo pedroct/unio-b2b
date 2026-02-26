@@ -169,7 +169,8 @@ export const DIAS_SEMANA: { valor: DiaSemana; rotulo: string }[] = [
 export interface AlimentoPlano {
   id: string;
   nome: string;
-  quantidade: string;
+  quantidade: number;
+  unidade: string;
   grupo?: string;
 }
 

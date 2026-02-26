@@ -525,8 +525,8 @@ Retorna o plano alimentar completo (com refeições e nutrientes) para o plano e
       "nome": "Desjejum",
       "horario": "07:00",
       "alimentos": [
-        { "id": "a1", "nome": "Pão integral", "quantidade": "2 fatias", "grupo": "Cereais e derivados" },
-        { "id": "a2", "nome": "Queijo minas frescal", "quantidade": "2 fatias (30g)", "grupo": "Leite e derivados" }
+        { "id": "a1", "nome": "Pão integral", "quantidade": 2, "unidade": "Fatia", "grupo": "Cereais e derivados" },
+        { "id": "a2", "nome": "Queijo minas frescal", "quantidade": 2, "unidade": "Fatia Média (30g)", "grupo": "Leite e derivados" }
       ],
       "substitutas": []
     }
