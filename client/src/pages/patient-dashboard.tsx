@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
-import { ArrowLeft, Settings2, UtensilsCrossed } from "lucide-react";
+import { ArrowLeft, Settings2, LayoutDashboard, Apple, Activity, Dumbbell, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -89,15 +89,19 @@ export default function PatientDashboardPage() {
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="w-full justify-start" data-testid="tabs-dashboard">
           <TabsTrigger value="overview" data-testid="tab-trigger-overview">
+            <LayoutDashboard className="h-3.5 w-3.5 mr-1.5" />
             Visão Geral
           </TabsTrigger>
           <TabsTrigger value="nutrition" data-testid="tab-trigger-nutrition">
+            <Apple className="h-3.5 w-3.5 mr-1.5" />
             Nutrição
           </TabsTrigger>
           <TabsTrigger value="biometry" data-testid="tab-trigger-biometry">
+            <Activity className="h-3.5 w-3.5 mr-1.5" />
             Biometria
           </TabsTrigger>
           <TabsTrigger value="training" data-testid="tab-trigger-training">
+            <Dumbbell className="h-3.5 w-3.5 mr-1.5" />
             Treinamento
           </TabsTrigger>
           <TabsTrigger value="plano-alimentar" data-testid="tab-trigger-plano-alimentar">
