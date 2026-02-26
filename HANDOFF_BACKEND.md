@@ -614,6 +614,52 @@ Atualiza a descrição/título de um plano alimentar.
 
 ---
 
+### `POST /api/profissional/dashboard/pacientes/{id}/planos-alimentares/{planoId}/refeicoes`
+
+Adiciona uma nova refeição ao plano alimentar.
+
+**Request Body:**
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `nome` | string | Nome/descrição da refeição (obrigatório). Ex: "Café da manhã", "Colação", "Brunch especial" |
+| `horario` | string | Horário no formato "HH:MM" (obrigatório). Ex: "07:00", "10:30" |
+| `alimentos` | AlimentoPlano[] | Lista de alimentos (pode ser vazio inicialmente) |
+| `observacao` | string? | Observação opcional visível ao cliente via aplicativo |
+
+Cada `AlimentoPlano`:
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | string | Identificador único do alimento |
+| `nome` | string | Nome do alimento |
+| `quantidade` | number | Quantidade numérica |
+| `unidade` | string | Unidade de medida (ex: "Fatia", "Colher De Sopa", "Grama") |
+| `grupo` | string? | Grupo alimentar (opcional) |
+
+**Response (201):**
+```json
+{
+  "id": "ref-1709123456789-a1b2c",
+  "nome": "Colação",
+  "horario": "10:00",
+  "alimentos": [],
+  "observacao": "Consumir antes do treino"
+}
+```
+
+**Error (400):**
+```json
+{ "message": "nome é obrigatório." }
+```
+
+**Error (404):**
+```json
+{ "message": "Plano alimentar não encontrado." }
+```
+
+---
+
 ## 11. Mapa Visual de Rotas
 
 ```
@@ -630,6 +676,7 @@ GET  /api/profissional/dashboard/pacientes/{id}/planos-alimentares          → 
 GET  /api/profissional/dashboard/pacientes/{id}/plano-alimentar?planoId&dia → Plano Alimentar Detalhado
 PUT  /api/profissional/dashboard/pacientes/{id}/planos-alimentares/{planoId}/dias      → Dias Ativos do Plano
 PUT  /api/profissional/dashboard/pacientes/{id}/planos-alimentares/{planoId}/descricao → Descrição do Plano
+POST /api/profissional/dashboard/pacientes/{id}/planos-alimentares/{planoId}/refeicoes → Criar Refeição
 ```
 
 ---

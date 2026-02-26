@@ -35,6 +35,7 @@ import {
 } from "recharts";
 import { EmptyState } from "@/components/empty-state";
 import { ModalDiasSemana } from "@/components/dashboard/modal-dias-semana";
+import { ModalNovaRefeicao } from "@/components/dashboard/modal-nova-refeicao";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { PlanoAlimentar, ResumoPlanoAlimentar, DiaSemana } from "@shared/schema";
@@ -90,6 +91,7 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
   const [planoSelecionadoId, setPlanoSelecionadoId] = useState<string>("");
   const [diaSelecionado, setDiaSelecionado] = useState<DiaSemana>("segunda");
   const [modalDiasAberto, setModalDiasAberto] = useState(false);
+  const [modalNovaRefeicaoAberta, setModalNovaRefeicaoAberta] = useState(false);
   const [editandoDescricao, setEditandoDescricao] = useState(false);
   const [novaDescricao, setNovaDescricao] = useState("");
   const { toast } = useToast();
@@ -243,6 +245,16 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
         onSalvar={(dias) => salvarDiasMutation.mutate(dias)}
         isSaving={salvarDiasMutation.isPending}
       />
+
+      {modalNovaRefeicaoAberta && (
+        <ModalNovaRefeicao
+          open={modalNovaRefeicaoAberta}
+          onOpenChange={setModalNovaRefeicaoAberta}
+          pacienteId={pacienteId}
+          planoId={planoId}
+          planoDescricao={plano.descricao}
+        />
+      )}
 
       {planosLista.length > 1 && (
         <div className="flex items-center gap-3" data-testid="seletor-plano">
@@ -399,7 +411,12 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
               <List className="h-3.5 w-3.5 mr-1.5" />
               Ver minhas refeições
             </Button>
-            <Button variant="outline" size="sm" data-testid="button-adicionar-refeicao">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setModalNovaRefeicaoAberta(true)}
+              data-testid="button-adicionar-refeicao"
+            >
               <Plus className="h-3.5 w-3.5 mr-1.5" />
               Adicionar nova refeição
             </Button>

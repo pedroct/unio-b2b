@@ -179,8 +179,25 @@ export interface Refeicao {
   nome: string;
   horario: string;
   alimentos: AlimentoPlano[];
+  observacao?: string;
   substitutas?: Refeicao[];
 }
+
+export const HORARIOS_REFEICAO: string[] = Array.from({ length: 48 }, (_, i) => {
+  const h = String(Math.floor(i / 2)).padStart(2, "0");
+  const m = i % 2 === 0 ? "00" : "30";
+  return `${h}:${m}`;
+});
+
+export const DESCRICOES_REFEICAO_PADRAO: string[] = [
+  "Café da manhã",
+  "Colação",
+  "Almoço",
+  "Lanche da tarde",
+  "Pré-treino",
+  "Pós-treino",
+  "Jantar",
+];
 
 export interface MacroNutrientePlano {
   gramas: number;

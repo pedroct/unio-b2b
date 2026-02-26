@@ -117,5 +117,25 @@ export async function registerRoutes(
     return res.json({ descricao: updated });
   });
 
+  app.post("/api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/refeicoes", async (req, res) => {
+    const { nome, horario, alimentos, observacao } = req.body;
+    if (!nome || typeof nome !== "string" || nome.trim().length === 0) {
+      return res.status(400).json({ message: "nome é obrigatório." });
+    }
+    if (!horario || typeof horario !== "string") {
+      return res.status(400).json({ message: "horario é obrigatório." });
+    }
+    const refeicao = await storage.addRefeicao(req.params.id, req.params.planoId, {
+      nome: nome.trim(),
+      horario,
+      alimentos: Array.isArray(alimentos) ? alimentos : [],
+      observacao: observacao?.trim() || undefined,
+    });
+    if (!refeicao) {
+      return res.status(404).json({ message: "Plano alimentar não encontrado." });
+    }
+    return res.status(201).json(refeicao);
+  });
+
   return httpServer;
 }

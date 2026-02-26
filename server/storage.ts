@@ -10,6 +10,7 @@ import type {
   PlanoAlimentar,
   NutrientesPlano,
   ResumoPlanoAlimentar,
+  Refeicao,
   DiaSemana,
 } from "@shared/schema";
 
@@ -199,6 +200,7 @@ interface PlanoMockData {
 
 const planoDescricoes: Record<string, string> = {};
 const planoDiasAtivosMap: Record<string, DiaSemana[]> = {};
+const planoRefeicaoesExtras: Record<string, Refeicao[]> = {};
 
 function getPlanosMock(pacienteId: string): PlanoMockData[] {
   const plano1Id = `plano-${pacienteId}-1`;
@@ -332,7 +334,12 @@ function getPlanosMock(pacienteId: string): PlanoMockData[] {
         fibra: 18,
       },
     },
-  ];
+  ].map((plano) => {
+    const extras = planoRefeicaoesExtras[plano.id] || [];
+    return extras.length > 0
+      ? { ...plano, refeicoes: [...plano.refeicoes, ...extras] }
+      : plano;
+  });
 }
 
 export interface IStorage {
@@ -349,6 +356,7 @@ export interface IStorage {
   getPlanoAlimentar(pacienteId: string, planoId: string, diaSemana: DiaSemana): Promise<PlanoAlimentar | undefined>;
   updateDiasAtivos(pacienteId: string, planoId: string, diasAtivos: DiaSemana[]): Promise<DiaSemana[]>;
   updateDescricaoPlano(pacienteId: string, planoId: string, descricao: string): Promise<string>;
+  addRefeicao(pacienteId: string, planoId: string, refeicao: Omit<Refeicao, "id">): Promise<Refeicao | null>;
 }
 
 export class MemStorage implements IStorage {
@@ -529,6 +537,23 @@ export class MemStorage implements IStorage {
   async updateDescricaoPlano(pacienteId: string, planoId: string, descricao: string): Promise<string> {
     planoDescricoes[planoId] = descricao;
     return descricao;
+  }
+
+  async addRefeicao(pacienteId: string, planoId: string, refeicao: Omit<Refeicao, "id">): Promise<Refeicao | null> {
+    const patient = patients.find((p) => p.id === pacienteId);
+    if (!patient) return null;
+    const planos = getPlanosMock(pacienteId);
+    const plano = planos.find((p) => p.id === planoId);
+    if (!plano) return null;
+    const novaRefeicao: Refeicao = {
+      id: `ref-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      ...refeicao,
+    };
+    if (!planoRefeicaoesExtras[planoId]) {
+      planoRefeicaoesExtras[planoId] = [];
+    }
+    planoRefeicaoesExtras[planoId].push(novaRefeicao);
+    return novaRefeicao;
   }
 }
 

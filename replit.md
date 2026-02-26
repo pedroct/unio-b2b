@@ -38,6 +38,7 @@ client/src/
       sheet-plano-alimentar.tsx - Sheet lateral read-only do plano alimentar (via CTA Nutrição)
       aba-plano-alimentar.tsx   - Prescrição: edição de plano alimentar com refeições e nutrientes
       modal-dias-semana.tsx     - Modal para editar dias ativos do plano alimentar
+      modal-nova-refeicao.tsx   - Modal para adicionar nova refeição ao plano alimentar
   pages/
     login.tsx                  - Login page (Registro + UF / CPF)
     patients.tsx               - Lista de clientes com tabs (Ativos/Todos/Inativos), filtros, ordenação, tags, período
@@ -73,3 +74,4 @@ shared/
 - GET /api/profissional/dashboard/pacientes/:id/plano-alimentar?planoId&diaSemana — Plan detail
 - PUT /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/dias — Update active days
 - PUT /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/descricao — Update description
+- POST /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/refeicoes — Create meal
