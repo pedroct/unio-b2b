@@ -67,8 +67,8 @@ function normalizarResultadosLegado(dados: any[]): ResultadoBusca[] {
 
 function MacroCard({ label, valor, unidade }: { label: string; valor: number; unidade: string }) {
   return (
-    <div className="flex flex-col items-center rounded-lg border bg-muted/30 px-3 py-2 min-w-0">
-      <span className="text-xs text-muted-foreground truncate">{label}</span>
+    <div className="flex flex-col items-center rounded-lg border bg-muted/30 px-2 py-2 min-w-0 overflow-hidden">
+      <span className="text-[11px] text-muted-foreground truncate w-full text-center">{label}</span>
       <span className="text-sm font-semibold tabular-nums">{valor}</span>
       <span className="text-[10px] text-muted-foreground">{unidade}</span>
     </div>
@@ -240,7 +240,7 @@ export function ModalAdicionarAlimento({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto p-0"
+        className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto overflow-x-hidden p-0"
         data-testid="modal-adicionar-alimento"
       >
         <div className="px-6 pt-6 pb-2">
@@ -254,7 +254,7 @@ export function ModalAdicionarAlimento({
           </DialogHeader>
         </div>
 
-        <div className="px-6 space-y-4">
+        <div className="px-6 space-y-4 overflow-hidden">
           <div className="flex items-center gap-2 flex-wrap" data-testid="filtros-origem">
             {filtros.map((f) => (
               <button
@@ -288,7 +288,7 @@ export function ModalAdicionarAlimento({
           </div>
 
           <div
-            className="rounded-lg border overflow-hidden"
+            className="rounded-lg border overflow-hidden min-w-0"
             data-testid="lista-resultados"
           >
             {buscando ? (
@@ -311,7 +311,7 @@ export function ModalAdicionarAlimento({
                     <button
                       type="button"
                       className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-accent/50",
+                        "w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-accent/50 overflow-hidden",
                         selecionado?.id === item.id && "bg-accent"
                       )}
                       onClick={() => handleSelecionarAlimento(item)}
@@ -320,11 +320,11 @@ export function ModalAdicionarAlimento({
                       {selecionado?.id === item.id && (
                         <Check className="h-4 w-4 shrink-0 text-primary" />
                       )}
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 overflow-hidden">
                         <p className="text-sm font-medium truncate">{item.nome}</p>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           {item.grupo && (
-                            <span className="text-[11px] text-muted-foreground truncate max-w-[200px]">
+                            <span className="text-[11px] text-muted-foreground truncate">
                               {item.grupo}
                             </span>
                           )}
@@ -354,21 +354,21 @@ export function ModalAdicionarAlimento({
 
           {selecionado && (
             <div
-              className="rounded-lg border bg-muted/20 p-4 space-y-3 animate-in fade-in-0 slide-in-from-bottom-2 duration-200"
+              className="rounded-lg border bg-muted/20 p-4 space-y-3 animate-in fade-in-0 slide-in-from-bottom-2 duration-200 overflow-hidden"
               data-testid="painel-detalhes"
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium" data-testid="text-alimento-selecionado">
+              <div className="flex items-start justify-between gap-2 overflow-hidden">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium line-clamp-2 break-words" data-testid="text-alimento-selecionado">
                     {selecionado.nome}
                   </p>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  <div className="flex items-center gap-2 mt-0.5 min-w-0">
                     {selecionado.grupo && (
-                      <span className="text-xs text-muted-foreground">{selecionado.grupo}</span>
+                      <span className="text-xs text-muted-foreground truncate min-w-0">{selecionado.grupo}</span>
                     )}
                     <Badge
                       variant="outline"
-                      className="text-[10px] px-1.5 py-0 border-emerald-300 text-emerald-700"
+                      className="text-[10px] px-1.5 py-0 shrink-0 border-emerald-300 text-emerald-700"
                     >
                       {selecionado.fonte}
                     </Badge>
@@ -404,12 +404,12 @@ export function ModalAdicionarAlimento({
                 </div>
               ) : macros ? (
                 <div
-                  className="grid grid-cols-5 gap-2"
+                  className="grid grid-cols-3 sm:grid-cols-5 gap-2"
                   data-testid="resumo-macros"
                 >
                   <MacroCard label="Calorias" valor={macros.calorias} unidade="kcal" />
                   <MacroCard label="Proteína" valor={macros.proteinas} unidade="g" />
-                  <MacroCard label="Carboidrato" valor={macros.carboidratos} unidade="g" />
+                  <MacroCard label="Carb." valor={macros.carboidratos} unidade="g" />
                   <MacroCard label="Gordura" valor={macros.gorduras} unidade="g" />
                   <MacroCard label="Fibra" valor={macros.fibras} unidade="g" />
                 </div>
