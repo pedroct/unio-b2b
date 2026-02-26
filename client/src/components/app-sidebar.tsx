@@ -1,3 +1,4 @@
+import React from "react";
 import { useLocation, Link } from "wouter";
 import { Users, LayoutDashboard, Settings, LogOut } from "lucide-react";
 import {

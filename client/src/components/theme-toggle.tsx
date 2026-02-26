@@ -1,10 +1,14 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function ThemeToggle() {
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("unio_theme");
+      if (stored === "dark") {
+        return true;
+      }
       return document.documentElement.classList.contains("dark");
     }
     return false;
@@ -19,13 +23,6 @@ export function ThemeToggle() {
     }
     localStorage.setItem("unio_theme", isDark ? "dark" : "light");
   }, [isDark]);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("unio_theme");
-    if (stored === "dark") {
-      setIsDark(true);
-    }
-  }, []);
 
   return (
     <Button

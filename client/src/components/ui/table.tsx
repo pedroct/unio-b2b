@@ -5,15 +5,34 @@ import { cn } from "@/lib/utils"
 const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto">
-    <table
-      ref={ref}
-      className={cn("w-full caption-bottom text-sm", className)}
-      {...props}
-    />
-  </div>
-))
+>(({ className, children, ...props }, ref) => {
+  const hasHeader = React.Children.toArray(children).some(
+    (child) => React.isValidElement(child) && child.type === TableHeader
+  )
+
+  return (
+    <div className="relative w-full overflow-auto">
+      <table
+        ref={ref}
+        className={cn("w-full caption-bottom text-sm", className)}
+        {...props}
+      >
+        {hasHeader ? (
+          children
+        ) : (
+          <>
+            <thead className="sr-only">
+              <tr>
+                <th scope="col">Dados</th>
+              </tr>
+            </thead>
+            {children}
+          </>
+        )}
+      </table>
+    </div>
+  )
+})
 Table.displayName = "Table"
 
 const TableHeader = React.forwardRef<
