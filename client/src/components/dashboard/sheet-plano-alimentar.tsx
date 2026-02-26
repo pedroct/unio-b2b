@@ -113,24 +113,28 @@ export function SheetPlanoAlimentar({
                     </span>
                   </div>
 
-                  <div className="divide-y">
-                    {refeicao.alimentos.map((alimento) => (
-                      <div
-                        key={alimento.id}
-                        className="flex items-start justify-between gap-4 px-4 py-2.5 text-sm"
-                        data-testid={`alimento-view-${alimento.id}`}
-                      >
-                        <span className="text-foreground">
-                          {alimento.nome} ({alimento.quantidade})
-                        </span>
-                        {alimento.grupo && (
-                          <span className="text-xs text-muted-foreground text-right shrink-0 max-w-[180px]">
-                            {alimento.grupo}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  <table className="w-full text-sm">
+                    <tbody className="divide-y">
+                      {refeicao.alimentos.map((alimento) => (
+                        <tr
+                          key={alimento.id}
+                          data-testid={`alimento-view-${alimento.id}`}
+                        >
+                          <td className="px-4 py-2.5 text-foreground">
+                            {alimento.nome}
+                          </td>
+                          <td className="px-2 py-2.5 text-muted-foreground whitespace-nowrap">
+                            {alimento.quantidade}
+                          </td>
+                          {alimento.grupo && (
+                            <td className="px-4 py-2.5 text-xs text-muted-foreground text-right whitespace-nowrap">
+                              {alimento.grupo}
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ))}
             </div>
