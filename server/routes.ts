@@ -137,5 +137,80 @@ export async function registerRoutes(
     return res.status(201).json(refeicao);
   });
 
+  app.get("/api/nutricao/alimentos/buscar", async (req, res) => {
+    const q = req.query.q as string;
+    const limite = parseInt(req.query.limite as string) || 20;
+    if (!q) {
+      return res.status(422).json({ message: "Parâmetro 'q' é obrigatório." });
+    }
+    const resultados = await storage.buscarAlimentos(q, "LEGADO", limite);
+    return res.json(resultados.map((a) => ({
+      id: a.id,
+      nome: a.nome,
+      marca: "",
+      codigo_barras: null,
+      calorias: a.caloriasPor100g,
+      carboidratos: a.carboidratoPor100g,
+      proteinas: a.proteinaPor100g,
+      gorduras: a.gorduraPor100g,
+      fibras: a.fibraPor100g,
+      unidade_medida: "G",
+    })));
+  });
+
+  app.get("/api/nutricao/tbca/alimentos/:id", async (req, res) => {
+    const alimento = await storage.getAlimentoDetalhe(req.params.id);
+    if (!alimento) {
+      return res.status(404).json({ erro: "Alimento não encontrado" });
+    }
+    return res.json({
+      id: alimento.id,
+      codigo_tbca: alimento.id.toUpperCase(),
+      descricao: alimento.nome,
+      nome_cientifico: null,
+      grupo_alimentar: { id: alimento.id + "-grp", codigo_tbca: "C", nome: alimento.grupo || "" },
+      fonte_dados: alimento.fonte,
+      valores_nutricionais: [
+        { nutriente: { id: "n1", nome: "Energia", unidade_medida: "kcal", categoria: "Energia", ordem_exibicao: 1 }, quantidade_base: 100, unidade_base: "g", valor: alimento.caloriasPor100g },
+        { nutriente: { id: "n2", nome: "Proteína", unidade_medida: "g", categoria: "Macronutriente", ordem_exibicao: 2 }, quantidade_base: 100, unidade_base: "g", valor: alimento.proteinaPor100g },
+        { nutriente: { id: "n3", nome: "Carboidrato", unidade_medida: "g", categoria: "Macronutriente", ordem_exibicao: 3 }, quantidade_base: 100, unidade_base: "g", valor: alimento.carboidratoPor100g },
+        { nutriente: { id: "n4", nome: "Gordura", unidade_medida: "g", categoria: "Macronutriente", ordem_exibicao: 4 }, quantidade_base: 100, unidade_base: "g", valor: alimento.gorduraPor100g },
+        { nutriente: { id: "n5", nome: "Fibra", unidade_medida: "g", categoria: "Macronutriente", ordem_exibicao: 5 }, quantidade_base: 100, unidade_base: "g", valor: alimento.fibraPor100g },
+      ],
+    });
+  });
+
+  app.get("/api/nutricao/tbca/alimentos", async (req, res) => {
+    const busca = (req.query.busca as string) || "";
+    const fonte = req.query.fonte as string | undefined;
+    const limite = parseInt(req.query.limite as string) || 50;
+    if (!busca) {
+      return res.json([]);
+    }
+    const validFontes = ["TBCA", "USDA", "LEGADO"];
+    const fonteFilter = fonte && validFontes.includes(fonte) ? (fonte as any) : undefined;
+    const resultados = await storage.buscarAlimentos(busca, fonteFilter, limite);
+    return res.json(resultados.map((a) => ({
+      id: a.id,
+      codigo_tbca: a.id.toUpperCase(),
+      descricao: a.nome,
+      nome_cientifico: null,
+      grupo_alimentar: { id: a.id + "-grp", codigo_tbca: "C", nome: a.grupo || "" },
+      fonte_dados: a.fonte,
+    })));
+  });
+
+  app.post("/api/nutricao/tbca/calcular", async (req, res) => {
+    const { alimento_id, quantidade_consumida } = req.body;
+    if (!alimento_id || !quantidade_consumida) {
+      return res.status(422).json({ message: "alimento_id e quantidade_consumida são obrigatórios." });
+    }
+    const resultado = await storage.calcularNutrientes(alimento_id, quantidade_consumida);
+    if (!resultado) {
+      return res.status(404).json({ erro: "Alimento não encontrado" });
+    }
+    return res.json(resultado);
+  });
+
   return httpServer;
 }

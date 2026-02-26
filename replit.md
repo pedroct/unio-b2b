@@ -39,6 +39,7 @@ client/src/
       aba-plano-alimentar.tsx   - Prescrição: edição de plano alimentar com refeições e nutrientes
       modal-dias-semana.tsx     - Modal para editar dias ativos do plano alimentar
       modal-nova-refeicao.tsx   - Modal para adicionar nova refeição ao plano alimentar
+      modal-adicionar-alimento.tsx - Modal para buscar, selecionar e adicionar alimento à refeição
   pages/
     login.tsx                  - Login page (Registro + UF / CPF)
     patients.tsx               - Lista de clientes com tabs (Ativos/Todos/Inativos), filtros, ordenação, tags, período
@@ -75,3 +76,7 @@ shared/
 - PUT /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/dias — Update active days
 - PUT /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/descricao — Update description
 - POST /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/refeicoes — Create meal
+- GET /api/nutricao/alimentos/buscar?q&limite — Search legacy foods
+- GET /api/nutricao/tbca/alimentos?busca&fonte&limite — Search TBCA foods
+- GET /api/nutricao/tbca/alimentos/:id — Food detail (nutrients)
+- POST /api/nutricao/tbca/calcular — Calculate nutrients for quantity

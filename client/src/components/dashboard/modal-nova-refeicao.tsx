@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { HORARIOS_REFEICAO, DESCRICOES_REFEICAO_PADRAO } from "@shared/schema";
 import type { AlimentoPlano } from "@shared/schema";
 import { cn } from "@/lib/utils";
+import { ModalAdicionarAlimento } from "./modal-adicionar-alimento";
 
 interface ModalNovaRefeicaoProps {
   open: boolean;
@@ -160,6 +161,7 @@ export function ModalNovaRefeicao({
   const { toast } = useToast();
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
   const [errors, setErrors] = useState<{ descricao?: string }>({});
+  const [modalAlimentoAberta, setModalAlimentoAberta] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -237,10 +239,14 @@ export function ModalNovaRefeicao({
   }
 
   function handleAdicionarAlimento() {
-    toast({
-      title: "Em breve",
-      description: "A busca de alimentos será implementada em breve.",
-    });
+    setModalAlimentoAberta(true);
+  }
+
+  function handleAlimentoAdicionado(alimento: AlimentoPlano) {
+    setForm((prev) => ({
+      ...prev,
+      alimentos: [...prev.alimentos, alimento],
+    }));
   }
 
   return (
@@ -420,6 +426,13 @@ export function ModalNovaRefeicao({
           </div>
         </DialogFooter>
       </DialogContent>
+
+      <ModalAdicionarAlimento
+        open={modalAlimentoAberta}
+        onOpenChange={setModalAlimentoAberta}
+        refeicaoNome={form.descricao || "Nova refeição"}
+        onAdicionarAlimento={handleAlimentoAdicionado}
+      />
     </Dialog>
   );
 }

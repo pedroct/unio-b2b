@@ -681,4 +681,53 @@ POST /api/profissional/dashboard/pacientes/{id}/planos-alimentares/{planoId}/ref
 
 ---
 
+## 12. Módulo Nutrição — Busca e Cálculo de Alimentos
+
+> **Nota:** Estes endpoints seguem o contrato definido no documento `attached_assets/Pasted--Contrato-API-Consulta-de-Alimentos-Modal-de-Refei-o-UN_1772116726356.txt`. O frontend possui implementação mock local que simula as respostas do backend Django. Quando o backend real estiver disponível, basta apontar as chamadas para a base URL de staging/produção.
+
+### `GET /api/nutricao/alimentos/buscar?q={termo}&limite={n}`
+
+Busca alimentos na base legada (alimentos manuais/importados).
+
+**Query params:**
+- `q` (obrigatório): termo de busca
+- `limite` (opcional, default: 20)
+
+**200 Response:** Array de objetos com `id`, `nome`, `marca`, `calorias`, `carboidratos`, `proteinas`, `gorduras`, `fibras`, `unidade_medida`.
+
+### `GET /api/nutricao/tbca/alimentos?busca={termo}&fonte={fonte}&limite={n}`
+
+Busca alimentos na base TBCA/institucional.
+
+**Query params:**
+- `busca` (opcional): termo de busca
+- `fonte` (opcional): `TBCA`, `USDA`, `MANUAL`
+- `limite` (opcional, default: 50)
+
+**200 Response:** Array de objetos com `id`, `codigo_tbca`, `descricao`, `grupo_alimentar`, `fonte_dados`.
+
+### `GET /api/nutricao/tbca/alimentos/{alimento_id}`
+
+Detalhe nutricional de um alimento TBCA.
+
+**200 Response:** Objeto com `id`, `descricao`, `grupo_alimentar`, `fonte_dados`, `valores_nutricionais[]`.
+**404 Response:** `{ "erro": "Alimento não encontrado" }`
+
+### `POST /api/nutricao/tbca/calcular`
+
+Calcula nutrientes para uma quantidade informada.
+
+**Request Body:**
+```json
+{
+  "alimento_id": "uuid",
+  "quantidade_consumida": 150
+}
+```
+
+**200 Response:** Objeto com `alimento`, `quantidade_consumida`, `unidade`, `resumo_macros { calorias, proteinas, carboidratos, gorduras, fibras }`.
+**404 Response:** `{ "erro": "Alimento não encontrado" }`
+
+---
+
 *Documento gerado a partir do frontend UNIO Performance OS v1.0 — React SPA com Shadcn/ui + Tailwind CSS*

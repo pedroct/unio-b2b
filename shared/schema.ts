@@ -199,6 +199,34 @@ export const DESCRICOES_REFEICAO_PADRAO: string[] = [
   "Jantar",
 ];
 
+export type FonteAlimento = "TBCA" | "USDA" | "LEGADO";
+
+export const FONTES_ALIMENTO: { valor: FonteAlimento; rotulo: string }[] = [
+  { valor: "TBCA", rotulo: "TBCA" },
+  { valor: "USDA", rotulo: "USDA" },
+  { valor: "LEGADO", rotulo: "Legado" },
+];
+
+export interface AlimentoBusca {
+  id: string;
+  nome: string;
+  grupo?: string;
+  fonte: FonteAlimento;
+  caloriasPor100g: number | null;
+  proteinaPor100g: number | null;
+  carboidratoPor100g: number | null;
+  gorduraPor100g: number | null;
+  fibraPor100g: number | null;
+}
+
+export interface ResumoMacros {
+  calorias: number;
+  proteinas: number;
+  carboidratos: number;
+  gorduras: number;
+  fibras: number;
+}
+
 export interface MacroNutrientePlano {
   gramas: number;
   percentual: number;
