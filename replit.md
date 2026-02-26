@@ -26,14 +26,15 @@ client/src/
     theme-toggle.tsx     - Dark mode toggle
     empty-state.tsx      - Reusable empty state component
     dashboard/
-      overview-tab.tsx   - Patient overview with insights & charts
-      nutrition-tab.tsx  - Nutrition data, macros, food diary
-      biometry-tab.tsx   - Body composition evolution charts
-      training-tab.tsx   - Training sessions, volume, RPE
+      overview-tab.tsx          - Patient overview with insights & charts
+      nutrition-tab.tsx         - Nutrition data, macros, food diary
+      biometry-tab.tsx          - Body composition evolution charts
+      training-tab.tsx          - Training sessions, volume, RPE
+      aba-plano-alimentar.tsx   - Plano alimentar com refeições e nutrientes
   pages/
     login.tsx            - Login page (Registro + UF / CPF)
     patients.tsx         - Patient list with adherence status
-    patient-dashboard.tsx - Patient dashboard with 4 tabs
+    patient-dashboard.tsx - Patient dashboard with 5 tabs
     patient-settings.tsx  - Patient goals configuration
 
 server/
@@ -53,3 +54,4 @@ shared/
 - GET /api/profissional/dashboard/pacientes/:id/nutricao — Nutrition
 - GET /api/profissional/dashboard/pacientes/:id/biometria — Biometry
 - GET /api/profissional/dashboard/pacientes/:id/treinamento — Training
+- GET /api/profissional/dashboard/pacientes/:id/plano-alimentar?diaSemana=segunda — Meal Plan

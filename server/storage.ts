@@ -7,6 +7,8 @@ import type {
   TrainingSummary,
   PatientOverview,
   InsightCard,
+  PlanoAlimentar,
+  DiaSemana,
 } from "@shared/schema";
 
 const professionals: Professional[] = [
@@ -168,6 +170,146 @@ function generateTrainingSessions() {
   return sessions;
 }
 
+function generatePlanoAlimentar(pacienteId: string, diaSemana: DiaSemana): PlanoAlimentar {
+  const refeicoesPorDia: Record<string, PlanoAlimentar["refeicoes"]> = {
+    segunda: [
+      {
+        id: "ref-1", nome: "Desjejum", horario: "07:00",
+        alimentos: [
+          { id: "a1", nome: "Pão integral", quantidade: "2 fatias" },
+          { id: "a2", nome: "Queijo minas frescal", quantidade: "2 fatias (30g)" },
+          { id: "a3", nome: "Mamão papaia", quantidade: "1/2 unidade" },
+          { id: "a4", nome: "Café com leite desnatado", quantidade: "1 xícara (200ml)" },
+        ],
+      },
+      {
+        id: "ref-2", nome: "Colação", horario: "10:00",
+        alimentos: [
+          { id: "a5", nome: "Iogurte natural desnatado", quantidade: "1 pote (170g)" },
+          { id: "a6", nome: "Granola sem açúcar", quantidade: "2 colheres de sopa" },
+          { id: "a7", nome: "Castanha-do-pará", quantidade: "2 unidades" },
+        ],
+      },
+      {
+        id: "ref-3", nome: "Almoço", horario: "12:30",
+        alimentos: [
+          { id: "a8", nome: "Arroz integral", quantidade: "4 colheres de sopa" },
+          { id: "a9", nome: "Feijão carioca", quantidade: "1 concha média" },
+          { id: "a10", nome: "Filé de frango grelhado", quantidade: "1 unidade (120g)" },
+          { id: "a11", nome: "Salada de folhas verdes", quantidade: "à vontade" },
+          { id: "a12", nome: "Azeite de oliva extravirgem", quantidade: "1 colher de sobremesa" },
+          { id: "a13", nome: "Suco de laranja natural", quantidade: "1 copo (200ml)" },
+        ],
+      },
+      {
+        id: "ref-4", nome: "Lanche da tarde", horario: "15:30",
+        alimentos: [
+          { id: "a14", nome: "Banana prata", quantidade: "1 unidade" },
+          { id: "a15", nome: "Pasta de amendoim integral", quantidade: "1 colher de sopa" },
+          { id: "a16", nome: "Aveia em flocos", quantidade: "2 colheres de sopa" },
+        ],
+      },
+      {
+        id: "ref-5", nome: "Jantar", horario: "19:00",
+        alimentos: [
+          { id: "a17", nome: "Salmão grelhado", quantidade: "1 filé (150g)" },
+          { id: "a18", nome: "Batata-doce assada", quantidade: "1 unidade média" },
+          { id: "a19", nome: "Brócolis cozido no vapor", quantidade: "1 xícara" },
+          { id: "a20", nome: "Azeite de oliva", quantidade: "1 colher de chá" },
+        ],
+      },
+      {
+        id: "ref-6", nome: "Ceia", horario: "21:30",
+        alimentos: [
+          { id: "a21", nome: "Chá de camomila", quantidade: "1 xícara (200ml)" },
+          { id: "a22", nome: "Cottage", quantidade: "2 colheres de sopa" },
+          { id: "a23", nome: "Torrada integral", quantidade: "2 unidades" },
+        ],
+      },
+    ],
+    default: [
+      {
+        id: "ref-1", nome: "Desjejum", horario: "07:00",
+        alimentos: [
+          { id: "a1", nome: "Omelete de claras", quantidade: "3 claras + 1 gema" },
+          { id: "a2", nome: "Pão integral", quantidade: "1 fatia" },
+          { id: "a3", nome: "Abacate", quantidade: "2 colheres de sopa" },
+          { id: "a4", nome: "Café preto", quantidade: "1 xícara (150ml)" },
+        ],
+      },
+      {
+        id: "ref-2", nome: "Colação", horario: "10:00",
+        alimentos: [
+          { id: "a5", nome: "Maçã", quantidade: "1 unidade" },
+          { id: "a6", nome: "Amêndoas", quantidade: "10 unidades" },
+        ],
+      },
+      {
+        id: "ref-3", nome: "Almoço", horario: "12:30",
+        alimentos: [
+          { id: "a7", nome: "Quinoa", quantidade: "3 colheres de sopa" },
+          { id: "a8", nome: "Peito de peru assado", quantidade: "1 filé (130g)" },
+          { id: "a9", nome: "Legumes grelhados", quantidade: "1 porção" },
+          { id: "a10", nome: "Salada mista", quantidade: "à vontade" },
+          { id: "a11", nome: "Limão", quantidade: "1/2 unidade" },
+        ],
+      },
+      {
+        id: "ref-4", nome: "Lanche da tarde", horario: "15:30",
+        alimentos: [
+          { id: "a12", nome: "Iogurte grego natural", quantidade: "1 pote (170g)" },
+          { id: "a13", nome: "Mel", quantidade: "1 colher de chá" },
+          { id: "a14", nome: "Chia", quantidade: "1 colher de sopa" },
+        ],
+      },
+      {
+        id: "ref-5", nome: "Jantar", horario: "19:00",
+        alimentos: [
+          { id: "a15", nome: "Tilápia grelhada", quantidade: "1 filé (140g)" },
+          { id: "a16", nome: "Arroz integral", quantidade: "3 colheres de sopa" },
+          { id: "a17", nome: "Couve refogada", quantidade: "1 porção" },
+        ],
+      },
+      {
+        id: "ref-6", nome: "Ceia", horario: "21:30",
+        alimentos: [
+          { id: "a18", nome: "Leite desnatado morno", quantidade: "1 copo (200ml)" },
+          { id: "a19", nome: "Canela em pó", quantidade: "1 pitada" },
+        ],
+      },
+    ],
+  };
+
+  const refeicoes = refeicoesPorDia[diaSemana] || refeicoesPorDia["default"];
+
+  const nutrientesPorDia: Record<string, PlanoAlimentar["nutrientes"]> = {
+    segunda: {
+      calorias: 2050,
+      proteina: { gramas: 138, percentual: 26.9 },
+      carboidrato: { gramas: 245, percentual: 47.8 },
+      gordura: { gramas: 58, percentual: 25.3 },
+      fibra: 32,
+    },
+    default: {
+      calorias: 1890,
+      proteina: { gramas: 125, percentual: 26.5 },
+      carboidrato: { gramas: 228, percentual: 48.3 },
+      gordura: { gramas: 53, percentual: 25.2 },
+      fibra: 28,
+    },
+  };
+
+  return {
+    id: `plano-${pacienteId}-${diaSemana}`,
+    pacienteId,
+    descricao: "Dieta Hiperproteica (modelo de cardápio importado)",
+    status: "ativo",
+    diaSemana,
+    refeicoes: refeicoes!,
+    nutrientes: nutrientesPorDia[diaSemana] || nutrientesPorDia["default"]!,
+  };
+}
+
 export interface IStorage {
   authenticate(registrationNumber: string, uf: string, password: string): Promise<{ professional: Professional; tokens: { access: string; refresh: string } } | null>;
   getPatients(): Promise<Patient[]>;
@@ -178,6 +320,7 @@ export interface IStorage {
   getPatientNutrition(patientId: string): Promise<NutritionSummary | undefined>;
   getPatientBiometry(patientId: string): Promise<BiometrySummary | undefined>;
   getPatientTraining(patientId: string): Promise<TrainingSummary | undefined>;
+  getPlanoAlimentar(pacienteId: string, diaSemana: DiaSemana): Promise<PlanoAlimentar | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -316,6 +459,11 @@ export class MemStorage implements IStorage {
       adherencePercent: Math.round((completed.length / sessions.length) * 100),
       sessions,
     };
+  }
+  async getPlanoAlimentar(pacienteId: string, diaSemana: DiaSemana): Promise<PlanoAlimentar | undefined> {
+    const patient = patients.find((p) => p.id === pacienteId);
+    if (!patient) return undefined;
+    return generatePlanoAlimentar(pacienteId, diaSemana);
   }
 }
 

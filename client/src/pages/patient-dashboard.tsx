@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
-import { ArrowLeft, Settings2 } from "lucide-react";
+import { ArrowLeft, Settings2, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { OverviewTab } from "@/components/dashboard/overview-tab";
 import { NutritionTab } from "@/components/dashboard/nutrition-tab";
 import { BiometryTab } from "@/components/dashboard/biometry-tab";
 import { TrainingTab } from "@/components/dashboard/training-tab";
+import { AbaPlanoAlimentar } from "@/components/dashboard/aba-plano-alimentar";
 import type { Patient } from "@shared/schema";
 
 function PatientHeaderSkeleton() {
@@ -99,6 +100,10 @@ export default function PatientDashboardPage() {
           <TabsTrigger value="training" data-testid="tab-trigger-training">
             Treinamento
           </TabsTrigger>
+          <TabsTrigger value="plano-alimentar" data-testid="tab-trigger-plano-alimentar">
+            <UtensilsCrossed className="h-3.5 w-3.5 mr-1.5" />
+            Plano Alimentar
+          </TabsTrigger>
         </TabsList>
 
         <div className="mt-6">
@@ -113,6 +118,9 @@ export default function PatientDashboardPage() {
           </TabsContent>
           <TabsContent value="training">
             <TrainingTab patientId={patientId} />
+          </TabsContent>
+          <TabsContent value="plano-alimentar">
+            <AbaPlanoAlimentar pacienteId={patientId} />
           </TabsContent>
         </div>
       </Tabs>

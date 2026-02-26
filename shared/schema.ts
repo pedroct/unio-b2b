@@ -151,6 +151,62 @@ export interface WeeklySnapshot {
   weightChange: number;
 }
 
+export type DiaSemana = "segunda" | "terca" | "quarta" | "quinta" | "sexta" | "sabado" | "domingo";
+
+export const DIAS_SEMANA: { valor: DiaSemana; rotulo: string }[] = [
+  { valor: "segunda", rotulo: "Segunda-feira" },
+  { valor: "terca", rotulo: "Terça-feira" },
+  { valor: "quarta", rotulo: "Quarta-feira" },
+  { valor: "quinta", rotulo: "Quinta-feira" },
+  { valor: "sexta", rotulo: "Sexta-feira" },
+  { valor: "sabado", rotulo: "Sábado" },
+  { valor: "domingo", rotulo: "Domingo" },
+];
+
+export interface AlimentoPlano {
+  id: string;
+  nome: string;
+  quantidade: string;
+}
+
+export interface Refeicao {
+  id: string;
+  nome: string;
+  horario: string;
+  alimentos: AlimentoPlano[];
+  substitutas?: Refeicao[];
+}
+
+export interface MacroNutrientePlano {
+  gramas: number;
+  percentual: number;
+}
+
+export interface NutrientesPlano {
+  calorias: number;
+  proteina: MacroNutrientePlano;
+  carboidrato: MacroNutrientePlano;
+  gordura: MacroNutrientePlano;
+  fibra: number;
+}
+
+export interface PlanoAlimentar {
+  id: string;
+  pacienteId: string;
+  descricao: string;
+  status: "ativo" | "rascunho";
+  diaSemana: DiaSemana;
+  refeicoes: Refeicao[];
+  nutrientes: NutrientesPlano;
+}
+
+export interface ResumoPlanoAlimentar {
+  id: string;
+  descricao: string;
+  status: "ativo" | "rascunho";
+  diaSemana: DiaSemana;
+}
+
 export const BRAZILIAN_STATES = [
   "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO",
   "MA", "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR",

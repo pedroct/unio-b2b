@@ -79,5 +79,14 @@ export async function registerRoutes(
     return res.json(training);
   });
 
+  app.get("/api/profissional/dashboard/pacientes/:id/plano-alimentar", async (req, res) => {
+    const diaSemana = (req.query.diaSemana as string) || "segunda";
+    const plano = await storage.getPlanoAlimentar(req.params.id, diaSemana as any);
+    if (!plano) {
+      return res.status(404).json({ message: "Plano alimentar não encontrado." });
+    }
+    return res.json(plano);
+  });
+
   return httpServer;
 }

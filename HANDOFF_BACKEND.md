@@ -450,6 +450,82 @@ Todos os endpoints devem seguir o padrão:
 
 ---
 
+## 10. Plano Alimentar
+
+### `GET /api/profissional/dashboard/pacientes/{id}/plano-alimentar?diaSemana=segunda`
+
+Retorna o plano alimentar do paciente para o dia da semana selecionado.
+
+**Query Parameters:**
+
+| Parâmetro | Tipo | Obrigatório | Valores |
+|-----------|------|-------------|---------|
+| `diaSemana` | string | Não (default: "segunda") | `segunda`, `terca`, `quarta`, `quinta`, `sexta`, `sabado`, `domingo` |
+
+**Response (200):**
+```json
+{
+  "id": "plano-p1-segunda",
+  "pacienteId": "p1",
+  "descricao": "Dieta Hiperproteica (modelo de cardápio importado)",
+  "status": "ativo",
+  "diaSemana": "segunda",
+  "refeicoes": [
+    {
+      "id": "ref-1",
+      "nome": "Desjejum",
+      "horario": "07:00",
+      "alimentos": [
+        { "id": "a1", "nome": "Pão integral", "quantidade": "2 fatias" },
+        { "id": "a2", "nome": "Queijo minas frescal", "quantidade": "2 fatias (30g)" }
+      ],
+      "substitutas": []
+    }
+  ],
+  "nutrientes": {
+    "calorias": 2050,
+    "proteina": { "gramas": 138, "percentual": 26.9 },
+    "carboidrato": { "gramas": 245, "percentual": 47.8 },
+    "gordura": { "gramas": 58, "percentual": 25.3 },
+    "fibra": 32
+  }
+}
+```
+
+**Campos:**
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | string | ID único do plano |
+| `pacienteId` | string | ID do paciente |
+| `descricao` | string | Descrição/nome do plano |
+| `status` | `"ativo"` \| `"rascunho"` | Status do plano |
+| `diaSemana` | string | Dia da semana correspondente |
+| `refeicoes` | Refeicao[] | Lista de refeições do dia |
+| `refeicoes[].id` | string | ID da refeição |
+| `refeicoes[].nome` | string | Nome da refeição (Desjejum, Colação, etc.) |
+| `refeicoes[].horario` | string | Horário no formato "HH:mm" |
+| `refeicoes[].alimentos` | AlimentoPlano[] | Lista de alimentos |
+| `refeicoes[].alimentos[].id` | string | ID do alimento |
+| `refeicoes[].alimentos[].nome` | string | Nome do alimento |
+| `refeicoes[].alimentos[].quantidade` | string | Quantidade descritiva (ex: "2 colheres de sopa") |
+| `refeicoes[].substitutas` | Refeicao[] (opcional) | Refeições substitutas |
+| `nutrientes.calorias` | number | Total calórico do dia (kcal) |
+| `nutrientes.proteina.gramas` | number | Gramas de proteína |
+| `nutrientes.proteina.percentual` | number | Percentual de proteína |
+| `nutrientes.carboidrato.gramas` | number | Gramas de carboidrato |
+| `nutrientes.carboidrato.percentual` | number | Percentual de carboidrato |
+| `nutrientes.gordura.gramas` | number | Gramas de gordura |
+| `nutrientes.gordura.percentual` | number | Percentual de gordura |
+| `nutrientes.fibra` | number | Gramas de fibra |
+
+**Error (404):**
+```json
+{ "message": "Plano alimentar não encontrado." }
+```
+
+---
+
 ## 11. Mapa Visual de Rotas
 
 ```
@@ -461,7 +537,8 @@ PUT  /api/profissional/pacientes/{id}/metas            → Atualizar metas
 GET  /api/profissional/dashboard/pacientes/{id}/overview   → Visão Geral
 GET  /api/profissional/dashboard/pacientes/{id}/nutricao   → Nutrição
 GET  /api/profissional/dashboard/pacientes/{id}/biometria  → Biometria
-GET  /api/profissional/dashboard/pacientes/{id}/treinamento → Treinamento
+GET  /api/profissional/dashboard/pacientes/{id}/treinamento    → Treinamento
+GET  /api/profissional/dashboard/pacientes/{id}/plano-alimentar → Plano Alimentar
 ```
 
 ---
