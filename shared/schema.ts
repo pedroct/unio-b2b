@@ -199,12 +199,14 @@ export const DESCRICOES_REFEICAO_PADRAO: string[] = [
   "Jantar",
 ];
 
-export type FonteAlimento = "TBCA" | "USDA" | "LEGADO";
+export type FonteAlimento = "TBCA" | "IBGE" | "TUCUNDUVA" | "SUPLEMENTOS" | "MEUS_ALIMENTOS";
 
-export const FONTES_ALIMENTO: { valor: FonteAlimento; rotulo: string }[] = [
-  { valor: "TBCA", rotulo: "TBCA" },
-  { valor: "USDA", rotulo: "USDA" },
-  { valor: "LEGADO", rotulo: "Legado" },
+export const FONTES_ALIMENTO: { valor: FonteAlimento; rotulo: string; disponivel: boolean }[] = [
+  { valor: "TBCA", rotulo: "TBCA", disponivel: true },
+  { valor: "IBGE", rotulo: "IBGE", disponivel: false },
+  { valor: "TUCUNDUVA", rotulo: "Tucunduva", disponivel: false },
+  { valor: "SUPLEMENTOS", rotulo: "Suplementos", disponivel: false },
+  { valor: "MEUS_ALIMENTOS", rotulo: "Meus alimentos", disponivel: false },
 ];
 
 export interface AlimentoBusca {

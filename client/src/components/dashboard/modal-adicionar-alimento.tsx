@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Check, Flame, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { FONTES_ALIMENTO } from "@shared/schema";
 import type { AlimentoPlano, AlimentoBusca, FonteAlimento, ResumoMacros } from "@shared/schema";
 
 type FiltroOrigem = "TODAS" | FonteAlimento;
@@ -54,24 +56,13 @@ function normalizarResultadosLegado(dados: any[]): ResultadoBusca[] {
     id: String(item.id),
     nome: item.nome,
     grupo: undefined,
-    fonte: "LEGADO" as FonteAlimento,
+    fonte: "TBCA" as FonteAlimento,
     caloriasPor100g: item.calorias ?? null,
     proteinaPor100g: item.proteinas ?? null,
     carboidratoPor100g: item.carboidratos ?? null,
     gorduraPor100g: item.gorduras ?? null,
     fibraPor100g: item.fibras ?? null,
   }));
-}
-
-function calcularMacrosLocal(alimento: ResultadoBusca, quantidade: number): ResumoMacros {
-  const fator = quantidade / 100;
-  return {
-    calorias: Math.round((alimento.caloriasPor100g || 0) * fator * 10) / 10,
-    proteinas: Math.round((alimento.proteinaPor100g || 0) * fator * 10) / 10,
-    carboidratos: Math.round((alimento.carboidratoPor100g || 0) * fator * 10) / 10,
-    gorduras: Math.round((alimento.gorduraPor100g || 0) * fator * 10) / 10,
-    fibras: Math.round((alimento.fibraPor100g || 0) * fator * 10) / 10,
-  };
 }
 
 function MacroCard({ label, valor, unidade }: { label: string; valor: number; unidade: string }) {
@@ -90,6 +81,7 @@ export function ModalAdicionarAlimento({
   refeicaoNome,
   onAdicionarAlimento,
 }: ModalAdicionarAlimentoProps) {
+  const { toast } = useToast();
   const [filtro, setFiltro] = useState<FiltroOrigem>("TODAS");
   const [termoBusca, setTermoBusca] = useState("");
   const [resultados, setResultados] = useState<ResultadoBusca[]>([]);
@@ -114,6 +106,20 @@ export function ModalAdicionarAlimento({
     }
   }, [open]);
 
+  function handleFiltroClick(valor: FiltroOrigem) {
+    const fonteInfo = FONTES_ALIMENTO.find((f) => f.valor === valor);
+    if (fonteInfo && !fonteInfo.disponivel) {
+      toast({
+        title: "Em breve",
+        description: `A tabela ${fonteInfo.rotulo} estará disponível em breve.`,
+      });
+      return;
+    }
+    setFiltro(valor);
+    setSelecionado(null);
+    setMacros(null);
+  }
+
   const executarBusca = useCallback(async (termo: string, origem: FiltroOrigem) => {
     if (termo.length < 2) {
       setResultados([]);
@@ -125,18 +131,10 @@ export function ModalAdicionarAlimento({
     try {
       const resultadosCombinados: ResultadoBusca[] = [];
 
-      if (origem === "TODAS" || origem === "LEGADO") {
-        const resLegado = await fetch(`/api/nutricao/alimentos/buscar?q=${encodeURIComponent(termo)}&limite=10`);
-        if (resLegado.ok) {
-          const dados = await resLegado.json();
-          resultadosCombinados.push(...normalizarResultadosLegado(dados));
-        }
-      }
-
-      if (origem === "TODAS" || origem === "TBCA" || origem === "USDA") {
-        const params = new URLSearchParams({ busca: termo, limite: "20" });
-        if (origem !== "TODAS") {
-          params.set("fonte", origem);
+      if (origem === "TODAS" || origem === "TBCA") {
+        const params = new URLSearchParams({ busca: termo, limite: "30" });
+        if (origem === "TBCA") {
+          params.set("fonte", "TBCA");
         }
         const resTbca = await fetch(`/api/nutricao/tbca/alimentos?${params}`);
         if (resTbca.ok) {
@@ -194,11 +192,6 @@ export function ModalAdicionarAlimento({
       return;
     }
 
-    if (selecionado.fonte === "LEGADO") {
-      setMacros(calcularMacrosLocal(selecionado, qtd));
-      return;
-    }
-
     if (calcDebounceRef.current) clearTimeout(calcDebounceRef.current);
     calcDebounceRef.current = setTimeout(() => {
       calcularMacrosRemoto(selecionado.id, qtd);
@@ -237,10 +230,9 @@ export function ModalAdicionarAlimento({
     }
   }
 
-  const filtros: { valor: FiltroOrigem; rotulo: string }[] = [
-    { valor: "TODAS", rotulo: "Todas" },
-    { valor: "TBCA", rotulo: "TBCA" },
-    { valor: "USDA", rotulo: "USDA" },
+  const filtros: { valor: FiltroOrigem; rotulo: string; disponivel: boolean }[] = [
+    { valor: "TODAS", rotulo: "Todas", disponivel: true },
+    ...FONTES_ALIMENTO.map((f) => ({ valor: f.valor as FiltroOrigem, rotulo: f.rotulo, disponivel: f.disponivel })),
   ];
 
   const qtdValida = !isNaN(parseFloat(quantidade)) && parseFloat(quantidade) > 0;
@@ -263,17 +255,19 @@ export function ModalAdicionarAlimento({
         </div>
 
         <div className="px-6 space-y-4">
-          <div className="flex items-center gap-2" data-testid="filtros-origem">
+          <div className="flex items-center gap-2 flex-wrap" data-testid="filtros-origem">
             {filtros.map((f) => (
               <button
                 key={f.valor}
                 type="button"
-                onClick={() => setFiltro(f.valor)}
+                onClick={() => handleFiltroClick(f.valor)}
                 className={cn(
                   "rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors border",
                   filtro === f.valor
                     ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-background text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground"
+                    : f.disponivel
+                      ? "bg-background text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground"
+                      : "bg-background text-muted-foreground/50 border-border/50 cursor-default"
                 )}
                 data-testid={`filtro-${f.valor.toLowerCase()}`}
               >
@@ -339,12 +333,7 @@ export function ModalAdicionarAlimento({
                       <div className="flex items-center gap-2 shrink-0">
                         <Badge
                           variant="outline"
-                          className={cn(
-                            "text-[10px] px-1.5 py-0",
-                            item.fonte === "TBCA" && "border-emerald-300 text-emerald-700 dark:border-emerald-700 dark:text-emerald-400",
-                            item.fonte === "USDA" && "border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-400",
-                            item.fonte === "LEGADO" && "border-orange-300 text-orange-700 dark:border-orange-700 dark:text-orange-400"
-                          )}
+                          className="text-[10px] px-1.5 py-0 border-emerald-300 text-emerald-700 dark:border-emerald-700 dark:text-emerald-400"
                           data-testid={`badge-fonte-${item.id}`}
                         >
                           {item.fonte}
@@ -379,12 +368,7 @@ export function ModalAdicionarAlimento({
                     )}
                     <Badge
                       variant="outline"
-                      className={cn(
-                        "text-[10px] px-1.5 py-0",
-                        selecionado.fonte === "TBCA" && "border-emerald-300 text-emerald-700",
-                        selecionado.fonte === "USDA" && "border-blue-300 text-blue-700",
-                        selecionado.fonte === "LEGADO" && "border-orange-300 text-orange-700"
-                      )}
+                      className="text-[10px] px-1.5 py-0 border-emerald-300 text-emerald-700"
                     >
                       {selecionado.fonte}
                     </Badge>

@@ -12,9 +12,6 @@ import type {
   ResumoPlanoAlimentar,
   Refeicao,
   DiaSemana,
-  AlimentoBusca,
-  ResumoMacros,
-  FonteAlimento,
 } from "@shared/schema";
 
 const professionals: Professional[] = [
@@ -345,29 +342,6 @@ function getPlanosMock(pacienteId: string): PlanoMockData[] {
   });
 }
 
-const alimentosMock: AlimentoBusca[] = [
-  { id: "tbca-001", nome: "Arroz, integral, cozido", grupo: "Cereais e derivados", fonte: "TBCA", caloriasPor100g: 124, proteinaPor100g: 2.6, carboidratoPor100g: 25.8, gorduraPor100g: 1.0, fibraPor100g: 2.7 },
-  { id: "tbca-002", nome: "Feijão, carioca, cozido", grupo: "Leguminosas e derivados", fonte: "TBCA", caloriasPor100g: 76, proteinaPor100g: 4.8, carboidratoPor100g: 13.6, gorduraPor100g: 0.5, fibraPor100g: 8.5 },
-  { id: "tbca-003", nome: "Frango, peito, sem pele, grelhado", grupo: "Carnes e derivados", fonte: "TBCA", caloriasPor100g: 159, proteinaPor100g: 32.0, carboidratoPor100g: 0.0, gorduraPor100g: 3.2, fibraPor100g: 0.0 },
-  { id: "tbca-004", nome: "Ovo, de galinha, inteiro, cozido", grupo: "Ovos e derivados", fonte: "TBCA", caloriasPor100g: 146, proteinaPor100g: 13.3, carboidratoPor100g: 0.6, gorduraPor100g: 9.5, fibraPor100g: 0.0 },
-  { id: "tbca-005", nome: "Batata doce, cozida", grupo: "Tubérculos, raízes e derivados", fonte: "TBCA", caloriasPor100g: 77, proteinaPor100g: 0.6, carboidratoPor100g: 18.4, gorduraPor100g: 0.1, fibraPor100g: 2.2 },
-  { id: "tbca-006", nome: "Abacate, cru", grupo: "Frutas e derivados", fonte: "TBCA", caloriasPor100g: 96, proteinaPor100g: 1.2, carboidratoPor100g: 6.0, gorduraPor100g: 8.4, fibraPor100g: 6.3 },
-  { id: "tbca-007", nome: "Banana, prata, crua", grupo: "Frutas e derivados", fonte: "TBCA", caloriasPor100g: 98, proteinaPor100g: 1.3, carboidratoPor100g: 26.0, gorduraPor100g: 0.1, fibraPor100g: 2.0 },
-  { id: "tbca-008", nome: "Leite, de vaca, desnatado", grupo: "Leite e derivados", fonte: "TBCA", caloriasPor100g: 35, proteinaPor100g: 3.4, carboidratoPor100g: 4.9, gorduraPor100g: 0.2, fibraPor100g: 0.0 },
-  { id: "tbca-009", nome: "Iogurte, natural, desnatado", grupo: "Leite e derivados", fonte: "TBCA", caloriasPor100g: 51, proteinaPor100g: 4.1, carboidratoPor100g: 6.7, gorduraPor100g: 0.3, fibraPor100g: 0.0 },
-  { id: "tbca-010", nome: "Brócolis, cozido", grupo: "Verduras, hortaliças e derivados", fonte: "TBCA", caloriasPor100g: 25, proteinaPor100g: 2.1, carboidratoPor100g: 4.4, gorduraPor100g: 0.1, fibraPor100g: 3.4 },
-  { id: "tbca-011", nome: "Salmão, grelhado", grupo: "Pescados e frutos do mar", fonte: "TBCA", caloriasPor100g: 208, proteinaPor100g: 27.0, carboidratoPor100g: 0.0, gorduraPor100g: 11.0, fibraPor100g: 0.0 },
-  { id: "tbca-012", nome: "Aveia, flocos, crua", grupo: "Cereais e derivados", fonte: "TBCA", caloriasPor100g: 394, proteinaPor100g: 14.0, carboidratoPor100g: 66.6, gorduraPor100g: 8.5, fibraPor100g: 9.1 },
-  { id: "usda-001", nome: "Quinoa, cozida", grupo: "Cereais e derivados", fonte: "USDA", caloriasPor100g: 120, proteinaPor100g: 4.4, carboidratoPor100g: 21.3, gorduraPor100g: 1.9, fibraPor100g: 2.8 },
-  { id: "usda-002", nome: "Amêndoa, crua", grupo: "Nozes e sementes", fonte: "USDA", caloriasPor100g: 579, proteinaPor100g: 21.2, carboidratoPor100g: 21.6, gorduraPor100g: 49.9, fibraPor100g: 12.5 },
-  { id: "usda-003", nome: "Espinafre, cru", grupo: "Verduras, hortaliças e derivados", fonte: "USDA", caloriasPor100g: 23, proteinaPor100g: 2.9, carboidratoPor100g: 3.6, gorduraPor100g: 0.4, fibraPor100g: 2.2 },
-  { id: "usda-004", nome: "Peito de peru, defumado", grupo: "Carnes e derivados", fonte: "USDA", caloriasPor100g: 104, proteinaPor100g: 17.1, carboidratoPor100g: 3.5, gorduraPor100g: 1.7, fibraPor100g: 0.0 },
-  { id: "leg-001", nome: "Granola caseira com mel", grupo: "Cereais e derivados", fonte: "LEGADO", caloriasPor100g: 471, proteinaPor100g: 10.0, carboidratoPor100g: 64.0, gorduraPor100g: 20.0, fibraPor100g: 5.5 },
-  { id: "leg-002", nome: "Pão integral artesanal", grupo: "Panificados", fonte: "LEGADO", caloriasPor100g: 247, proteinaPor100g: 13.0, carboidratoPor100g: 41.0, gorduraPor100g: 3.4, fibraPor100g: 7.0 },
-  { id: "leg-003", nome: "Whey Protein Isolado (baunilha)", grupo: "Suplementos", fonte: "LEGADO", caloriasPor100g: 375, proteinaPor100g: 87.5, carboidratoPor100g: 3.1, gorduraPor100g: 1.2, fibraPor100g: 0.0 },
-  { id: "leg-004", nome: "Pasta de amendoim integral", grupo: "Nozes e sementes", fonte: "LEGADO", caloriasPor100g: 593, proteinaPor100g: 22.0, carboidratoPor100g: 22.0, gorduraPor100g: 46.0, fibraPor100g: 8.0 },
-];
-
 export interface IStorage {
   authenticate(registrationNumber: string, uf: string, password: string): Promise<{ professional: Professional; tokens: { access: string; refresh: string } } | null>;
   getPatients(): Promise<Patient[]>;
@@ -383,9 +357,6 @@ export interface IStorage {
   updateDiasAtivos(pacienteId: string, planoId: string, diasAtivos: DiaSemana[]): Promise<DiaSemana[]>;
   updateDescricaoPlano(pacienteId: string, planoId: string, descricao: string): Promise<string>;
   addRefeicao(pacienteId: string, planoId: string, refeicao: Omit<Refeicao, "id">): Promise<Refeicao | null>;
-  buscarAlimentos(termo: string, fonte?: FonteAlimento, limite?: number): Promise<AlimentoBusca[]>;
-  getAlimentoDetalhe(id: string): Promise<AlimentoBusca | null>;
-  calcularNutrientes(alimentoId: string, quantidade: number): Promise<{ alimento: string; quantidade_consumida: number; unidade: string; resumo_macros: ResumoMacros } | null>;
 }
 
 export class MemStorage implements IStorage {
@@ -583,38 +554,6 @@ export class MemStorage implements IStorage {
     }
     planoRefeicaoesExtras[planoId].push(novaRefeicao);
     return novaRefeicao;
-  }
-  async buscarAlimentos(termo: string, fonte?: FonteAlimento, limite: number = 20): Promise<AlimentoBusca[]> {
-    const termoLower = termo.toLowerCase();
-    let resultados = alimentosMock.filter((a) =>
-      a.nome.toLowerCase().includes(termoLower)
-    );
-    if (fonte) {
-      resultados = resultados.filter((a) => a.fonte === fonte);
-    }
-    return resultados.slice(0, limite);
-  }
-
-  async getAlimentoDetalhe(id: string): Promise<AlimentoBusca | null> {
-    return alimentosMock.find((a) => a.id === id) || null;
-  }
-
-  async calcularNutrientes(alimentoId: string, quantidade: number): Promise<{ alimento: string; quantidade_consumida: number; unidade: string; resumo_macros: ResumoMacros } | null> {
-    const alimento = alimentosMock.find((a) => a.id === alimentoId);
-    if (!alimento) return null;
-    const fator = quantidade / 100;
-    return {
-      alimento: alimento.nome,
-      quantidade_consumida: quantidade,
-      unidade: "g",
-      resumo_macros: {
-        calorias: Math.round((alimento.caloriasPor100g || 0) * fator * 10) / 10,
-        proteinas: Math.round((alimento.proteinaPor100g || 0) * fator * 10) / 10,
-        carboidratos: Math.round((alimento.carboidratoPor100g || 0) * fator * 10) / 10,
-        gorduras: Math.round((alimento.gorduraPor100g || 0) * fator * 10) / 10,
-        fibras: Math.round((alimento.fibraPor100g || 0) * fator * 10) / 10,
-      },
-    };
   }
 }
 

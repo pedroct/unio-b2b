@@ -37,3 +37,10 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[userenv]
+
+[userenv.shared]
+STAGING_API_URL = "https://staging.unio.tec.br"
+STAGING_EMAIL = "contato@pedroct.com.br"
+STAGING_PASSWORD = "Pct@1955"
