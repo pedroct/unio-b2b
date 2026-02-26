@@ -61,7 +61,7 @@ export function NutritionTab({ patientId, patientName }: NutritionTabProps) {
       <EmptyState
         icon={<Apple className="h-12 w-12" />}
         title="Sem dados de nutrição"
-        description="Quando o paciente começar a registrar suas refeições, os dados aparecerão aqui com resumos de macros e aderência."
+        description="Quando as refeições forem registradas, os dados aparecerão aqui com resumos de macros e aderência."
         module="nutrition"
       />
     );

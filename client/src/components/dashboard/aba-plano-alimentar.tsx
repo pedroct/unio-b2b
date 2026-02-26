@@ -191,7 +191,7 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
       <EmptyState
         icon={<UtensilsCrossed className="h-12 w-12" />}
         title="Sem plano alimentar"
-        description="Nenhum plano alimentar foi cadastrado para este paciente. Crie um plano para começar a acompanhar a nutrição."
+        description="Nenhum plano alimentar cadastrado. Crie um plano para começar a acompanhar a nutrição."
         module="nutrition"
       />
     );

@@ -223,7 +223,7 @@ export function ModalDiasSemana({
                   Ativo
                 </Badge>
                 <p className="text-xs text-muted-foreground">
-                  Estará disponível para o paciente via aplicativo, e-mail e impressão. Ative
+                  Estará disponível via aplicativo, e-mail e impressão. Ative
                   marcando pelo menos um dia da semana.
                 </p>
               </div>
@@ -232,7 +232,7 @@ export function ModalDiasSemana({
                   Inativo
                 </Badge>
                 <p className="text-xs text-muted-foreground">
-                  Para o paciente não ver o plano inacabado enquanto você elabora, inative
+                  Para não exibir o plano inacabado enquanto você elabora, inative
                   desmarcando todos os dias da semana.
                 </p>
               </div>

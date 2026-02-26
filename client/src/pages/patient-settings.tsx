@@ -84,7 +84,7 @@ export default function PatientSettingsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/profissional/dashboard/pacientes", patientId] });
       toast({
         title: "Metas atualizadas",
-        description: "As metas do paciente foram salvas com sucesso.",
+        description: "As metas foram salvas com sucesso.",
       });
     },
     onError: () => {
@@ -110,7 +110,7 @@ export default function PatientSettingsPage() {
         </Link>
         <div>
           <h1 className="text-xl font-semibold tracking-tight" data-testid="text-settings-title">
-            Metas do Paciente
+            Metas
           </h1>
           <p className="text-sm text-muted-foreground">
             Ajuste as metas individuais de nutrição e hidratação.

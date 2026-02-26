@@ -1,7 +1,12 @@
 # UNIO Performance OS — Painel Web B2B
 
 ## Overview
-Plataforma web para profissionais de saúde (médicos, nutricionistas, personal trainers) acompanharem seus pacientes. Centraliza dados de Nutrição, Treino, Biometria e Hidratação em um único dashboard.
+Plataforma web para profissionais de saúde (médicos, nutricionistas, personal trainers) acompanharem seus clientes. Centraliza dados de Nutrição, Treino, Biometria e Hidratação em um único dashboard.
+
+## Terminologia
+- **Frontend (textos visíveis):** usa "Cliente(s)" em telas estruturais (listagem, sidebar, filtros, botões, empty states)
+- **Telas clínicas/operacionais:** usa o nome da pessoa ou linguagem técnica neutra (sem "cliente" nem "paciente")
+- **Backend / API / variáveis internas:** mantém "paciente" nas rotas e queryKeys (compatibilidade com Django backend)
 
 ## Architecture
 - **Frontend:** React (Vite) + TypeScript + Shadcn/ui + Tailwind CSS + Recharts
@@ -22,7 +27,7 @@ client/src/
   App.tsx                 - Root component with routing and auth
   lib/auth.tsx           - Auth context provider (JWT)
   components/
-    app-sidebar.tsx      - Main navigation sidebar (Pacientes, Dashboard, Prescrição Alimentar, Configurações)
+    app-sidebar.tsx      - Main navigation sidebar (Clientes, Dashboard, Prescrição Alimentar, Configurações)
     theme-toggle.tsx     - Dark mode toggle
     empty-state.tsx      - Reusable empty state component
     dashboard/
@@ -35,11 +40,11 @@ client/src/
       modal-dias-semana.tsx     - Modal para editar dias ativos do plano alimentar
   pages/
     login.tsx                  - Login page (Registro + UF / CPF)
-    patients.tsx               - Patient list with tabs (Ativos/Todos/Inativos), filtros, ordenação, tags
-    patient-dashboard.tsx      - Patient dashboard with 4 tabs (Visão Geral, Nutrição, Biometria, Treinamento)
-    patient-settings.tsx       - Patient goals configuration
+    patients.tsx               - Lista de clientes com tabs (Ativos/Todos/Inativos), filtros, ordenação, tags, período
+    patient-dashboard.tsx      - Dashboard individual com 4 tabs (Visão Geral, Nutrição, Biometria, Treinamento)
+    patient-settings.tsx       - Configuração de metas individuais
     prescricao-alimentar.tsx        - Prescrição Alimentar page (edição para paciente específico)
-    prescricao-alimentar-lista.tsx  - Lista de pacientes para selecionar e prescrever plano alimentar
+    prescricao-alimentar-lista.tsx  - Lista de clientes para selecionar e prescrever plano alimentar
 
 server/
   routes.ts             - Mock API endpoints
@@ -50,10 +55,10 @@ shared/
 ```
 
 ## Key Concepts
-- **Múltiplos planos por paciente**: cada paciente pode ter vários planos alimentares (ex: um para dias de semana, outro para fim de semana). Cada plano tem ID, descrição editável, dias ativos e refeições próprias.
+- **Múltiplos planos por paciente**: cada cliente pode ter vários planos alimentares (ex: um para dias de semana, outro para fim de semana). Cada plano tem ID, descrição editável, dias ativos e refeições próprias.
 - **Plano Alimentar (Visualização)**: read-only Sheet lateral acessada via CTA "Ver Plano Alimentar" na aba Nutrição. Mostra todos os planos ativos em tabs separadas.
 - **Prescrição Alimentar (Edição)**: página completa no sidebar (restrita a Nutricionista). Permite selecionar plano via dropdown, editar descrição inline, editar refeições e dias ativos.
-- O dashboard do paciente tem 4 abas: Visão Geral, Nutrição, Biometria, Treinamento.
+- O dashboard individual tem 4 abas: Visão Geral, Nutrição, Biometria, Treinamento.
 
 ## API Endpoints (Mock)
 - POST /api/auth/pair — Login

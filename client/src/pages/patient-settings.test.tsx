@@ -347,7 +347,7 @@ describe("PatientSettingsPage", () => {
     });
     expect(toastMock).toHaveBeenCalledWith({
       title: "Metas atualizadas",
-      description: "As metas do paciente foram salvas com sucesso.",
+      description: "As metas foram salvas com sucesso.",
     });
   });
 });

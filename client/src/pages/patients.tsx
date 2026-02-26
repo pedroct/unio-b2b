@@ -226,10 +226,10 @@ export default function PatientsPage() {
             className="text-2xl font-semibold tracking-tight"
             data-testid="text-page-title"
           >
-            Pacientes
+            Clientes
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Gerencie e acompanhe seus pacientes em um só lugar.
+            Gerencie e acompanhe seus clientes em um só lugar.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -244,7 +244,7 @@ export default function PatientsPage() {
           </div>
           <Button data-testid="button-adicionar-paciente" disabled>
             <UserPlus className="h-4 w-4 mr-2" />
-            Adicionar paciente
+            Adicionar cliente
           </Button>
         </div>
       </div>
@@ -271,7 +271,7 @@ export default function PatientsPage() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome ou e-mail..."
+            placeholder="Buscar cliente por nome ou e-mail..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -379,7 +379,7 @@ export default function PatientsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Paciente</TableHead>
+                <TableHead>Cliente</TableHead>
                 <TableHead>Gênero / Idade</TableHead>
                 <TableHead className="hidden md:table-cell">Tags</TableHead>
                 <TableHead>Dieta</TableHead>
@@ -403,15 +403,15 @@ export default function PatientsPage() {
           icon={<Users className="h-12 w-12" />}
           title={
             hasActiveFilters
-              ? "Nenhum paciente encontrado"
+              ? "Nenhum cliente encontrado"
               : statusFilter === "inativos"
-                ? "Nenhum paciente inativo"
-                : "Sem pacientes cadastrados"
+                ? "Nenhum cliente inativo"
+                : "Sem clientes cadastrados"
           }
           description={
             hasActiveFilters
               ? "Tente ajustar os filtros ou buscar com outro termo."
-              : "Quando seus pacientes forem vinculados, eles aparecerão aqui."
+              : "Quando seus clientes forem vinculados, eles aparecerão aqui."
           }
         />
       ) : (
@@ -419,7 +419,7 @@ export default function PatientsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Paciente</TableHead>
+                <TableHead>Cliente</TableHead>
                 <TableHead>Gênero / Idade</TableHead>
                 <TableHead className="hidden md:table-cell">Tags</TableHead>
                 <TableHead>Dieta</TableHead>
@@ -544,7 +544,7 @@ export default function PatientsPage() {
       )}
 
       <div className="text-xs text-muted-foreground text-center" data-testid="text-resultados-count">
-        {filtered.length} paciente{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""}
+        {filtered.length} cliente{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""}
       </div>
     </div>
   );

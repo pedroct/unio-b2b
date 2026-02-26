@@ -53,7 +53,7 @@ describe("PatientsPage", () => {
     render(<PatientsPage />);
 
     expect(screen.getByTestId("page-patients")).toBeInTheDocument();
-    expect(screen.getByTestId("text-page-title")).toHaveTextContent("Pacientes");
+    expect(screen.getByTestId("text-page-title")).toHaveTextContent("Clientes");
     expect(screen.getByTestId("text-active-count")).toHaveTextContent("1 ativos");
     expect(screen.getByTestId("text-avg-adherence")).toHaveTextContent(
       "Aderência média: 58%",

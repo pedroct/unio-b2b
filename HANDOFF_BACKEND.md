@@ -12,6 +12,8 @@ Este documento descreve todos os endpoints REST que o frontend do UNIO consome, 
 
 **Autenticação:** Todas as rotas (exceto `/api/auth/pair`) devem exigir o header `Authorization: Bearer <access_token>`.
 
+**Terminologia:** O frontend usa "Cliente(s)" nos textos visíveis (telas estruturais) e linguagem técnica neutra nas telas clínicas. As rotas de API mantêm "paciente(s)" para compatibilidade com o backend Django. Não há necessidade de alterar nomes de endpoints ou campos.
+
 ---
 
 ## 2. Autenticação

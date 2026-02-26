@@ -97,7 +97,7 @@ export default function LoginPage() {
 
           <div className="max-w-md">
             <h2 className="font-serif text-4xl font-bold leading-tight mb-6">
-              O centro de controle da saúde dos seus pacientes.
+              O centro de controle da saúde dos seus clientes.
             </h2>
             <p className="text-white/70 text-lg leading-relaxed">
               Nutrição, treino, biometria e hidratação em um único ecossistema. 

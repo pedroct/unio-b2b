@@ -48,7 +48,7 @@ describe("AppSidebar", () => {
     render(<AppSidebar />);
 
     expect(screen.getByTestId("text-brand-name")).toBeInTheDocument();
-    expect(screen.getByTestId("nav-pacientes")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-clientes")).toBeInTheDocument();
     expect(screen.getByTestId("text-professional-name")).toHaveTextContent(
       "Dra. Ana",
     );

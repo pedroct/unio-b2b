@@ -42,7 +42,7 @@ export default function PrescricaoAlimentarListaPage() {
               Prescrição Alimentar
             </h1>
             <p className="text-sm text-muted-foreground">
-              Selecione um paciente para gerenciar o plano alimentar
+              Selecione um cliente para gerenciar o plano alimentar
             </p>
           </div>
         </div>

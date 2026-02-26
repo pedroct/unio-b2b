@@ -47,7 +47,7 @@ export function TrainingTab({ patientId }: TrainingTabProps) {
       <EmptyState
         icon={<Dumbbell className="h-12 w-12" />}
         title="Sem dados de treinamento"
-        description="Este módulo está sendo finalizado. Quando o paciente registrar suas sessões de treino, os dados de volume, carga e PSE aparecerão aqui."
+        description="Quando as sessões de treino forem registradas, os dados de volume, carga e PSE aparecerão aqui."
         module="training"
       />
     );

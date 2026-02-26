@@ -19,7 +19,7 @@ import { useAuth } from "@/lib/auth";
 import unioLogo from "@assets/Unio_Logo_1771972757927.png";
 
 const navItems = [
-  { title: "Pacientes", url: "/pacientes", icon: Users },
+  { title: "Clientes", url: "/pacientes", icon: Users },
   { title: "Dashboard Global", url: "/dashboard", icon: LayoutDashboard },
   { title: "Prescrição Alimentar", url: "/prescricao-alimentar", icon: UtensilsCrossed },
   { title: "Configurações", url: "/configuracoes", icon: Settings },

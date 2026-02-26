@@ -201,7 +201,7 @@ export function SheetPlanoAlimentar({
             <UtensilsCrossed className="h-10 w-10 text-muted-foreground/50 mb-3" />
             <p className="text-sm font-medium">Sem plano alimentar</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Nenhum plano alimentar ativo para este paciente.
+              Nenhum plano alimentar ativo.
             </p>
           </div>
         ) : (

@@ -73,7 +73,7 @@ export function BiometryTab({ patientId }: BiometryTabProps) {
       <EmptyState
         icon={<Scale className="h-12 w-12" />}
         title="Sem dados de biometria"
-        description="Quando o paciente registrar suas medições corporais (balança, bioimpedância), os dados de evolução aparecerão aqui."
+        description="Quando as medições corporais forem registradas, os dados de evolução aparecerão aqui."
         module="biometry"
       />
     );
