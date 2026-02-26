@@ -1,0 +1,152 @@
+# 🔄 Atualização de Terminologia — Padrão Sistêmico "Cliente"
+
+## Objetivo
+
+Atualizar a nomenclatura da entidade principal da aplicação, substituindo o termo **“Paciente”** pelo termo **“Cliente”** como padrão sistêmico.
+
+A alteração deve preservar a coerência semântica, profissionalismo e adequação ao contexto clínico e de performance (Médico, Nutricionista e Personal Trainer).
+
+---
+
+## Regra Conceitual (Obrigatória)
+
+O termo **“Cliente”** deve ser utilizado apenas na camada estrutural e administrativa do sistema.
+
+Em telas operacionais (ex: Plano Alimentar, Prescrição, Prontuário, Treino), deve-se priorizar:
+
+- O nome da pessoa
+- O contexto clínico específico
+- A terminologia técnica adequada
+
+Evitar uso forçado de “Cliente” dentro de fluxos clínicos.
+
+---
+
+## Onde Substituir "Paciente" por "Cliente"
+
+### Deve usar “Cliente”
+
+- Menu lateral principal
+- Tela de listagem geral
+- Dashboard (cards e métricas)
+- Botões de cadastro
+- Filtros e busca
+- Estados vazios
+- Mensagens sistêmicas
+
+### NÃO deve usar “Cliente”
+
+- Plano Alimentar
+- Prescrição Médica
+- Prontuário
+- Evolução Clínica
+- Ficha de Treino
+- Histórico individual
+
+Nestes casos, utilizar:
+
+- O nome da pessoa
+- Ou o termo técnico da funcionalidade
+
+---
+
+## Substituições Diretas
+
+Aplicar substituição global segura:
+
+| Antes                      | Depois                    |
+| -------------------------- | ------------------------- |
+| Paciente                   | Cliente                   |
+| Pacientes                  | Clientes                  |
+| Adicionar paciente         | Adicionar cliente         |
+| Buscar paciente            | Buscar cliente            |
+| Nenhum paciente encontrado | Nenhum cliente encontrado |
+| 4 pacientes encontrados    | 4 clientes encontrados    |
+| Status do paciente         | Status do cliente         |
+
+---
+
+## 🖥 Ajustes na Tela de Listagem
+
+### Cabeçalho
+
+Antes:
+
+> Pacientes
+
+Depois:
+
+> Clientes
+
+### Subtítulo
+
+Antes:
+
+> Gerencie e acompanhe seus pacientes em um só lugar.
+
+Depois:
+
+> Gerencie e acompanhe seus clientes em um só lugar.
+
+---
+
+## Ajuste em Telas Individuais
+
+### Incorreto:
+
+> Plano Alimentar do Cliente
+
+### Correto:
+
+> Plano Alimentar  
+> Ana Carolina Silva
+
+---
+
+### Incorreto:
+
+> Prescrição do Cliente
+
+### Correto:
+
+> Prescrição Médica  
+> Bruno Oliveira Santos
+
+---
+
+## Diretrizes de UX
+
+1. Nunca repetir “Cliente” quando o nome da pessoa já estiver presente.
+2. Priorizar clareza e naturalidade na leitura.
+3. Manter consistência tipográfica e hierárquica.
+4. Não alterar estrutura visual — apenas textos.
+
+---
+
+## Critérios de Validação
+
+- Nenhuma ocorrência residual de “Paciente” no frontend.
+- “Cliente” aparece apenas em contexto estrutural.
+- Telas clínicas mantêm linguagem técnica apropriada.
+- Não há duplicação desnecessária de termos.
+
+---
+
+## Escopo
+
+- Alteração textual (labels, headings, placeholders, estados vazios, botões)
+- Não alterar lógica de negócio
+- Não alterar nomes de variáveis internas (caso estejam atreladas ao backend)
+
+---
+
+## Resultado Esperado
+
+Sistema semanticamente neutro, adequado para:
+
+- Médicos
+- Nutricionistas
+- Personais
+- Clínicas multidisciplinares
+
+Terminologia consistente, profissional e escalável.
