@@ -40,6 +40,8 @@ export interface Patient {
   adherenceDiet: number;
   lastActivity: string;
   status: "active" | "inactive";
+  tags: string[];
+  dataCadastro: string;
 }
 
 export interface PatientGoals {

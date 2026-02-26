@@ -37,6 +37,8 @@ const patients: Patient[] = [
     adherenceDiet: 72,
     lastActivity: "Há 2 horas",
     status: "active",
+    tags: ["Emagrecimento", "Low Carb"],
+    dataCadastro: "10/01/2026",
   },
   {
     id: "p2",
@@ -50,6 +52,8 @@ const patients: Patient[] = [
     adherenceDiet: 88,
     lastActivity: "Há 1 hora",
     status: "active",
+    tags: ["Hipertrofia", "Suplementação"],
+    dataCadastro: "05/11/2025",
   },
   {
     id: "p3",
@@ -63,6 +67,8 @@ const patients: Patient[] = [
     adherenceDiet: 60,
     lastActivity: "Há 3 dias",
     status: "active",
+    tags: ["Gestante", "Acompanhamento"],
+    dataCadastro: "20/02/2026",
   },
   {
     id: "p4",
@@ -76,6 +82,8 @@ const patients: Patient[] = [
     adherenceDiet: 55,
     lastActivity: "Ontem",
     status: "active",
+    tags: ["Emagrecimento", "Diabetes T2"],
+    dataCadastro: "15/12/2025",
   },
   {
     id: "p5",
@@ -89,6 +97,8 @@ const patients: Patient[] = [
     adherenceDiet: 40,
     lastActivity: "Há 2 semanas",
     status: "inactive",
+    tags: ["Reabilitação"],
+    dataCadastro: "03/08/2025",
   },
 ];
 

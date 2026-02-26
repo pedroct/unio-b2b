@@ -448,6 +448,10 @@ Todos os endpoints devem seguir o padrão:
    - `avatarUrl` pode ser `null` — o frontend exibe iniciais do nome como fallback.
    - `lastActivity` é uma string humanizada — pode ser gerada pelo backend ou pelo frontend se receber um timestamp.
 
+8. **Campos adicionais no Patient (novos):**
+   - `tags: string[]` — lista de tags do paciente (ex: "Emagrecimento", "Hipertrofia", "Gestante", "Diabetes T2"). O frontend usa para filtrar e exibir badges.
+   - `dataCadastro: string` — data de cadastro no formato "dd/mm/aaaa" (ex: "10/01/2026"). Exibido na coluna "Desde" da lista de pacientes.
+
 ---
 
 ## 10. Planos Alimentares (Múltiplos por paciente)

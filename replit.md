@@ -35,7 +35,7 @@ client/src/
       modal-dias-semana.tsx     - Modal para editar dias ativos do plano alimentar
   pages/
     login.tsx                  - Login page (Registro + UF / CPF)
-    patients.tsx               - Patient list with adherence status
+    patients.tsx               - Patient list with tabs (Ativos/Todos/Inativos), filtros, ordenação, tags
     patient-dashboard.tsx      - Patient dashboard with 4 tabs (Visão Geral, Nutrição, Biometria, Treinamento)
     patient-settings.tsx       - Patient goals configuration
     prescricao-alimentar.tsx        - Prescrição Alimentar page (edição para paciente específico)
