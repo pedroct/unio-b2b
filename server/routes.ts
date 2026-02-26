@@ -79,24 +79,42 @@ export async function registerRoutes(
     return res.json(training);
   });
 
+  app.get("/api/profissional/dashboard/pacientes/:id/planos-alimentares", async (req, res) => {
+    const planos = await storage.listarPlanosAlimentares(req.params.id);
+    return res.json(planos);
+  });
+
   app.get("/api/profissional/dashboard/pacientes/:id/plano-alimentar", async (req, res) => {
+    const planoId = req.query.planoId as string;
     const diaSemana = (req.query.diaSemana as string) || "segunda";
-    const plano = await storage.getPlanoAlimentar(req.params.id, diaSemana as any);
+    if (!planoId) {
+      return res.status(400).json({ message: "planoId é obrigatório." });
+    }
+    const plano = await storage.getPlanoAlimentar(req.params.id, planoId, diaSemana as any);
     if (!plano) {
       return res.status(404).json({ message: "Plano alimentar não encontrado." });
     }
     return res.json(plano);
   });
 
-  app.put("/api/profissional/dashboard/pacientes/:id/plano-alimentar/dias", async (req, res) => {
+  app.put("/api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/dias", async (req, res) => {
     const { diasAtivos } = req.body;
     if (!Array.isArray(diasAtivos)) {
       return res.status(400).json({ message: "diasAtivos deve ser um array." });
     }
     const validos = ["segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo"];
     const diasValidados = [...new Set(diasAtivos.filter((d: string) => validos.includes(d)))];
-    const updated = await storage.updateDiasAtivos(req.params.id, diasValidados as any);
+    const updated = await storage.updateDiasAtivos(req.params.id, req.params.planoId, diasValidados as any);
     return res.json({ diasAtivos: updated });
+  });
+
+  app.put("/api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/descricao", async (req, res) => {
+    const { descricao } = req.body;
+    if (!descricao || typeof descricao !== "string" || descricao.trim().length === 0) {
+      return res.status(400).json({ message: "descricao é obrigatória." });
+    }
+    const updated = await storage.updateDescricaoPlano(req.params.id, req.params.planoId, descricao.trim());
+    return res.json({ descricao: updated });
   });
 
   return httpServer;

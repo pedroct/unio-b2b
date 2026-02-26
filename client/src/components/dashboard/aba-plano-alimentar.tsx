@@ -1,10 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Clock,
   Plus,
@@ -15,6 +23,8 @@ import {
   ArrowRightLeft,
   UtensilsCrossed,
   Flame,
+  Check,
+  X,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -27,7 +37,7 @@ import { EmptyState } from "@/components/empty-state";
 import { ModalDiasSemana } from "@/components/dashboard/modal-dias-semana";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { PlanoAlimentar, DiaSemana } from "@shared/schema";
+import type { PlanoAlimentar, ResumoPlanoAlimentar, DiaSemana } from "@shared/schema";
 import { DIAS_SEMANA } from "@shared/schema";
 
 interface AbaPlanoAlimentarProps {
@@ -77,25 +87,61 @@ function PlanoAlimentarSkeleton() {
 }
 
 export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
+  const [planoSelecionadoId, setPlanoSelecionadoId] = useState<string>("");
   const [diaSelecionado, setDiaSelecionado] = useState<DiaSemana>("segunda");
   const [modalDiasAberto, setModalDiasAberto] = useState(false);
+  const [editandoDescricao, setEditandoDescricao] = useState(false);
+  const [novaDescricao, setNovaDescricao] = useState("");
   const { toast } = useToast();
 
-  const { data: plano, isLoading } = useQuery<PlanoAlimentar>({
-    queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "plano-alimentar", diaSelecionado],
+  const { data: planosLista, isLoading: isLoadingLista } = useQuery<ResumoPlanoAlimentar[]>({
+    queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "planos-alimentares"],
     queryFn: async () => {
-      const res = await fetch(`/api/profissional/dashboard/pacientes/${pacienteId}/plano-alimentar?diaSemana=${diaSelecionado}`, { credentials: "include" });
-      if (!res.ok) throw new Error("Erro ao carregar plano alimentar");
+      const res = await fetch(
+        `/api/profissional/dashboard/pacientes/${pacienteId}/planos-alimentares`,
+        { credentials: "include" }
+      );
+      if (!res.ok) throw new Error("Erro ao carregar planos");
       return res.json();
     },
   });
 
+  const planoId = planoSelecionadoId || (planosLista && planosLista.length > 0 ? planosLista[0].id : "");
+
+  const planoResumo = planosLista?.find((p) => p.id === planoId);
+
+  useEffect(() => {
+    if (planoResumo && planoResumo.diasAtivos.length > 0 && !planoResumo.diasAtivos.includes(diaSelecionado)) {
+      setDiaSelecionado(planoResumo.diasAtivos[0]);
+    }
+  }, [planoId, planoResumo]);
+
+  const { data: plano, isLoading: isLoadingPlano } = useQuery<PlanoAlimentar>({
+    queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "plano-alimentar", planoId, diaSelecionado],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/profissional/dashboard/pacientes/${pacienteId}/plano-alimentar?planoId=${planoId}&diaSemana=${diaSelecionado}`,
+        { credentials: "include" }
+      );
+      if (!res.ok) throw new Error("Erro ao carregar plano alimentar");
+      return res.json();
+    },
+    enabled: !!planoId,
+  });
+
   const salvarDiasMutation = useMutation({
     mutationFn: async (diasAtivos: DiaSemana[]) => {
-      const res = await apiRequest("PUT", `/api/profissional/dashboard/pacientes/${pacienteId}/plano-alimentar/dias`, { diasAtivos });
+      const res = await apiRequest(
+        "PUT",
+        `/api/profissional/dashboard/pacientes/${pacienteId}/planos-alimentares/${planoId}/dias`,
+        { diasAtivos }
+      );
       return res.json();
     },
     onSuccess: (_data, diasAtivos) => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "planos-alimentares"],
+      });
       queryClient.invalidateQueries({
         queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "plano-alimentar"],
       });
@@ -112,9 +158,35 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
     },
   });
 
+  const salvarDescricaoMutation = useMutation({
+    mutationFn: async (descricao: string) => {
+      const res = await apiRequest(
+        "PUT",
+        `/api/profissional/dashboard/pacientes/${pacienteId}/planos-alimentares/${planoId}/descricao`,
+        { descricao }
+      );
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "planos-alimentares"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "plano-alimentar"],
+      });
+      setEditandoDescricao(false);
+      toast({
+        title: "Descrição atualizada",
+        description: "A descrição do plano alimentar foi salva com sucesso.",
+      });
+    },
+  });
+
+  const isLoading = isLoadingLista || isLoadingPlano;
+
   if (isLoading) return <PlanoAlimentarSkeleton />;
 
-  if (!plano) {
+  if (!planosLista || planosLista.length === 0) {
     return (
       <EmptyState
         icon={<UtensilsCrossed className="h-12 w-12" />}
@@ -124,6 +196,12 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
       />
     );
   }
+
+  if (!plano) {
+    return <PlanoAlimentarSkeleton />;
+  }
+
+  const outrosPlanos = planosLista.filter((p) => p.id !== planoId);
 
   const diasVisiveis = DIAS_SEMANA.filter((dia) =>
     plano.diasAtivos.includes(dia.valor)
@@ -135,6 +213,25 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
     { name: "LIP", value: plano.nutrientes.gordura.gramas, color: "#D97952" },
   ];
 
+  function iniciarEdicaoDescricao() {
+    setNovaDescricao(plano!.descricao);
+    setEditandoDescricao(true);
+  }
+
+  function confirmarDescricao() {
+    const desc = novaDescricao.trim();
+    if (desc && desc !== plano!.descricao) {
+      salvarDescricaoMutation.mutate(desc);
+    } else {
+      setEditandoDescricao(false);
+    }
+  }
+
+  function cancelarEdicaoDescricao() {
+    setEditandoDescricao(false);
+    setNovaDescricao("");
+  }
+
   return (
     <div className="space-y-6" data-testid="tab-plano-alimentar">
       <ModalDiasSemana
@@ -142,9 +239,94 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
         onOpenChange={setModalDiasAberto}
         diasAtivos={plano.diasAtivos}
         plano={plano}
+        outrosPlanos={outrosPlanos}
         onSalvar={(dias) => salvarDiasMutation.mutate(dias)}
         isSaving={salvarDiasMutation.isPending}
       />
+
+      {planosLista.length > 1 && (
+        <div className="flex items-center gap-3" data-testid="seletor-plano">
+          <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+            Plano:
+          </span>
+          <Select
+            value={planoId}
+            onValueChange={(val) => {
+              setPlanoSelecionadoId(val);
+              const novoPlano = planosLista.find((p) => p.id === val);
+              if (novoPlano && novoPlano.diasAtivos.length > 0) {
+                if (!novoPlano.diasAtivos.includes(diaSelecionado)) {
+                  setDiaSelecionado(novoPlano.diasAtivos[0]);
+                }
+              }
+            }}
+          >
+            <SelectTrigger className="max-w-md" data-testid="select-plano">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {planosLista.map((p) => (
+                <SelectItem key={p.id} value={p.id} data-testid={`option-plano-${p.id}`}>
+                  {p.descricao}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      <div className="flex items-start gap-2" data-testid="campo-descricao-plano">
+        {editandoDescricao ? (
+          <div className="flex items-center gap-2 flex-1">
+            <Input
+              value={novaDescricao}
+              onChange={(e) => setNovaDescricao(e.target.value)}
+              className="flex-1"
+              placeholder="Descrição do plano alimentar"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") confirmarDescricao();
+                if (e.key === "Escape") cancelarEdicaoDescricao();
+              }}
+              data-testid="input-descricao-plano"
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={confirmarDescricao}
+              disabled={salvarDescricaoMutation.isPending}
+              data-testid="button-confirmar-descricao"
+            >
+              <Check className="h-4 w-4 text-primary" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={cancelarEdicaoDescricao}
+              data-testid="button-cancelar-descricao"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <p
+              className="text-sm font-medium truncate"
+              data-testid="text-descricao-plano"
+            >
+              {plano.descricao}
+            </p>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={iniciarEdicaoDescricao}
+              data-testid="button-editar-descricao"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        )}
+      </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 flex-wrap">

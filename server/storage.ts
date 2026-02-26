@@ -8,6 +8,8 @@ import type {
   PatientOverview,
   InsightCard,
   PlanoAlimentar,
+  NutrientesPlano,
+  ResumoPlanoAlimentar,
   DiaSemana,
 } from "@shared/schema";
 
@@ -170,156 +172,152 @@ function generateTrainingSessions() {
   return sessions;
 }
 
-const planoDiasAtivos: Record<string, DiaSemana[]> = {};
-
-function getDiasAtivos(pacienteId: string): DiaSemana[] {
-  if (!planoDiasAtivos[pacienteId]) {
-    planoDiasAtivos[pacienteId] = ["segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo"];
-  }
-  return planoDiasAtivos[pacienteId];
+interface PlanoMockData {
+  id: string;
+  descricao: string;
+  status: "ativo" | "rascunho";
+  diasAtivos: DiaSemana[];
+  dataCriacao: string;
+  refeicoes: PlanoAlimentar["refeicoes"];
+  nutrientes: NutrientesPlano;
 }
 
-function generatePlanoAlimentar(pacienteId: string, diaSemana: DiaSemana): PlanoAlimentar {
-  const refeicoesPorDia: Record<string, PlanoAlimentar["refeicoes"]> = {
-    segunda: [
-      {
-        id: "ref-1", nome: "Desjejum", horario: "07:00",
-        alimentos: [
-          { id: "a1", nome: "Pão, aveia, forma", quantidade: "Fatia: 2", grupo: "Cereais e derivados" },
-          { id: "a2", nome: "Queijo, minas, frescal", quantidade: "Fatia Média (30g): 2", grupo: "Leite e derivados" },
-          { id: "a3", nome: "Mamão, Papaia, cru", quantidade: "Fatia: 2", grupo: "Frutas e derivados" },
-          { id: "a4", nome: "Quinoa", quantidade: "Colher De Sopa: 2", grupo: "Cereais e leguminosas" },
-          { id: "a24", nome: "Achocolatado em pó", quantidade: "Colher De Sobremesa: 1", grupo: "Açúcares e produtos de confeitaria" },
-          { id: "a25", nome: "Leite de vaca desnatado", quantidade: "Copo Grande: 1", grupo: "Laticínios" },
-          { id: "a26", nome: "Leite em pó desnatado", quantidade: "Colher De Sopa: 2", grupo: "Laticínios" },
-        ],
-      },
-      {
-        id: "ref-2", nome: "Colação", horario: "10:00",
-        alimentos: [
-          { id: "a5", nome: "Iogurte, natural, desnatado", quantidade: "Copo: 2", grupo: "Leite e derivados" },
-          { id: "a6", nome: "Granola", quantidade: "Colher De Sobremesa: 2", grupo: "Farinhas, féculas e massas" },
-        ],
-      },
-      {
-        id: "ref-3", nome: "Almoço", horario: "13:00",
-        alimentos: [
-          { id: "a8", nome: "Arroz integral", quantidade: "Colher De Sopa: 4", grupo: "Cereais e leguminosas" },
-          { id: "a9", nome: "Feijão, carioca, cozido", quantidade: "Concha Pequena Cheia: 1", grupo: "Leguminosas e derivados" },
-          { id: "a10", nome: "Filé de frango Grelhado(a)/brasa/churrasco", quantidade: "Bifé: 2", grupo: "Aves e ovos" },
-          { id: "a11", nome: "Salada ou verdura crua, exceto de fruta", quantidade: "Colher De Arroz/Servir: 1", grupo: "Miscelâneas" },
-          { id: "a13", nome: "Suco de acerola", quantidade: "Copo Americano: 1", grupo: "Miscelâneas" },
-        ],
-      },
-      {
-        id: "ref-4", nome: "Lanche da tarde", horario: "16:00",
-        alimentos: [
-          { id: "a14", nome: "Pão integral", quantidade: "Fatia: 2", grupo: "Panificados" },
-          { id: "a27", nome: "Queijo, cottage, magro, 1% gordura", quantidade: "Grama: 60", grupo: "Ovos e Laticínios" },
-          { id: "a28", nome: "Abacaxi, cru, todas as variedades", quantidade: "fatia, fina (8.9 diâmetro x 1.3 cm espessura): 3", grupo: "Frutas e Sucos de Frutas" },
-          { id: "a29", nome: "Café, infusão 10%", quantidade: "Xícara De Cafézinho: 1", grupo: "Bebidas (alcoólicas e não alcoólicas)" },
-        ],
-      },
-      {
-        id: "ref-5", nome: "Jantar", horario: "19:00",
-        alimentos: [
-          { id: "a17", nome: "Torrada de qualquer pão", quantidade: "Unidade: 3", grupo: "Panificados" },
-          { id: "a30", nome: "Omelete, de queijo", quantidade: "Grama: 150", grupo: "Ovos e derivados" },
-        ],
-      },
-      {
-        id: "ref-6", nome: "Ceia", horario: "22:00",
-        alimentos: [
-          { id: "a21", nome: "Castanha, japonesa, assada", quantidade: "Grama: 5", grupo: "Nozes e Sementes" },
-          { id: "a22", nome: "Maçã", quantidade: "Unidade: 1", grupo: "Frutas" },
-          { id: "a31", nome: "Achocolatado, pó", quantidade: "Colher De Sobremesa: 1", grupo: "Produtos açucarados" },
-          { id: "a32", nome: "Leite de vaca desnatado", quantidade: "Copo De Requeijão: 1", grupo: "Laticínios" },
-        ],
-      },
-    ],
-    default: [
-      {
-        id: "ref-1", nome: "Desjejum", horario: "07:00",
-        alimentos: [
-          { id: "a1", nome: "Omelete de claras", quantidade: "3 claras + 1 gema", grupo: "Ovos e derivados" },
-          { id: "a2", nome: "Pão integral", quantidade: "Fatia: 1", grupo: "Panificados" },
-          { id: "a3", nome: "Abacate", quantidade: "Colher De Sopa: 2", grupo: "Frutas" },
-          { id: "a4", nome: "Café preto", quantidade: "Xícara: 1 (150ml)", grupo: "Bebidas" },
-        ],
-      },
-      {
-        id: "ref-2", nome: "Colação", horario: "10:00",
-        alimentos: [
-          { id: "a5", nome: "Maçã", quantidade: "Unidade: 1", grupo: "Frutas" },
-          { id: "a6", nome: "Amêndoas", quantidade: "Unidade: 10", grupo: "Nozes e Sementes" },
-        ],
-      },
-      {
-        id: "ref-3", nome: "Almoço", horario: "12:30",
-        alimentos: [
-          { id: "a7", nome: "Quinoa", quantidade: "Colher De Sopa: 3", grupo: "Cereais e leguminosas" },
-          { id: "a8", nome: "Peito de peru assado", quantidade: "Filé: 1 (130g)", grupo: "Aves e ovos" },
-          { id: "a9", nome: "Legumes grelhados", quantidade: "Porção: 1", grupo: "Miscelâneas" },
-          { id: "a10", nome: "Salada mista", quantidade: "à vontade", grupo: "Miscelâneas" },
-          { id: "a11", nome: "Limão", quantidade: "Unidade: 1/2", grupo: "Frutas" },
-        ],
-      },
-      {
-        id: "ref-4", nome: "Lanche da tarde", horario: "15:30",
-        alimentos: [
-          { id: "a12", nome: "Iogurte grego natural", quantidade: "Pote: 1 (170g)", grupo: "Leite e derivados" },
-          { id: "a13", nome: "Mel", quantidade: "Colher De Chá: 1", grupo: "Açúcares" },
-          { id: "a14", nome: "Chia", quantidade: "Colher De Sopa: 1", grupo: "Nozes e Sementes" },
-        ],
-      },
-      {
-        id: "ref-5", nome: "Jantar", horario: "19:00",
-        alimentos: [
-          { id: "a15", nome: "Tilápia grelhada", quantidade: "Filé: 1 (140g)", grupo: "Peixes e frutos do mar" },
-          { id: "a16", nome: "Arroz integral", quantidade: "Colher De Sopa: 3", grupo: "Cereais e leguminosas" },
-          { id: "a17", nome: "Couve refogada", quantidade: "Porção: 1", grupo: "Miscelâneas" },
-        ],
-      },
-      {
-        id: "ref-6", nome: "Ceia", horario: "21:30",
-        alimentos: [
-          { id: "a18", nome: "Leite desnatado morno", quantidade: "Copo: 1 (200ml)", grupo: "Laticínios" },
-          { id: "a19", nome: "Canela em pó", quantidade: "Pitada: 1", grupo: "Miscelâneas" },
-        ],
-      },
-    ],
-  };
+const planoDescricoes: Record<string, string> = {};
+const planoDiasAtivosMap: Record<string, DiaSemana[]> = {};
 
-  const refeicoes = refeicoesPorDia[diaSemana] || refeicoesPorDia["default"];
+function getPlanosMock(pacienteId: string): PlanoMockData[] {
+  const plano1Id = `plano-${pacienteId}-1`;
+  const plano2Id = `plano-${pacienteId}-2`;
 
-  const nutrientesPorDia: Record<string, PlanoAlimentar["nutrientes"]> = {
-    segunda: {
-      calorias: 2050,
-      proteina: { gramas: 138, percentual: 26.9 },
-      carboidrato: { gramas: 245, percentual: 47.8 },
-      gordura: { gramas: 58, percentual: 25.3 },
-      fibra: 32,
+  if (!planoDiasAtivosMap[plano1Id]) {
+    planoDiasAtivosMap[plano1Id] = ["segunda", "terca", "quarta", "quinta", "sexta"];
+  }
+  if (!planoDiasAtivosMap[plano2Id]) {
+    planoDiasAtivosMap[plano2Id] = ["sabado", "domingo"];
+  }
+
+  return [
+    {
+      id: plano1Id,
+      descricao: planoDescricoes[plano1Id] || "Dieta Hiperproteica (modelo de cardápio Dietbox) (importado)",
+      status: "ativo",
+      diasAtivos: planoDiasAtivosMap[plano1Id],
+      dataCriacao: "26/02/2026",
+      refeicoes: [
+        {
+          id: "ref-1", nome: "Desjejum", horario: "07:00",
+          alimentos: [
+            { id: "a1", nome: "Pão, aveia, forma", quantidade: "Fatia: 2", grupo: "Cereais e derivados" },
+            { id: "a2", nome: "Queijo, minas, frescal", quantidade: "Fatia Média (30g): 2", grupo: "Leite e derivados" },
+            { id: "a3", nome: "Mamão, Papaia, cru", quantidade: "Fatia: 2", grupo: "Frutas e derivados" },
+            { id: "a4", nome: "Quinoa", quantidade: "Colher De Sopa: 2", grupo: "Cereais e leguminosas" },
+            { id: "a24", nome: "Achocolatado em pó", quantidade: "Colher De Sobremesa: 1", grupo: "Açúcares e produtos de confeitaria" },
+            { id: "a25", nome: "Leite de vaca desnatado", quantidade: "Copo Grande: 1", grupo: "Laticínios" },
+            { id: "a26", nome: "Leite em pó desnatado", quantidade: "Colher De Sopa: 2", grupo: "Laticínios" },
+          ],
+        },
+        {
+          id: "ref-2", nome: "Colação", horario: "10:00",
+          alimentos: [
+            { id: "a5", nome: "Iogurte, natural, desnatado", quantidade: "Copo: 2", grupo: "Leite e derivados" },
+            { id: "a6", nome: "Granola", quantidade: "Colher De Sobremesa: 2", grupo: "Farinhas, féculas e massas" },
+          ],
+        },
+        {
+          id: "ref-3", nome: "Almoço", horario: "13:00",
+          alimentos: [
+            { id: "a8", nome: "Arroz integral", quantidade: "Colher De Sopa: 4", grupo: "Cereais e leguminosas" },
+            { id: "a9", nome: "Feijão, carioca, cozido", quantidade: "Concha Pequena Cheia: 1", grupo: "Leguminosas e derivados" },
+            { id: "a10", nome: "Filé de frango Grelhado(a)/brasa/churrasco", quantidade: "Bifé: 2", grupo: "Aves e ovos" },
+            { id: "a11", nome: "Salada ou verdura crua, exceto de fruta", quantidade: "Colher De Arroz/Servir: 1", grupo: "Miscelâneas" },
+            { id: "a13", nome: "Suco de acerola", quantidade: "Copo Americano: 1", grupo: "Miscelâneas" },
+          ],
+        },
+        {
+          id: "ref-4", nome: "Lanche da tarde", horario: "16:00",
+          alimentos: [
+            { id: "a14", nome: "Pão integral", quantidade: "Fatia: 2", grupo: "Panificados" },
+            { id: "a27", nome: "Queijo, cottage, magro, 1% gordura", quantidade: "Grama: 60", grupo: "Ovos e Laticínios" },
+            { id: "a28", nome: "Abacaxi, cru, todas as variedades", quantidade: "fatia, fina (8.9 diâmetro x 1.3 cm espessura): 3", grupo: "Frutas e Sucos de Frutas" },
+            { id: "a29", nome: "Café, infusão 10%", quantidade: "Xícara De Cafézinho: 1", grupo: "Bebidas (alcoólicas e não alcoólicas)" },
+          ],
+        },
+        {
+          id: "ref-5", nome: "Jantar", horario: "19:00",
+          alimentos: [
+            { id: "a17", nome: "Torrada de qualquer pão", quantidade: "Unidade: 3", grupo: "Panificados" },
+            { id: "a30", nome: "Omelete, de queijo", quantidade: "Grama: 150", grupo: "Ovos e derivados" },
+          ],
+        },
+        {
+          id: "ref-6", nome: "Ceia", horario: "22:00",
+          alimentos: [
+            { id: "a21", nome: "Castanha, japonesa, assada", quantidade: "Grama: 5", grupo: "Nozes e Sementes" },
+            { id: "a22", nome: "Maçã", quantidade: "Unidade: 1", grupo: "Frutas" },
+            { id: "a31", nome: "Achocolatado, pó", quantidade: "Colher De Sobremesa: 1", grupo: "Produtos açucarados" },
+            { id: "a32", nome: "Leite de vaca desnatado", quantidade: "Copo De Requeijão: 1", grupo: "Laticínios" },
+          ],
+        },
+      ],
+      nutrientes: {
+        calorias: 2050,
+        proteina: { gramas: 138, percentual: 26.9 },
+        carboidrato: { gramas: 245, percentual: 47.8 },
+        gordura: { gramas: 58, percentual: 25.3 },
+        fibra: 32,
+      },
     },
-    default: {
-      calorias: 1890,
-      proteina: { gramas: 125, percentual: 26.5 },
-      carboidrato: { gramas: 228, percentual: 48.3 },
-      gordura: { gramas: 53, percentual: 25.2 },
-      fibra: 28,
+    {
+      id: plano2Id,
+      descricao: planoDescricoes[plano2Id] || "Dieta Low Carb — Fim de semana",
+      status: "ativo",
+      diasAtivos: planoDiasAtivosMap[plano2Id],
+      dataCriacao: "26/02/2026",
+      refeicoes: [
+        {
+          id: "ref-w1", nome: "Brunch", horario: "10:00",
+          alimentos: [
+            { id: "aw1", nome: "Omelete de claras", quantidade: "3 claras + 1 gema", grupo: "Ovos e derivados" },
+            { id: "aw2", nome: "Abacate", quantidade: "Colher De Sopa: 2", grupo: "Frutas" },
+            { id: "aw3", nome: "Salmão defumado", quantidade: "Fatia: 3", grupo: "Peixes e frutos do mar" },
+            { id: "aw4", nome: "Café preto", quantidade: "Xícara: 1 (150ml)", grupo: "Bebidas" },
+          ],
+        },
+        {
+          id: "ref-w2", nome: "Almoço", horario: "13:30",
+          alimentos: [
+            { id: "aw5", nome: "Filé mignon grelhado", quantidade: "Grama: 180", grupo: "Carnes bovinas" },
+            { id: "aw6", nome: "Salada caesar", quantidade: "Porção: 1", grupo: "Miscelâneas" },
+            { id: "aw7", nome: "Azeite de oliva extra virgem", quantidade: "Colher De Sopa: 1", grupo: "Óleos e gorduras" },
+            { id: "aw8", nome: "Brócolis cozido", quantidade: "Colher De Sopa: 3", grupo: "Verduras e hortaliças" },
+          ],
+        },
+        {
+          id: "ref-w3", nome: "Lanche", horario: "16:30",
+          alimentos: [
+            { id: "aw9", nome: "Iogurte grego natural", quantidade: "Pote: 1 (170g)", grupo: "Leite e derivados" },
+            { id: "aw10", nome: "Castanha-do-pará", quantidade: "Unidade: 3", grupo: "Nozes e Sementes" },
+            { id: "aw11", nome: "Morango", quantidade: "Unidade: 6", grupo: "Frutas" },
+          ],
+        },
+        {
+          id: "ref-w4", nome: "Jantar", horario: "19:30",
+          alimentos: [
+            { id: "aw12", nome: "Peito de frango desfiado", quantidade: "Grama: 150", grupo: "Aves e ovos" },
+            { id: "aw13", nome: "Abobrinha refogada", quantidade: "Colher De Sopa: 4", grupo: "Verduras e hortaliças" },
+            { id: "aw14", nome: "Queijo parmesão ralado", quantidade: "Colher De Sopa: 1", grupo: "Laticínios" },
+          ],
+        },
+      ],
+      nutrientes: {
+        calorias: 1650,
+        proteina: { gramas: 142, percentual: 34.4 },
+        carboidrato: { gramas: 98, percentual: 23.8 },
+        gordura: { gramas: 76, percentual: 41.8 },
+        fibra: 18,
+      },
     },
-  };
-
-  return {
-    id: `plano-${pacienteId}-${diaSemana}`,
-    pacienteId,
-    descricao: "Dieta Hiperproteica (modelo de cardápio Dietbox) (importado)",
-    status: "ativo" as const,
-    diaSemana,
-    diasAtivos: getDiasAtivos(pacienteId),
-    dataCriacao: "26/02/2026",
-    refeicoes: refeicoes!,
-    nutrientes: nutrientesPorDia[diaSemana] || nutrientesPorDia["default"]!,
-  };
+  ];
 }
 
 export interface IStorage {
@@ -332,8 +330,10 @@ export interface IStorage {
   getPatientNutrition(patientId: string): Promise<NutritionSummary | undefined>;
   getPatientBiometry(patientId: string): Promise<BiometrySummary | undefined>;
   getPatientTraining(patientId: string): Promise<TrainingSummary | undefined>;
-  getPlanoAlimentar(pacienteId: string, diaSemana: DiaSemana): Promise<PlanoAlimentar | undefined>;
-  updateDiasAtivos(pacienteId: string, diasAtivos: DiaSemana[]): Promise<DiaSemana[]>;
+  listarPlanosAlimentares(pacienteId: string): Promise<ResumoPlanoAlimentar[]>;
+  getPlanoAlimentar(pacienteId: string, planoId: string, diaSemana: DiaSemana): Promise<PlanoAlimentar | undefined>;
+  updateDiasAtivos(pacienteId: string, planoId: string, diasAtivos: DiaSemana[]): Promise<DiaSemana[]>;
+  updateDescricaoPlano(pacienteId: string, planoId: string, descricao: string): Promise<string>;
 }
 
 export class MemStorage implements IStorage {
@@ -473,15 +473,47 @@ export class MemStorage implements IStorage {
       sessions,
     };
   }
-  async getPlanoAlimentar(pacienteId: string, diaSemana: DiaSemana): Promise<PlanoAlimentar | undefined> {
+  async listarPlanosAlimentares(pacienteId: string): Promise<ResumoPlanoAlimentar[]> {
     const patient = patients.find((p) => p.id === pacienteId);
-    if (!patient) return undefined;
-    return generatePlanoAlimentar(pacienteId, diaSemana);
+    if (!patient) return [];
+    const planos = getPlanosMock(pacienteId);
+    return planos.map((p) => ({
+      id: p.id,
+      descricao: p.descricao,
+      status: p.status,
+      diasAtivos: p.diasAtivos,
+      dataCriacao: p.dataCriacao,
+      calorias: p.nutrientes.calorias,
+    }));
   }
 
-  async updateDiasAtivos(pacienteId: string, diasAtivos: DiaSemana[]): Promise<DiaSemana[]> {
-    planoDiasAtivos[pacienteId] = diasAtivos;
+  async getPlanoAlimentar(pacienteId: string, planoId: string, diaSemana: DiaSemana): Promise<PlanoAlimentar | undefined> {
+    const patient = patients.find((p) => p.id === pacienteId);
+    if (!patient) return undefined;
+    const planos = getPlanosMock(pacienteId);
+    const plano = planos.find((p) => p.id === planoId);
+    if (!plano) return undefined;
+    return {
+      id: plano.id,
+      pacienteId,
+      descricao: plano.descricao,
+      status: plano.status,
+      diaSemana,
+      diasAtivos: plano.diasAtivos,
+      dataCriacao: plano.dataCriacao,
+      refeicoes: plano.refeicoes,
+      nutrientes: plano.nutrientes,
+    };
+  }
+
+  async updateDiasAtivos(pacienteId: string, planoId: string, diasAtivos: DiaSemana[]): Promise<DiaSemana[]> {
+    planoDiasAtivosMap[planoId] = diasAtivos;
     return diasAtivos;
+  }
+
+  async updateDescricaoPlano(pacienteId: string, planoId: string, descricao: string): Promise<string> {
+    planoDescricoes[planoId] = descricao;
+    return descricao;
   }
 }
 

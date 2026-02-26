@@ -207,7 +207,9 @@ export interface ResumoPlanoAlimentar {
   id: string;
   descricao: string;
   status: "ativo" | "rascunho";
-  diaSemana: DiaSemana;
+  diasAtivos: DiaSemana[];
+  dataCriacao: string;
+  calorias: number;
 }
 
 export const BRAZILIAN_STATES = [

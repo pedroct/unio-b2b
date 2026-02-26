@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueries } from "@tanstack/react-query";
 import {
   Sheet,
   SheetContent,
@@ -8,8 +9,10 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { UtensilsCrossed } from "lucide-react";
-import type { PlanoAlimentar } from "@shared/schema";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UtensilsCrossed, Flame } from "lucide-react";
+import type { PlanoAlimentar, ResumoPlanoAlimentar, DiaSemana } from "@shared/schema";
 
 interface SheetPlanoAlimentarProps {
   open: boolean;
@@ -17,6 +20,16 @@ interface SheetPlanoAlimentarProps {
   pacienteId: string;
   pacienteNome?: string;
 }
+
+const DIAS_CURTOS: Record<DiaSemana, string> = {
+  segunda: "Seg",
+  terca: "Ter",
+  quarta: "Qua",
+  quinta: "Qui",
+  sexta: "Sex",
+  sabado: "Sáb",
+  domingo: "Dom",
+};
 
 function SheetSkeleton() {
   return (
@@ -37,24 +50,135 @@ function SheetSkeleton() {
   );
 }
 
+function PlanoContent({
+  plano,
+  pacienteNome,
+}: {
+  plano: PlanoAlimentar;
+  pacienteNome?: string;
+}) {
+  return (
+    <div className="space-y-6 pb-6" data-testid={`conteudo-plano-${plano.id}`}>
+      <div className="text-center space-y-1 pb-2">
+        {pacienteNome && (
+          <p className="text-sm font-medium" data-testid="text-paciente-nome-plano">
+            {pacienteNome}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground">{plano.dataCriacao}</p>
+      </div>
+
+      <Separator />
+
+      <div className="space-y-2">
+        <p
+          className="text-sm text-center font-medium"
+          data-testid={`text-descricao-plano-${plano.id}`}
+        >
+          {plano.descricao}
+        </p>
+        <div className="flex items-center justify-center gap-3">
+          <Badge variant="outline" className="text-xs">
+            {plano.diasAtivos.map((d) => DIAS_CURTOS[d]).join(", ")}
+          </Badge>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Flame className="h-3 w-3" />
+            <span>{plano.nutrientes.calorias.toLocaleString("pt-BR")} kcal</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {plano.refeicoes.map((refeicao) => (
+          <div
+            key={refeicao.id}
+            className="rounded-lg border overflow-hidden"
+            data-testid={`refeicao-view-${refeicao.id}`}
+          >
+            <div className="bg-primary px-4 py-2">
+              <span className="text-sm font-semibold text-primary-foreground">
+                {refeicao.horario} - {refeicao.nome}
+              </span>
+            </div>
+
+            <table className="w-full text-sm">
+              <tbody className="divide-y">
+                {refeicao.alimentos.map((alimento) => (
+                  <tr
+                    key={alimento.id}
+                    data-testid={`alimento-view-${alimento.id}`}
+                  >
+                    <td className="px-4 py-2.5 text-foreground">
+                      {alimento.nome}
+                    </td>
+                    <td className="px-2 py-2.5 text-muted-foreground whitespace-nowrap">
+                      {alimento.quantidade}
+                    </td>
+                    {alimento.grupo && (
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground text-right whitespace-nowrap">
+                        {alimento.grupo}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function SheetPlanoAlimentar({
   open,
   onOpenChange,
   pacienteId,
   pacienteNome,
 }: SheetPlanoAlimentarProps) {
-  const { data: plano, isLoading } = useQuery<PlanoAlimentar>({
-    queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "plano-alimentar", "segunda"],
+  const [tabAtiva, setTabAtiva] = useState<string>("");
+
+  const { data: planosLista, isLoading: isLoadingLista } = useQuery<ResumoPlanoAlimentar[]>({
+    queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "planos-alimentares"],
     queryFn: async () => {
       const res = await fetch(
-        `/api/profissional/dashboard/pacientes/${pacienteId}/plano-alimentar?diaSemana=segunda`,
+        `/api/profissional/dashboard/pacientes/${pacienteId}/planos-alimentares`,
         { credentials: "include" }
       );
-      if (!res.ok) throw new Error("Erro ao carregar plano alimentar");
+      if (!res.ok) throw new Error("Erro ao carregar planos");
       return res.json();
     },
     enabled: open,
   });
+
+  const planosAtivos = (planosLista || []).filter(
+    (p) => p.status === "ativo" && p.diasAtivos.length > 0
+  );
+
+  const planosQueries = useQueries({
+    queries: planosAtivos.map((p) => ({
+      queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "plano-alimentar", p.id, p.diasAtivos[0]],
+      queryFn: async () => {
+        const res = await fetch(
+          `/api/profissional/dashboard/pacientes/${pacienteId}/plano-alimentar?planoId=${p.id}&diaSemana=${p.diasAtivos[0]}`,
+          { credentials: "include" }
+        );
+        if (!res.ok) throw new Error("Erro ao carregar plano");
+        return res.json() as Promise<PlanoAlimentar>;
+      },
+      enabled: open && planosAtivos.length > 0,
+    })),
+  });
+
+  const planosCompletos = planosQueries
+    .map((q) => q.data)
+    .filter(Boolean) as PlanoAlimentar[];
+
+  const isLoadingPlanos = planosQueries.some((q) => q.isLoading);
+  const isLoading = isLoadingLista || isLoadingPlanos;
+
+  const primeiroPlanoId = planosAtivos[0]?.id || "";
+  const tabCorrente = tabAtiva || primeiroPlanoId;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -66,13 +190,13 @@ export function SheetPlanoAlimentar({
         <SheetHeader className="pb-4">
           <SheetTitle data-testid="titulo-sheet-plano">Plano Alimentar</SheetTitle>
           <SheetDescription>
-            Visualização do plano alimentar atual
+            Visualização dos planos alimentares ativos
           </SheetDescription>
         </SheetHeader>
 
         {isLoading ? (
           <SheetSkeleton />
-        ) : !plano ? (
+        ) : planosCompletos.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <UtensilsCrossed className="h-10 w-10 text-muted-foreground/50 mb-3" />
             <p className="text-sm font-medium">Sem plano alimentar</p>
@@ -80,65 +204,28 @@ export function SheetPlanoAlimentar({
               Nenhum plano alimentar ativo para este paciente.
             </p>
           </div>
+        ) : planosCompletos.length === 1 ? (
+          <PlanoContent plano={planosCompletos[0]} pacienteNome={pacienteNome} />
         ) : (
-          <div className="space-y-6 pb-6" data-testid="conteudo-plano-alimentar">
-            <div className="text-center space-y-1 pb-2">
-              {pacienteNome && (
-                <p className="text-sm font-medium" data-testid="text-paciente-nome-plano">
-                  {pacienteNome}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground">{plano.dataCriacao}</p>
-            </div>
-
-            <Separator />
-
-            <p
-              className="text-sm text-center italic text-muted-foreground"
-              data-testid="text-descricao-plano"
-            >
-              {plano.descricao}
-            </p>
-
-            <div className="space-y-4">
-              {plano.refeicoes.map((refeicao) => (
-                <div
-                  key={refeicao.id}
-                  className="rounded-lg border overflow-hidden"
-                  data-testid={`refeicao-view-${refeicao.id}`}
+          <Tabs value={tabCorrente} onValueChange={setTabAtiva} data-testid="tabs-planos-sheet">
+            <TabsList className="w-full mb-4" data-testid="tabs-lista-planos">
+              {planosCompletos.map((p) => (
+                <TabsTrigger
+                  key={p.id}
+                  value={p.id}
+                  className="flex-1 text-xs"
+                  data-testid={`tab-plano-${p.id}`}
                 >
-                  <div className="bg-primary px-4 py-2">
-                    <span className="text-sm font-semibold text-primary-foreground">
-                      {refeicao.horario} - {refeicao.nome}
-                    </span>
-                  </div>
-
-                  <table className="w-full text-sm">
-                    <tbody className="divide-y">
-                      {refeicao.alimentos.map((alimento) => (
-                        <tr
-                          key={alimento.id}
-                          data-testid={`alimento-view-${alimento.id}`}
-                        >
-                          <td className="px-4 py-2.5 text-foreground">
-                            {alimento.nome}
-                          </td>
-                          <td className="px-2 py-2.5 text-muted-foreground whitespace-nowrap">
-                            {alimento.quantidade}
-                          </td>
-                          {alimento.grupo && (
-                            <td className="px-4 py-2.5 text-xs text-muted-foreground text-right whitespace-nowrap">
-                              {alimento.grupo}
-                            </td>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                  {p.descricao.length > 30 ? p.descricao.substring(0, 30) + "..." : p.descricao}
+                </TabsTrigger>
               ))}
-            </div>
-          </div>
+            </TabsList>
+            {planosCompletos.map((p) => (
+              <TabsContent key={p.id} value={p.id}>
+                <PlanoContent plano={p} pacienteNome={pacienteNome} />
+              </TabsContent>
+            ))}
+          </Tabs>
         )}
       </SheetContent>
     </Sheet>

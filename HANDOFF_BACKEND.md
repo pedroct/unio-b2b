@@ -450,34 +450,76 @@ Todos os endpoints devem seguir o padrão:
 
 ---
 
-## 10. Plano Alimentar
+## 10. Planos Alimentares (Múltiplos por paciente)
 
-### `GET /api/profissional/dashboard/pacientes/{id}/plano-alimentar?diaSemana=segunda`
+Um paciente pode ter múltiplos planos alimentares simultaneamente (ex: um para dias de semana, outro para fim de semana). Cada plano tem seu próprio ID, descrição editável, dias ativos e refeições.
 
-Retorna o plano alimentar do paciente para o dia da semana selecionado.
+### 10.1. `GET /api/profissional/dashboard/pacientes/{id}/planos-alimentares`
+
+Retorna a lista resumida de todos os planos alimentares do paciente.
+
+**Response (200):**
+```json
+[
+  {
+    "id": "plano-p1-1",
+    "descricao": "Dieta Hiperproteica (modelo de cardápio Dietbox) (importado)",
+    "status": "ativo",
+    "diasAtivos": ["segunda", "terca", "quarta", "quinta", "sexta"],
+    "dataCriacao": "26/02/2026",
+    "calorias": 2050
+  },
+  {
+    "id": "plano-p1-2",
+    "descricao": "Dieta Low Carb — Fim de semana",
+    "status": "ativo",
+    "diasAtivos": ["sabado", "domingo"],
+    "dataCriacao": "26/02/2026",
+    "calorias": 1650
+  }
+]
+```
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | string | ID único do plano |
+| `descricao` | string | Título/descrição do plano |
+| `status` | `"ativo"` \| `"rascunho"` | Status do plano |
+| `diasAtivos` | DiaSemana[] | Dias da semana ativos para este plano |
+| `dataCriacao` | string | Data de criação (formato "dd/mm/aaaa") |
+| `calorias` | number | Total calórico do plano (kcal) |
+
+---
+
+### 10.2. `GET /api/profissional/dashboard/pacientes/{id}/plano-alimentar?planoId=xxx&diaSemana=segunda`
+
+Retorna o plano alimentar completo (com refeições e nutrientes) para o plano e dia selecionados.
 
 **Query Parameters:**
 
 | Parâmetro | Tipo | Obrigatório | Valores |
 |-----------|------|-------------|---------|
+| `planoId` | string | Sim | ID do plano alimentar |
 | `diaSemana` | string | Não (default: "segunda") | `segunda`, `terca`, `quarta`, `quinta`, `sexta`, `sabado`, `domingo` |
 
 **Response (200):**
 ```json
 {
-  "id": "plano-p1-segunda",
+  "id": "plano-p1-1",
   "pacienteId": "p1",
   "descricao": "Dieta Hiperproteica (modelo de cardápio importado)",
   "status": "ativo",
   "diaSemana": "segunda",
+  "diasAtivos": ["segunda", "terca", "quarta", "quinta", "sexta"],
+  "dataCriacao": "26/02/2026",
   "refeicoes": [
     {
       "id": "ref-1",
       "nome": "Desjejum",
       "horario": "07:00",
       "alimentos": [
-        { "id": "a1", "nome": "Pão integral", "quantidade": "2 fatias" },
-        { "id": "a2", "nome": "Queijo minas frescal", "quantidade": "2 fatias (30g)" }
+        { "id": "a1", "nome": "Pão integral", "quantidade": "2 fatias", "grupo": "Cereais e derivados" },
+        { "id": "a2", "nome": "Queijo minas frescal", "quantidade": "2 fatias (30g)", "grupo": "Leite e derivados" }
       ],
       "substitutas": []
     }
@@ -492,33 +534,10 @@ Retorna o plano alimentar do paciente para o dia da semana selecionado.
 }
 ```
 
-**Campos:**
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | string | ID único do plano |
-| `pacienteId` | string | ID do paciente |
-| `descricao` | string | Descrição/nome do plano |
-| `status` | `"ativo"` \| `"rascunho"` | Status do plano |
-| `diaSemana` | string | Dia da semana correspondente |
-| `refeicoes` | Refeicao[] | Lista de refeições do dia |
-| `refeicoes[].id` | string | ID da refeição |
-| `refeicoes[].nome` | string | Nome da refeição (Desjejum, Colação, etc.) |
-| `refeicoes[].horario` | string | Horário no formato "HH:mm" |
-| `refeicoes[].alimentos` | AlimentoPlano[] | Lista de alimentos |
-| `refeicoes[].alimentos[].id` | string | ID do alimento |
-| `refeicoes[].alimentos[].nome` | string | Nome do alimento |
-| `refeicoes[].alimentos[].quantidade` | string | Quantidade descritiva (ex: "Colher De Sopa: 2") |
-| `refeicoes[].alimentos[].grupo` | string (opcional) | Grupo alimentar (ex: "Cereais e derivados", "Laticínios") |
-| `refeicoes[].substitutas` | Refeicao[] (opcional) | Refeições substitutas |
-| `nutrientes.calorias` | number | Total calórico do dia (kcal) |
-| `nutrientes.proteina.gramas` | number | Gramas de proteína |
-| `nutrientes.proteina.percentual` | number | Percentual de proteína |
-| `nutrientes.carboidrato.gramas` | number | Gramas de carboidrato |
-| `nutrientes.carboidrato.percentual` | number | Percentual de carboidrato |
-| `nutrientes.gordura.gramas` | number | Gramas de gordura |
-| `nutrientes.gordura.percentual` | number | Percentual de gordura |
-| `nutrientes.fibra` | number | Gramas de fibra |
+**Error (400):**
+```json
+{ "message": "planoId é obrigatório." }
+```
 
 **Error (404):**
 ```json
@@ -527,11 +546,9 @@ Retorna o plano alimentar do paciente para o dia da semana selecionado.
 
 ---
 
-## 10.1. Atualizar Dias Ativos do Plano Alimentar
+### 10.3. `PUT /api/profissional/dashboard/pacientes/{id}/planos-alimentares/{planoId}/dias`
 
-### `PUT /api/profissional/dashboard/pacientes/{id}/plano-alimentar/dias`
-
-Atualiza quais dias da semana o plano alimentar está ativo. Se nenhum dia for selecionado, o plano é considerado inativo.
+Atualiza quais dias da semana o plano alimentar está ativo.
 
 **Request Body:**
 ```json
@@ -542,7 +559,7 @@ Atualiza quais dias da semana o plano alimentar está ativo. Se nenhum dia for s
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `diasAtivos` | string[] | Array de dias da semana ativos. Valores possíveis: `segunda`, `terca`, `quarta`, `quinta`, `sexta`, `sabado`, `domingo` |
+| `diasAtivos` | string[] | Array de dias da semana ativos |
 
 **Response (200):**
 ```json
@@ -557,9 +574,36 @@ Atualiza quais dias da semana o plano alimentar está ativo. Se nenhum dia for s
 ```
 
 **Notas:**
-- O campo `diasAtivos` também é retornado em `GET /api/.../plano-alimentar` como parte do objeto `PlanoAlimentar`
-- O campo `dataCriacao` (string, formato "dd/mm/aaaa") também foi adicionado ao `PlanoAlimentar`
 - Se `diasAtivos` for um array vazio, o plano é considerado inativo no frontend
+
+---
+
+### 10.4. `PUT /api/profissional/dashboard/pacientes/{id}/planos-alimentares/{planoId}/descricao`
+
+Atualiza a descrição/título de um plano alimentar.
+
+**Request Body:**
+```json
+{
+  "descricao": "Dieta Hiperproteica — Dias de semana"
+}
+```
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `descricao` | string | Nova descrição do plano (obrigatória, não pode ser vazia) |
+
+**Response (200):**
+```json
+{
+  "descricao": "Dieta Hiperproteica — Dias de semana"
+}
+```
+
+**Error (400):**
+```json
+{ "message": "descricao é obrigatória." }
+```
 
 ---
 
@@ -571,12 +615,14 @@ GET  /api/profissional/pacientes                       → Lista de pacientes
 GET  /api/profissional/pacientes/{id}                  → Detalhe do paciente
 GET  /api/profissional/pacientes/{id}/metas            → Metas do paciente
 PUT  /api/profissional/pacientes/{id}/metas            → Atualizar metas
-GET  /api/profissional/dashboard/pacientes/{id}/overview   → Visão Geral
-GET  /api/profissional/dashboard/pacientes/{id}/nutricao   → Nutrição
-GET  /api/profissional/dashboard/pacientes/{id}/biometria  → Biometria
+GET  /api/profissional/dashboard/pacientes/{id}/overview       → Visão Geral
+GET  /api/profissional/dashboard/pacientes/{id}/nutricao       → Nutrição
+GET  /api/profissional/dashboard/pacientes/{id}/biometria      → Biometria
 GET  /api/profissional/dashboard/pacientes/{id}/treinamento    → Treinamento
-GET  /api/profissional/dashboard/pacientes/{id}/plano-alimentar → Plano Alimentar
-PUT  /api/profissional/dashboard/pacientes/{id}/plano-alimentar/dias → Dias Ativos do Plano
+GET  /api/profissional/dashboard/pacientes/{id}/planos-alimentares          → Lista de Planos Alimentares
+GET  /api/profissional/dashboard/pacientes/{id}/plano-alimentar?planoId&dia → Plano Alimentar Detalhado
+PUT  /api/profissional/dashboard/pacientes/{id}/planos-alimentares/{planoId}/dias      → Dias Ativos do Plano
+PUT  /api/profissional/dashboard/pacientes/{id}/planos-alimentares/{planoId}/descricao → Descrição do Plano
 ```
 
 ---

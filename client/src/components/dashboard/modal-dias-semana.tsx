@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { UtensilsCrossed, Flame } from "lucide-react";
-import type { DiaSemana, PlanoAlimentar } from "@shared/schema";
+import type { DiaSemana, PlanoAlimentar, ResumoPlanoAlimentar } from "@shared/schema";
 import { DIAS_SEMANA } from "@shared/schema";
 
 interface ModalDiasSemanaProps {
@@ -19,6 +19,7 @@ interface ModalDiasSemanaProps {
   onOpenChange: (open: boolean) => void;
   diasAtivos: DiaSemana[];
   plano: PlanoAlimentar;
+  outrosPlanos?: ResumoPlanoAlimentar[];
   onSalvar: (dias: DiaSemana[]) => void;
   isSaving?: boolean;
 }
@@ -40,11 +41,22 @@ function getResumoDias(dias: DiaSemana[]): string {
     .join(", ");
 }
 
+const DIAS_CURTOS: Record<DiaSemana, string> = {
+  segunda: "Seg",
+  terca: "Ter",
+  quarta: "Qua",
+  quinta: "Qui",
+  sexta: "Sex",
+  sabado: "Sáb",
+  domingo: "Dom",
+};
+
 export function ModalDiasSemana({
   open,
   onOpenChange,
   diasAtivos,
   plano,
+  outrosPlanos = [],
   onSalvar,
   isSaving,
 }: ModalDiasSemanaProps) {
@@ -92,6 +104,10 @@ export function ModalDiasSemana({
     }
   };
 
+  const outrosPlanosAtivos = outrosPlanos.filter(
+    (p) => p.status === "ativo" && p.diasAtivos.length > 0
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl" data-testid="modal-dias-semana">
@@ -132,10 +148,13 @@ export function ModalDiasSemana({
           <div className="flex items-center gap-2 flex-wrap" data-testid="grid-dias-semana">
             {DIAS_SEMANA.map((dia) => {
               const ativo = selecionados.includes(dia.valor);
+              const ocupadoOutroPlano = outrosPlanosAtivos.some((p) =>
+                p.diasAtivos.includes(dia.valor)
+              );
               return (
                 <Button
                   key={dia.valor}
-                  variant={ativo ? "default" : "outline"}
+                  variant={ativo ? "default" : ocupadoOutroPlano ? "secondary" : "outline"}
                   size="sm"
                   className="rounded-full min-w-[110px]"
                   onClick={() => toggleDia(dia.valor)}
@@ -154,11 +173,11 @@ export function ModalDiasSemana({
               <span>Plano alimentar atual</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-full border border-muted-foreground" />
+              <div className="h-2.5 w-2.5 rounded-full bg-secondary" />
               <span>Outros planos alimentares</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-full bg-muted" />
+              <div className="h-2.5 w-2.5 rounded-full border border-muted-foreground" />
               <span>Sem planos alimentares</span>
             </div>
           </div>
@@ -224,11 +243,40 @@ export function ModalDiasSemana({
             <p className="text-sm font-medium text-muted-foreground">
               Outros planos alimentares ativos
             </p>
-            <div className="rounded-lg border px-4 py-3">
-              <p className="text-xs text-muted-foreground italic">
-                Nenhum outro plano alimentar ativo no momento.
-              </p>
-            </div>
+            {outrosPlanosAtivos.length === 0 ? (
+              <div className="rounded-lg border px-4 py-3">
+                <p className="text-xs text-muted-foreground italic">
+                  Nenhum outro plano alimentar ativo no momento.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {outrosPlanosAtivos.map((outro) => (
+                  <div
+                    key={outro.id}
+                    className="flex items-center gap-3 rounded-lg border px-4 py-3"
+                    data-testid={`card-outro-plano-${outro.id}`}
+                  >
+                    <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-secondary text-secondary-foreground shrink-0">
+                      <UtensilsCrossed className="h-4 w-4" />
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap flex-1 text-sm">
+                      <Badge variant="outline" className="text-xs">
+                        {outro.diasAtivos.map((d) => DIAS_CURTOS[d]).join(", ")}
+                      </Badge>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Flame className="h-3 w-3" />
+                        <span>{outro.calorias.toLocaleString("pt-BR")} kcal</span>
+                      </div>
+                      <span className="text-muted-foreground">{outro.descricao}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {outro.dataCriacao}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

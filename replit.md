@@ -50,8 +50,9 @@ shared/
 ```
 
 ## Key Concepts
-- **Plano Alimentar (Visualização)**: read-only Sheet lateral acessada via CTA "Ver Plano Alimentar" na aba Nutrição. Mostra refeições, alimentos, quantidades e grupos alimentares.
-- **Prescrição Alimentar (Edição)**: página completa no sidebar (restrita a Nutricionista). Permite editar refeições, dias ativos, adicionar/remover alimentos.
+- **Múltiplos planos por paciente**: cada paciente pode ter vários planos alimentares (ex: um para dias de semana, outro para fim de semana). Cada plano tem ID, descrição editável, dias ativos e refeições próprias.
+- **Plano Alimentar (Visualização)**: read-only Sheet lateral acessada via CTA "Ver Plano Alimentar" na aba Nutrição. Mostra todos os planos ativos em tabs separadas.
+- **Prescrição Alimentar (Edição)**: página completa no sidebar (restrita a Nutricionista). Permite selecionar plano via dropdown, editar descrição inline, editar refeições e dias ativos.
 - O dashboard do paciente tem 4 abas: Visão Geral, Nutrição, Biometria, Treinamento.
 
 ## API Endpoints (Mock)
@@ -63,5 +64,7 @@ shared/
 - GET /api/profissional/dashboard/pacientes/:id/nutricao — Nutrition
 - GET /api/profissional/dashboard/pacientes/:id/biometria — Biometry
 - GET /api/profissional/dashboard/pacientes/:id/treinamento — Training
-- GET /api/profissional/dashboard/pacientes/:id/plano-alimentar?diaSemana=segunda — Meal Plan
-- PUT /api/profissional/dashboard/pacientes/:id/plano-alimentar/dias — Update active days
+- GET /api/profissional/dashboard/pacientes/:id/planos-alimentares — List all plans
+- GET /api/profissional/dashboard/pacientes/:id/plano-alimentar?planoId&diaSemana — Plan detail
+- PUT /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/dias — Update active days
+- PUT /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/descricao — Update description
