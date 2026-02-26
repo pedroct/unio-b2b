@@ -508,7 +508,8 @@ Retorna o plano alimentar do paciente para o dia da semana selecionado.
 | `refeicoes[].alimentos` | AlimentoPlano[] | Lista de alimentos |
 | `refeicoes[].alimentos[].id` | string | ID do alimento |
 | `refeicoes[].alimentos[].nome` | string | Nome do alimento |
-| `refeicoes[].alimentos[].quantidade` | string | Quantidade descritiva (ex: "2 colheres de sopa") |
+| `refeicoes[].alimentos[].quantidade` | string | Quantidade descritiva (ex: "Colher De Sopa: 2") |
+| `refeicoes[].alimentos[].grupo` | string (opcional) | Grupo alimentar (ex: "Cereais e derivados", "Laticínios") |
 | `refeicoes[].substitutas` | Refeicao[] (opcional) | Refeições substitutas |
 | `nutrientes.calorias` | number | Total calórico do dia (kcal) |
 | `nutrientes.proteina.gramas` | number | Gramas de proteína |

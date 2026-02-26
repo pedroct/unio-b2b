@@ -167,6 +167,7 @@ export interface AlimentoPlano {
   id: string;
   nome: string;
   quantidade: string;
+  grupo?: string;
 }
 
 export interface Refeicao {

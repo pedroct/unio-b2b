@@ -22,21 +22,24 @@ client/src/
   App.tsx                 - Root component with routing and auth
   lib/auth.tsx           - Auth context provider (JWT)
   components/
-    app-sidebar.tsx      - Main navigation sidebar
+    app-sidebar.tsx      - Main navigation sidebar (Pacientes, Dashboard, Prescrição Alimentar, Configurações)
     theme-toggle.tsx     - Dark mode toggle
     empty-state.tsx      - Reusable empty state component
     dashboard/
       overview-tab.tsx          - Patient overview with insights & charts
-      nutrition-tab.tsx         - Nutrition data, macros, food diary
+      nutrition-tab.tsx         - Nutrition data, macros, food diary + CTA para ver plano alimentar
       biometry-tab.tsx          - Body composition evolution charts
       training-tab.tsx          - Training sessions, volume, RPE
-      aba-plano-alimentar.tsx   - Plano alimentar com refeições e nutrientes
+      sheet-plano-alimentar.tsx - Sheet lateral read-only do plano alimentar (via CTA Nutrição)
+      aba-plano-alimentar.tsx   - Prescrição: edição de plano alimentar com refeições e nutrientes
       modal-dias-semana.tsx     - Modal para editar dias ativos do plano alimentar
   pages/
-    login.tsx            - Login page (Registro + UF / CPF)
-    patients.tsx         - Patient list with adherence status
-    patient-dashboard.tsx - Patient dashboard with 5 tabs
-    patient-settings.tsx  - Patient goals configuration
+    login.tsx                  - Login page (Registro + UF / CPF)
+    patients.tsx               - Patient list with adherence status
+    patient-dashboard.tsx      - Patient dashboard with 4 tabs (Visão Geral, Nutrição, Biometria, Treinamento)
+    patient-settings.tsx       - Patient goals configuration
+    prescricao-alimentar.tsx        - Prescrição Alimentar page (edição para paciente específico)
+    prescricao-alimentar-lista.tsx  - Lista de pacientes para selecionar e prescrever plano alimentar
 
 server/
   routes.ts             - Mock API endpoints
@@ -45,6 +48,11 @@ server/
 shared/
   schema.ts             - TypeScript types and Zod schemas
 ```
+
+## Key Concepts
+- **Plano Alimentar (Visualização)**: read-only Sheet lateral acessada via CTA "Ver Plano Alimentar" na aba Nutrição. Mostra refeições, alimentos, quantidades e grupos alimentares.
+- **Prescrição Alimentar (Edição)**: página completa no sidebar (restrita a Nutricionista). Permite editar refeições, dias ativos, adicionar/remover alimentos.
+- O dashboard do paciente tem 4 abas: Visão Geral, Nutrição, Biometria, Treinamento.
 
 ## API Endpoints (Mock)
 - POST /api/auth/pair — Login

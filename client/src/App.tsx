@@ -13,6 +13,8 @@ import LoginPage from "@/pages/login";
 import PatientsPage from "@/pages/patients";
 import PatientDashboardPage from "@/pages/patient-dashboard";
 import PatientSettingsPage from "@/pages/patient-settings";
+import PrescricaoAlimentarPage from "@/pages/prescricao-alimentar";
+import PrescricaoAlimentarListaPage from "@/pages/prescricao-alimentar-lista";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const style = {
@@ -67,6 +69,8 @@ function AppRoutes() {
         <Route path="/pacientes" component={PatientsPage} />
         <Route path="/pacientes/:id/dashboard" component={PatientDashboardPage} />
         <Route path="/pacientes/:id/configuracoes" component={PatientSettingsPage} />
+        <Route path="/prescricao-alimentar/:pacienteId" component={PrescricaoAlimentarPage} />
+        <Route path="/prescricao-alimentar" component={PrescricaoAlimentarListaPage} />
         <Route path="/dashboard" component={PatientsPage} />
         <Route path="/configuracoes">
           <div className="p-6 max-w-4xl mx-auto">

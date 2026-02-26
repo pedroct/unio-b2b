@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation, Link } from "wouter";
-import { Users, LayoutDashboard, Settings, LogOut } from "lucide-react";
+import { Users, LayoutDashboard, Settings, LogOut, UtensilsCrossed } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -21,6 +21,7 @@ import unioLogo from "@assets/Unio_Logo_1771972757927.png";
 const navItems = [
   { title: "Pacientes", url: "/pacientes", icon: Users },
   { title: "Dashboard Global", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Prescrição Alimentar", url: "/prescricao-alimentar", icon: UtensilsCrossed },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 

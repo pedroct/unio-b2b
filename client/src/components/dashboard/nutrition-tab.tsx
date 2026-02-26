@@ -1,15 +1,18 @@
-import React from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { Apple } from "lucide-react";
+import { Apple, UtensilsCrossed, ChevronRight } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from "recharts";
 import { EmptyState } from "@/components/empty-state";
+import { SheetPlanoAlimentar } from "@/components/dashboard/sheet-plano-alimentar";
 import type { NutritionSummary } from "@shared/schema";
 
 interface NutritionTabProps {
   patientId: string;
+  patientName?: string;
 }
 
 function MacroCard({ label, current, target, color, unit }: {
@@ -44,7 +47,9 @@ function NutritionSkeleton() {
   );
 }
 
-export function NutritionTab({ patientId }: NutritionTabProps) {
+export function NutritionTab({ patientId, patientName }: NutritionTabProps) {
+  const [sheetPlanoAberto, setSheetPlanoAberto] = useState(false);
+
   const { data: nutrition, isLoading } = useQuery<NutritionSummary>({
     queryKey: ["/api/profissional/dashboard/pacientes", patientId, "nutricao"],
   });
@@ -72,6 +77,32 @@ export function NutritionTab({ patientId }: NutritionTabProps) {
 
   return (
     <div className="space-y-6" data-testid="tab-nutrition">
+      <SheetPlanoAlimentar
+        open={sheetPlanoAberto}
+        onOpenChange={setSheetPlanoAberto}
+        pacienteId={patientId}
+        pacienteNome={patientName}
+      />
+
+      <Card
+        className="cursor-pointer transition-colors hover:bg-accent/50"
+        onClick={() => setSheetPlanoAberto(true)}
+        data-testid="cta-ver-plano-alimentar"
+      >
+        <CardContent className="flex items-center gap-4 py-4">
+          <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10 text-primary shrink-0">
+            <UtensilsCrossed className="h-5 w-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold">Ver Plano Alimentar</p>
+            <p className="text-xs text-muted-foreground">
+              Visualize o plano alimentar prescrito com refeições, alimentos e grupos alimentares
+            </p>
+          </div>
+          <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2">
