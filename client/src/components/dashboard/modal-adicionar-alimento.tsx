@@ -14,42 +14,19 @@ import { Search, Check, Flame, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { formatFoodName, formatNutrient } from "@/lib/formatters";
+import { normalizarResultadosTBCA, type ResultadoBuscaNormalizado } from "@/lib/api-normalizers";
 import { FONTES_ALIMENTO } from "@shared/schema";
-import type { AlimentoPlano, AlimentoBusca, FonteAlimento, ResumoMacros } from "@shared/schema";
+import type { AlimentoPlano, FonteAlimento, ResumoMacros, ApresentacaoAlimento } from "@shared/schema";
 
 type FiltroOrigem = "TODAS" | FonteAlimento;
+
+type ResultadoBusca = ResultadoBuscaNormalizado;
 
 interface ModalAdicionarAlimentoProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   refeicaoNome: string;
   onAdicionarAlimento: (alimento: AlimentoPlano) => void;
-}
-
-interface ResultadoBusca {
-  id: string;
-  nome: string;
-  grupo?: string;
-  fonte: FonteAlimento;
-  caloriasPor100g: number | null;
-  proteinaPor100g: number | null;
-  carboidratoPor100g: number | null;
-  gorduraPor100g: number | null;
-  fibraPor100g: number | null;
-}
-
-function normalizarResultadosTBCA(dados: any[]): ResultadoBusca[] {
-  return dados.map((item) => ({
-    id: item.id,
-    nome: item.descricao,
-    grupo: item.grupo_alimentar?.nome,
-    fonte: (item.fonte_dados || "TBCA") as FonteAlimento,
-    caloriasPor100g: null,
-    proteinaPor100g: null,
-    carboidratoPor100g: null,
-    gorduraPor100g: null,
-    fibraPor100g: null,
-  }));
 }
 
 function normalizarResultadosLegado(dados: any[]): ResultadoBusca[] {
@@ -234,6 +211,7 @@ export function ModalAdicionarAlimento({
       quantidade: qtd,
       unidade: "g",
       grupo: selecionado.grupo,
+      alimentoTbcaId: selecionado.id,
     };
 
     onAdicionarAlimento(alimento);

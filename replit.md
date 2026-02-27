@@ -26,7 +26,8 @@ Plataforma web para profissionais de saúde (médicos, nutricionistas, personal 
 client/src/
   App.tsx                 - Root component with routing and auth
   lib/auth.tsx           - Auth context provider (JWT)
-  lib/formatters.ts      - Shared formatters: formatFoodName, formatNutrient, formatUnit
+  lib/formatters.ts      - Shared formatters: formatFoodName, formatNutrient, formatUnit, formatHorario
+  lib/api-normalizers.ts - Normalização de responses do backend (TBCA, planos, refeições, alimentos)
   components/
     app-sidebar.tsx      - Main navigation sidebar (Clientes, Dashboard, Prescrição Alimentar, Configurações)
     theme-toggle.tsx     - Dark mode toggle

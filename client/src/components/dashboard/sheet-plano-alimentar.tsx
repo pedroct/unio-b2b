@@ -18,6 +18,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { UtensilsCrossed, Flame } from "lucide-react";
+import { formatFoodName, formatHorario } from "@/lib/formatters";
+import { normalizarPlanoAlimentar, normalizarResumoPlano } from "@/lib/api-normalizers";
 import type { PlanoAlimentar, ResumoPlanoAlimentar, DiaSemana } from "@shared/schema";
 
 interface SheetPlanoAlimentarProps {
@@ -122,7 +124,7 @@ function PlanoContent({
                     data-testid={`alimento-view-${alimento.id}`}
                   >
                     <td className="px-4 py-2.5 text-foreground">
-                      {alimento.nome}
+                      {formatFoodName(alimento.nome)}
                     </td>
                     <td className="px-2 py-2.5 text-center text-foreground tabular-nums">
                       {alimento.quantidade}
@@ -157,7 +159,8 @@ export function SheetPlanoAlimentar({
         { credentials: "include" }
       );
       if (!res.ok) throw new Error("Erro ao carregar planos");
-      return res.json();
+      const raw = await res.json();
+      return (raw as any[]).map(normalizarResumoPlano);
     },
     enabled: open,
   });
@@ -178,7 +181,8 @@ export function SheetPlanoAlimentar({
         { credentials: "include" }
       );
       if (!res.ok) throw new Error("Erro ao carregar plano");
-      return res.json();
+      const raw = await res.json();
+      return normalizarPlanoAlimentar(raw);
     },
     enabled: open && !!planoIdAtual,
   });

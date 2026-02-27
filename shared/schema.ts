@@ -172,6 +172,7 @@ export interface AlimentoPlano {
   quantidade: number;
   unidade: string;
   grupo?: string;
+  alimentoTbcaId?: string;
 }
 
 export interface Refeicao {
@@ -209,6 +210,14 @@ export const FONTES_ALIMENTO: { valor: FonteAlimento; rotulo: string; disponivel
   { valor: "MEUS_ALIMENTOS", rotulo: "Meus alimentos", disponivel: false },
 ];
 
+export interface ApresentacaoAlimento {
+  nomeExibicao: string;
+  detalhes: string;
+  modoPreparo: string;
+  categoria: string;
+  fonte: string;
+}
+
 export interface AlimentoBusca {
   id: string;
   nome: string;
@@ -219,14 +228,15 @@ export interface AlimentoBusca {
   carboidratoPor100g: number | null;
   gorduraPor100g: number | null;
   fibraPor100g: number | null;
+  apresentacao?: ApresentacaoAlimento;
 }
 
 export interface ResumoMacros {
-  calorias: number;
-  proteinas: number;
-  carboidratos: number;
-  gorduras: number;
-  fibras: number;
+  calorias: number | string;
+  proteinas: number | string;
+  carboidratos: number | string;
+  gorduras: number | string;
+  fibras: number | string;
 }
 
 export interface MacroNutrientePlano {

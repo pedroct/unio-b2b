@@ -426,3 +426,77 @@ Token JWT cacheado por 25 minutos. Endpoints proxied:
 - `GET /api/nutricao/tbca/alimentos/:id` → `GET staging/api/nutricao/tbca/alimentos/:id`
 - `POST /api/nutricao/tbca/calcular` → `POST staging/api/nutricao/tbca/calcular`
 - `GET /api/nutricao/alimentos/buscar` → `GET staging/api/nutricao/alimentos/buscar`
+
+---
+
+## 8. Contrato real do backend (v3 — Fev/2026)
+
+Esta seção documenta as diferenças entre o contrato original (seções 2–3 acima) e o contrato real implementado pelo backend Django. O frontend foi adaptado com uma camada de normalização (`client/src/lib/api-normalizers.ts`) para tratar essas diferenças.
+
+### 8.1. Busca TBCA — Diferenças
+
+| Campo | Handoff original | Backend real | Impacto |
+|-------|-----------------|--------------|---------|
+| `grupo_alimentar` | `{ id, codigo_tbca, nome }` (objeto) | `"grupo": "Carnes..."` (string direta) | Normalizado em `normalizarAlimentoTBCA()` |
+| `fonte_dados` | `"TBCA"` (uppercase) | `"tbca"` (lowercase) | Normalizado via `toUpperCase()` |
+| `apresentacao` | Não existia | Novo bloco: `{ nome_exibicao, detalhes, modo_preparo, categoria, fonte }` | Preservado no tipo `ApresentacaoAlimento` |
+| `confianca_parse` | Não existia | `"alta"` / `"media"` / `"baixa"` | Disponível no response, não consumido na UI ainda |
+
+### 8.2. Calcular — Diferenças
+
+| Campo | Handoff original | Backend real | Impacto |
+|-------|-----------------|--------------|---------|
+| `composicao[].categoria` | Presente | Removido | Sem impacto (frontend não consome) |
+| `composicao[].simbolo` | Não existia | Adicionado (ex: `"PROT"`) | Disponível mas não consumido |
+
+### 8.3. Planos Alimentares (leitura) — Diferenças
+
+| Campo | Handoff original | Backend real | Impacto |
+|-------|-----------------|--------------|---------|
+| `pacienteId` | `string` | `paciente_id: number` | Normalizado para `String(paciente_id)` |
+| `profissional_id` | Não existia | `number` | Novo campo, ignorado no frontend |
+| `diasAtivos` | Array de `DiaSemana` | Ausente | Fallback: `[]` |
+| `diaSemana` | `DiaSemana` | Ausente | Fallback: `"segunda"` |
+| `dataCriacao` | `string` | Ausente | Fallback: `new Date().toISOString()` |
+| `calorias` (resumo) | `number` | Ausente | Fallback: `0` |
+| `nutrientes` | `NutrientesPlano` | Ausente | Fallback: objeto zerado |
+
+### 8.4. Alimentos dentro de Refeição (leitura) — Diferenças
+
+| Campo | Handoff original | Backend real | Impacto |
+|-------|-----------------|--------------|---------|
+| `nome` | `string` | `alimento_nome: string` | Normalizado: `alimento_nome → nome` |
+| `quantidade` | `number` | `string` (ex: `"150.50"`) | Normalizado: `parseFloat()` |
+| `alimento_tbca_id` | Não existia | UUID do catálogo TBCA | Preservado em `alimentoTbcaId` |
+| `grupo` | Opcional | Ausente | Sem impacto (já era opcional) |
+
+### 8.5. Horário — Diferenças
+
+| Contexto | Handoff original | Backend real | Impacto |
+|----------|-----------------|--------------|---------|
+| Response (leitura) | `"HH:mm"` | `"HH:mm:ss"` (ex: `"12:30:00"`) | Normalizado para `"HH:mm"` na leitura |
+| Request (escrita) | `"HH:mm"` | `"HH:mm:ss"` | Frontend appenda `:00` ao enviar |
+
+### 8.6. POST Criar Refeição — Diferenças
+
+| Campo | Handoff original | Backend real | Impacto |
+|-------|-----------------|--------------|---------|
+| Chaves do payload | PT-BR (`nome`, `horario`, `alimentos`, `observacao`) | PT-BR (idêntico) | Sem mudança necessária |
+| `alimentos[].alimento_tbca_id` | Não existia | UUID TBCA obrigatório | Adicionado via `montarPayloadRefeicao()` |
+| `alimentos[].nome` | Enviado | Não esperado | Removido do payload |
+| `alimentos[].grupo` | Enviado | Não esperado | Removido do payload |
+
+### 8.7. Camada de normalização
+
+Arquivo: `client/src/lib/api-normalizers.ts`
+
+Funções exportadas:
+- `normalizarAlimentoTBCA(raw)` — normaliza um resultado de busca TBCA
+- `normalizarResultadosTBCA(dados)` — normaliza array de resultados
+- `normalizarAlimentoPlano(raw)` — normaliza alimento dentro de refeição
+- `normalizarRefeicao(raw)` — normaliza refeição com alimentos e horário
+- `normalizarPlanoAlimentar(raw)` — normaliza plano alimentar completo
+- `normalizarResumoPlano(raw)` — normaliza resumo de plano (para listagem)
+- `montarPayloadRefeicao(nome, horario, alimentos, observacao?)` — monta payload para POST
+
+Todas as funções detectam automaticamente o formato (mock vs backend real) e aplicam normalização adequada, permitindo transição suave sem quebrar a UI durante a migração

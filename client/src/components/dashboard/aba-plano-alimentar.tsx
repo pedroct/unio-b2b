@@ -3,7 +3,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatFoodName, formatNutrient, formatUnit } from "@/lib/formatters";
+import { formatFoodName, formatNutrient, formatUnit, formatHorario } from "@/lib/formatters";
+import { normalizarPlanoAlimentar, normalizarResumoPlano } from "@/lib/api-normalizers";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -106,7 +107,8 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
         { credentials: "include" }
       );
       if (!res.ok) throw new Error("Erro ao carregar planos");
-      return res.json();
+      const raw = await res.json();
+      return (raw as any[]).map(normalizarResumoPlano);
     },
   });
 
@@ -128,7 +130,8 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
         { credentials: "include" }
       );
       if (!res.ok) throw new Error("Erro ao carregar plano alimentar");
-      return res.json();
+      const raw = await res.json();
+      return normalizarPlanoAlimentar(raw);
     },
     enabled: !!planoId,
   });

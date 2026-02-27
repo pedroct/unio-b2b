@@ -27,3 +27,8 @@ export const formatUnit = (unit: string): string => {
   if (!unit) return '';
   return unit.toLowerCase();
 };
+
+export const formatHorario = (h: string): string => {
+  if (!h) return '';
+  return h.replace(/^(\d{2}:\d{2}):?\d{0,2}$/, '$1');
+};

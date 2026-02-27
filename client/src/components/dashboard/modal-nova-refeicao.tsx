@@ -22,6 +22,7 @@ import {
 import { UtensilsCrossed, Plus, X, Check, ChevronDown } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { montarPayloadRefeicao } from "@/lib/api-normalizers";
 import { HORARIOS_REFEICAO, DESCRICOES_REFEICAO_PADRAO } from "@shared/schema";
 import type { AlimentoPlano } from "@shared/schema";
 import { cn } from "@/lib/utils";
@@ -172,15 +173,16 @@ export function ModalNovaRefeicao({
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
+      const payload = montarPayloadRefeicao(
+        data.descricao,
+        data.horario,
+        data.alimentos,
+        data.observacao,
+      );
       const res = await apiRequest(
         "POST",
         `/api/profissional/dashboard/pacientes/${pacienteId}/planos-alimentares/${planoId}/refeicoes`,
-        {
-          nome: data.descricao,
-          horario: data.horario,
-          alimentos: data.alimentos,
-          observacao: data.observacao || undefined,
-        }
+        payload,
       );
       return res.json();
     },
