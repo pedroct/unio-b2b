@@ -1,0 +1,237 @@
+# Contrato de Integração Frontend — Nova Refeição + Adicionar Alimento
+
+Este documento detalha as rotas, payloads de requisição (request) e esquemas de resposta (response) implementados no backend do UNIO Performance OS para suportar as funcionalidades **Nova Refeição** e **Adicionar Alimento** (integração com a base de alimentos TBCA).
+
+O serviço backend fornece as informações sempre padronizando campos numéricos estruturais, como valores calculados, resumos de macro e IDs nativos para os seus tipos de interface (`str` em caso de Decimais formatados longos para retenção de precisão). O cabeçalho deve carregar o JWT de Autenticação (`Authorization: Bearer <token>`).
+
+---
+
+## 1. Módulo TBCA (Busca e Cálculos de Alimentos)
+
+### `GET /api/nutricao/tbca/alimentos`
+
+Busca fonética e textual os alimentos no catálogo TBCA.
+
+**Query Params:**
+
+- `busca` (str, opcional): Termo de pesquisa (mín. 2 caracteres). Ex: `Frango`.
+- `grupo` (str, opcional): Filtrar por grupo específico.
+- `limite` (int, default=50): Paginação dinâmica do limite de respostas.
+
+**Response `(200 OK)`:**
+
+```json
+// list[AlimentoTBCAResumoSchema]
+[
+  {
+    "id": "e21b76df-c7c4-4d80-bae3-23a936af8d82",
+    "codigo_tbca": "BR281G",
+    "descricao": "Frango, peito, sem pele, grelhado",
+    "grupo": "Carnes e derivados",
+    "fonte_dados": "tbca",
+    "confianca_parse": "alta",
+    "apresentacao": {
+      "nome_exibicao": "Frango",
+      "detalhes": "peito, sem pele, grelhado",
+      "modo_preparo": "Grelhado",
+      "categoria": "Carnes e derivados",
+      "fonte": "tbca"
+    }
+  }
+]
+```
+
+---
+
+### `GET /api/nutricao/tbca/alimentos/{uuid}`
+
+Detalhes de composição nominal integral do alimento na porção base padrão definida pela TBCA (geralmente 100g).
+
+**Response `(200 OK)`:**
+
+```json
+// AlimentoTBCADetalheSchema
+{
+  "id": "e21b76df-c7c4-4d80-bae3-23a936af8d82",
+  "codigo_tbca": "BR281G",
+  "descricao": "Frango, peito, sem pele, grelhado",
+  "grupo": "Carnes e derivados",
+  "fonte_dados": "tbca",
+  "confianca_parse": "alta",
+  "apresentacao": {
+    "nome_exibicao": "Frango",
+    "detalhes": "peito, sem pele, grelhado",
+    "modo_preparo": "Grelhado",
+    "categoria": "Carnes e derivados",
+    "fonte": "tbca"
+  },
+  "nutrientes": [
+    {
+      "nutriente_id": "87bf...",
+      "nutriente_nome": "Proteína",
+      "nutriente_simbolo": "PROT",
+      "valor": "31.50",
+      "unidade": "g"
+    }
+  ]
+}
+```
+
+---
+
+### `POST /api/nutricao/tbca/calcular`
+
+Soma a proporção exata da densidade de vitaminas/macros em tempo real baseada num alimento X e numa quantidade consumida Y.
+
+**Request Body (`application/json`):**
+
+```json
+// CalculoNutricionalRequestSchema
+{
+  "alimento_id": "e21b76df-c7c4-4d80-bae3-23a936af8d82",
+  "quantidade_consumida": 150.5
+}
+```
+
+**Response `(200 OK)`:**
+
+```json
+// CalculoNutricionalResponseSchema
+{
+  "alimento": "Frango, peito, sem pele, grelhado",
+  "quantidade_consumida": "150.5",
+  "unidade": "g",
+  "resumo_macros": {
+    "calorias": "279.00",
+    "proteinas": "45.00",
+    "carboidratos": "0.00",
+    "gorduras": "11.00",
+    "fibras": "0.00"
+  },
+  "composicao": [
+    {
+      "nutriente": "Proteína",
+      "simbolo": "PROT",
+      "valor": "45.00",
+      "valor_texto": null,
+      "unidade": "g"
+    }
+  ]
+}
+```
+
+> **Nota de Tipo Frontend:** As saídas e valores calculados dentro de `resumo_macros`, `composicao.valor`, e `quantidade_consumida` são estritamente `string` e preservam casas decimais nativas vindas via ORM para evitar falhas nativas de truncamento no JavaScript. Converta `Number()` conforme demanda exclusiva das telas guiadas por interface.
+
+---
+
+## 2. Módulo Dashboard do Profissional (Planos Alimentares)
+
+### `GET /api/profissional/dashboard/pacientes/{paciente_id}/planos-alimentares`
+
+Lista todos os Planos Alimentares já criados para esse cliente específico pelo Profissional autenticado.
+
+> _Nota: Todas as requisições `dashboard/pacientes/{paciente_id}` validam via JWT que o `profissional` autenticado detém relação autorizada e ativa com o `paciente`._
+
+**Response `(200 OK)`:**
+
+```json
+// list[PlanoAlimentarOutSchema]
+[
+  {
+    "id": "27abc...", // UUID convertido em str
+    "paciente_id": 15,
+    "profissional_id": 4,
+    "descricao": "Dieta Hipertrofia",
+    "status": "ativo",
+    "refeicoes": [
+      /* Preenchido se hoverem */
+    ]
+  }
+]
+```
+
+---
+
+### `GET /api/profissional/dashboard/pacientes/{paciente_id}/plano-alimentar`
+
+Consulta detalhada do plano alimentar. Útil para reidratar planilhas parciais. Use o `planoId` para pinçar o último ativo.
+
+**Query Params:**
+
+- `planoId` (UUID, opcional). Retorna o cronológico mais recente caso omitido.
+
+**Response `(200 OK)`:**
+
+```json
+// PlanoAlimentarOutSchema
+{
+  "id": "27abc...",
+  "paciente_id": 15,
+  "profissional_id": 4,
+  "descricao": "Dieta Hipertrofia",
+  "status": "ativo",
+  "refeicoes": [
+    {
+      "id": "d04d...",
+      "nome": "Almoço",
+      "horario": "12:30:00",
+      "observacao": "Sem pele e grelhado na água",
+      "alimentos": [
+        {
+          "id": "f51c...",
+          "alimento_tbca_id": "e21b76df-c7c4-4d80-bae3-23a936af8d82",
+          "alimento_nome": "Frango, peito, sem pele, grelhado",
+          "quantidade": "150.50",
+          "unidade": "g"
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+### `POST /api/profissional/dashboard/pacientes/{paciente_id}/planos-alimentares/{plano_id}/refeicoes`
+
+Ponto de injeção e transação `unit-of-work` via Django para injetar uma nova **Refeição** conectada instantaneamente sob aquele **Plano Alimentar**, linkando diretamente aos alimentos selecionados na TBCA.
+
+**Request Body (`application/json`)**:
+
+```json
+// RefeicaoPlanoInSchema
+{
+  "nome": "Almoço",
+  "horario": "12:30:00",
+  "observacao": "Sem pele e grelhado na água", // opcional
+  "alimentos": [
+    {
+      "id": "f51c...", // UUID gerado pelo front
+      "alimento_tbca_id": "e21b76df-c7c4-4d80-bae3-23a936af8d82", // UUID do catálogo TBCA
+      "quantidade": 150.5,
+      "unidade": "g"
+    }
+  ]
+}
+```
+
+**Response `(201 Created)`:**
+
+```json
+// RefeicaoPlanoOutSchema
+{
+  "id": "d04d...",
+  "nome": "Almoço",
+  "horario": "12:30:00",
+  "observacao": "Sem pele e grelhado na água",
+  "alimentos": [
+    {
+      "id": "f51c...",
+      "alimento_tbca_id": "e21b76df-c7c4-4d80-bae3-23a936af8d82",
+      "alimento_nome": "Frango, peito, sem pele, grelhado",
+      "quantidade": "150.50",
+      "unidade": "g"
+    }
+  ]
+}
+```
