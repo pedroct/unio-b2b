@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -68,7 +68,7 @@ export default function LoginPage() {
     } catch (error: any) {
       toast({
         title: "Erro de autenticação",
-        description: error.message || "Credenciais inválidas. Verifique seus dados.",
+        description: "Registro ou CPF incorretos. Verifique seus dados e tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -97,11 +97,11 @@ export default function LoginPage() {
 
           <div className="max-w-md">
             <h2 className="font-serif text-4xl font-bold leading-tight mb-6">
-              O centro de controle da saúde dos seus clientes.
+              O centro de controle da saúde dos seus clientes
             </h2>
             <p className="text-white/70 text-lg leading-relaxed">
               Nutrição, treino, biometria e hidratação em um único ecossistema. 
-              Dados que cruzam para decisões que transformam.
+              Dados que se cruzam para decisões que transformam.
             </p>
 
             <div className="mt-12 grid grid-cols-2 gap-4">
@@ -127,7 +127,7 @@ export default function LoginPage() {
           </div>
 
           <p className="text-white/40 text-sm">
-            UNIO Performance OS — Dados que cuidam de você
+            UNIO - Dados que cuidam de você
           </p>
         </div>
       </div>
@@ -140,7 +140,7 @@ export default function LoginPage() {
 
           <div className="mb-8">
             <h1 className="text-2xl font-semibold tracking-tight mb-2" data-testid="text-login-title">
-              Bem-vindo de volta
+              Bem-vindo de volta!
             </h1>
             <p className="text-muted-foreground">
               Acesse com seu registro profissional
@@ -155,10 +155,10 @@ export default function LoginPage() {
                   name="registrationNumber"
                   render={({ field }) => (
                     <FormItem className="flex-1">
-                      <FormLabel>Registro Profissional</FormLabel>
+                      <FormLabel>Registro profissional</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="CRM-12345"
+                          placeholder="Ex: CRM-12345"
                           {...field}
                           onChange={(e) => field.onChange(formatRegistration(e.target.value))}
                           data-testid="input-registration"
@@ -200,12 +200,12 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Senha (CPF)</FormLabel>
+                    <FormLabel>Senha</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
                           type={showPassword ? "text" : "password"}
-                          placeholder="000.000.000-00"
+                          placeholder="Digite seu CPF"
                           {...field}
                           onChange={(e) => field.onChange(formatCPF(e.target.value))}
                           maxLength={14}
@@ -233,13 +233,28 @@ export default function LoginPage() {
                 disabled={isSubmitting}
                 data-testid="button-login"
               >
-                {isSubmitting ? "Entrando..." : "Entrar"}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Entrando...
+                  </>
+                ) : "Entrar"}
               </Button>
             </form>
           </Form>
 
-          <p className="text-center text-xs text-muted-foreground mt-8">
-            Use seu número de registro profissional e CPF para acessar a plataforma.
+          <p className="text-center text-xs text-muted-foreground mt-8" data-testid="text-helper-login">
+            Use seu registro profissional e CPF para acessar a plataforma.
+          </p>
+          <p className="text-center text-xs text-muted-foreground mt-3" data-testid="text-recuperar-acesso">
+            Não consegue acessar?{" "}
+            <a
+              href="mailto:suporte@unio.tec.br"
+              className="underline hover:text-foreground transition-colors"
+              data-testid="link-suporte"
+            >
+              Entre em contato com o suporte.
+            </a>
           </p>
         </div>
       </div>
