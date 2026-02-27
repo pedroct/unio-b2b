@@ -44,7 +44,7 @@ interface FormData {
 }
 
 const INITIAL_FORM: FormData = {
-  horario: "07:00",
+  horario: "",
   descricao: "",
   alimentos: [],
   observacao: "",
@@ -160,7 +160,7 @@ export function ModalNovaRefeicao({
 }: ModalNovaRefeicaoProps) {
   const { toast } = useToast();
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
-  const [errors, setErrors] = useState<{ descricao?: string; alimentos?: string }>({});
+  const [errors, setErrors] = useState<{ horario?: string; descricao?: string; alimentos?: string }>({});
   const [modalAlimentoAberta, setModalAlimentoAberta] = useState(false);
 
   useEffect(() => {
@@ -199,8 +199,13 @@ export function ModalNovaRefeicao({
     },
   });
 
+  const formCompleto = form.horario !== "" && form.descricao.trim() !== "" && form.alimentos.length > 0;
+
   function validate(): boolean {
-    const newErrors: { descricao?: string; alimentos?: string } = {};
+    const newErrors: { horario?: string; descricao?: string; alimentos?: string } = {};
+    if (!form.horario) {
+      newErrors.horario = "Selecione um horário.";
+    }
     if (!form.descricao.trim()) {
       newErrors.descricao = "Informe o nome da refeição.";
     }
@@ -278,11 +283,18 @@ export function ModalNovaRefeicao({
                 Horário
               </Label>
               <Select
-                value={form.horario}
-                onValueChange={(v) => setForm((prev) => ({ ...prev, horario: v }))}
+                value={form.horario || undefined}
+                onValueChange={(v) => {
+                  setForm((prev) => ({ ...prev, horario: v }));
+                  if (v) setErrors((prev) => ({ ...prev, horario: undefined }));
+                }}
               >
-                <SelectTrigger id="horario" data-testid="select-horario">
-                  <SelectValue />
+                <SelectTrigger
+                  id="horario"
+                  className={cn(errors.horario && "border-destructive")}
+                  data-testid="select-horario"
+                >
+                  <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[240px]">
                   {HORARIOS_REFEICAO.map((h) => (
@@ -292,6 +304,11 @@ export function ModalNovaRefeicao({
                   ))}
                 </SelectContent>
               </Select>
+              {errors.horario && (
+                <p className="text-xs text-destructive mt-1" data-testid="error-horario">
+                  {errors.horario}
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -425,7 +442,7 @@ export function ModalNovaRefeicao({
               type="button"
               variant="outline"
               onClick={() => handleSave(true)}
-              disabled={mutation.isPending}
+              disabled={!formCompleto || mutation.isPending}
               data-testid="button-salvar-e-continuar"
             >
               {mutation.isPending ? "Salvando..." : "Salvar e adicionar outra"}
@@ -433,7 +450,7 @@ export function ModalNovaRefeicao({
             <Button
               type="button"
               onClick={() => handleSave(false)}
-              disabled={mutation.isPending}
+              disabled={!formCompleto || mutation.isPending}
               data-testid="button-salvar-refeicao"
             >
               {mutation.isPending ? "Salvando..." : "Salvar"}
