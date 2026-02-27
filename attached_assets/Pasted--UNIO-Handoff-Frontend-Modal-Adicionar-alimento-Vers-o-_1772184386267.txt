@@ -1,0 +1,458 @@
+# UNIO — Handoff Frontend: Modal "Adicionar alimento" (Versão definitiva)
+
+**Plataforma:** Web (Dashboard Profissional)  
+**Tela:** Modal — Adicionar alimento (2 estados: busca + detalhe nutricional)  
+**Data:** 27/02/2026  
+**Versão:** 2.0 — Consolidada com contrato de backend aprovado  
+**Ref. contrato:** `contratos/matriz_compatibilidade_contrato_alimentos_tbca.md`  
+**Escopo:** Textos, copy, formatação de dados, renderização condicional e acessibilidade. Não alterar lógica de negócio ou endpoints.
+
+---
+
+## Contexto para o frontend
+
+O backend vai adicionar um bloco opcional `apresentacao` ao payload de alimentos. **Esse bloco ainda não está disponível.** Este handoff cobre duas fases:
+
+- **Fase 1 (imediata):** Funções utilitárias de formatação no frontend — independem do backend.
+- **Fase 2 (quando backend entregar):** Consumo do bloco `apresentacao` com fallback para Fase 1.
+
+Todas as correções de copy (placeholders, labels, mensagens) são da Fase 1 e podem ser implementadas agora.
+
+---
+
+## Parte 1 — Correções de copy (Fase 1)
+
+### 1.1 Placeholder de busca
+
+| Atual | Novo |
+|-------|------|
+| `Buscar alimento por nome...` | `Buscar alimento por nome` |
+
+Remover reticências.
+
+---
+
+### 1.2 Mensagem de estado inicial (busca vazia)
+
+| Atual | Novo |
+|-------|------|
+| `Digite pelo menos 2 caracteres para buscar` | `Digite ao menos 2 letras para buscar` |
+
+Motivos: "ao menos" é mais fluido em pt-BR; "letras" substitui o jargão "caracteres".
+
+---
+
+### 1.3 Tabs de fonte — adicionar tooltips
+
+Os nomes das tabs permanecem iguais. Adicionar `title` (tooltip nativo) em cada tab:
+
+| Tab | Tooltip (`title`) |
+|-----|-------------------|
+| `TBCA` | `Tabela Brasileira de Composição de Alimentos` |
+| `IBGE` | `Pesquisa de Orçamentos Familiares — IBGE` |
+| `Tucunduva` | `Tabela de Composição de Alimentos — Tucunduva` |
+| `Suplementos` | Sem tooltip |
+| `Meus alimentos` | Sem tooltip |
+
+---
+
+### 1.4 Label "Carb." nos cards de macronutrientes
+
+| Atual | Novo |
+|-------|------|
+| `Carb.` | `Carboidrato` |
+
+Se houver restrição de espaço no card, manter `Carb.` e adicionar `title="Carboidrato"`.
+
+---
+
+### 1.5 Botões — estado desabilitado
+
+Quando nenhum alimento estiver selecionado, os botões `Adicionar` e `Adicionar e buscar outro` devem estar desabilitados:
+
+```
+disabled={!alimentoSelecionado}
+```
+
+Estilo visual: opacidade reduzida (`opacity: 0.5`) + `cursor: not-allowed`.
+
+---
+
+### 1.6 Botão X do modal
+
+Adicionar atributo de acessibilidade:
+
+```html
+<button aria-label="Fechar">×</button>
+```
+
+---
+
+## Parte 2 — Funções utilitárias (Fase 1)
+
+Criar 3 funções em arquivo compartilhado (ex: `utils/formatters.ts`). Essas funções serão usadas em **todas as telas** que exibem dados nutricionais: este modal, Prescrição Alimentar, e telas futuras.
+
+### 2.1 `formatFoodName(descricao: string): string`
+
+Formata o nome bruto do alimento para exibição legível. Usada como fallback quando o bloco `apresentacao` não existir.
+
+```typescript
+export const formatFoodName = (descricao: string): string => {
+  if (!descricao) return '';
+
+  return descricao
+    // Expandir abreviações
+    .replace(/\bc\/\s*/g, 'com ')
+    .replace(/\bs\/\s*/g, 'sem ')
+    // Remover origem geográfica no final
+    .replace(/,\s*Brasil\s*$/i, '')
+    // Remover metadados técnicos
+    .replace(/,\s*todas as variedades/gi, '')
+    // Limpar espaços duplos
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+};
+```
+
+**Importante:** Esta função NÃO remove parênteses nem separa modo de preparo — isso será responsabilidade do backend via bloco `apresentacao`. A função apenas resolve os problemas mais críticos de legibilidade (abreviações e metadados inúteis).
+
+---
+
+### 2.2 `formatNutrient(value: number): string`
+
+Formata valores nutricionais para exibição em pt-BR.
+
+```typescript
+export const formatNutrient = (value: number): string => {
+  if (value == null || isNaN(value)) return '0';
+  if (value === 0) return '0';
+  if (Number.isInteger(value)) return value.toString();
+
+  // Uma casa decimal, vírgula como separador
+  const formatted = value.toFixed(1);
+  // Remover .0 desnecessário
+  const cleaned = formatted.replace(/\.0$/, '');
+  // Trocar ponto por vírgula
+  return cleaned.replace('.', ',');
+};
+```
+
+**Regras:**
+
+| Entrada | Saída | Regra |
+|---------|-------|-------|
+| `279.00` | `279` | Inteiro — sem decimal |
+| `279` | `279` | Inteiro — sem decimal |
+| `31.20` | `31,2` | Fracionário — 1 casa, vírgula |
+| `0.00` | `0` | Zero — sem decimal |
+| `0` | `0` | Zero — sem decimal |
+| `5.05` | `5,1` | Arredondamento para 1 casa |
+| `null` | `0` | Fallback seguro |
+
+---
+
+### 2.3 `formatUnit(unit: string): string`
+
+Força todas as unidades de medida para minúsculas.
+
+```typescript
+export const formatUnit = (unit: string): string => {
+  if (!unit) return '';
+  return unit.toLowerCase();
+};
+```
+
+**Exemplos:**
+
+| Entrada | Saída |
+|---------|-------|
+| `Colher De Sopa` | `colher de sopa` |
+| `Copo De Requeijão` | `copo de requeijão` |
+| `Xícara De Cafézinho` | `xícara de cafézinho` |
+| `g` | `g` |
+| `kcal` | `kcal` |
+
+---
+
+## Parte 3 — Renderização condicional do bloco `apresentacao` (Fase 2)
+
+### 3.1 Estrutura do novo bloco (quando disponível)
+
+```typescript
+interface ApresentacaoAlimento {
+  nome_exibicao: string;
+  detalhes?: string | null;
+  modo_preparo?: string | null;
+  fonte?: string;
+  categoria?: string;
+  confianca_parse: 'alta' | 'media' | 'baixa' | 'manual';
+}
+```
+
+Este bloco é **opcional e aditivo**. Os campos atuais (`descricao`, `fonte_dados`, `grupo_alimentar.nome`) permanecem disponíveis.
+
+---
+
+### 3.2 Chain de prioridade para nome do alimento
+
+```typescript
+const getNomeExibicao = (alimento: Alimento): string => {
+  // 1. Bloco apresentacao com confiança suficiente
+  if (alimento.apresentacao?.nome_exibicao &&
+      alimento.apresentacao.confianca_parse !== 'baixa') {
+    return alimento.apresentacao.nome_exibicao;
+  }
+
+  // 2. Fallback formatado (Fase 1)
+  if (alimento.descricao) {
+    return formatFoodName(alimento.descricao);
+  }
+
+  // 3. Último recurso
+  return '';
+};
+```
+
+---
+
+### 3.3 Regras de renderização por nível de confiança
+
+#### `confianca_parse = 'alta'` ou `'manual'`
+
+Renderização completa:
+
+```
+Linha 1: nome_exibicao                    → bold, cor primária
+Linha 2: modo_preparo                     → regular, cor secundária (se existir)
+Linha 3: categoria · fonte                → regular, cor terciária
+          detalhes                         → tooltip no nome (se existir)
+```
+
+#### `confianca_parse = 'media'`
+
+Renderização parcial — sem detalhes:
+
+```
+Linha 1: nome_exibicao                    → bold, cor primária
+Linha 2: modo_preparo                     → regular, cor secundária (se existir)
+Linha 3: categoria · fonte                → regular, cor terciária
+```
+
+Sem tooltip de detalhes.
+
+#### `confianca_parse = 'baixa'`
+
+Fallback seguro — usar campo `descricao` original, não `nome_exibicao`:
+
+```
+Linha 1: formatFoodName(descricao)        → bold, cor primária
+Linha 2: categoria · fonte                → regular, cor terciária
+```
+
+Sem modo de preparo, sem detalhes. Exibir o nome formatado pela função utilitária.
+
+---
+
+### 3.4 Onde exibir cada campo — mapa de contexto
+
+| Campo | Lista de resultados | Painel de detalhe | Prescrição alimentar |
+|-------|--------------------|--------------------|----------------------|
+| `nome_exibicao` | ✅ Exibir | ✅ Exibir (bold) | ✅ Exibir |
+| `modo_preparo` | ❌ Ocultar | ✅ Exibir (linha 2) | ✅ Exibir (sublabel) |
+| `detalhes` | ❌ Ocultar | ⚡ Tooltip no nome | ❌ Ocultar |
+| `categoria` | ✅ Sublabel | ✅ Linha 3 | ❌ Ocultar |
+| `fonte` | ✅ Badge | ✅ Linha 3 (após ·) | ❌ Ocultar |
+
+---
+
+### 3.5 Regra de supressão de redundância
+
+Se `detalhes` for semanticamente redundante com `nome_exibicao`, ocultar o tooltip:
+
+```typescript
+const deveExibirDetalhes = (apresentacao: ApresentacaoAlimento): boolean => {
+  if (!apresentacao.detalhes) return false;
+  if (apresentacao.confianca_parse === 'media') return false;
+  if (apresentacao.confianca_parse === 'baixa') return false;
+
+  // Verificar redundância
+  const nomeNorm = apresentacao.nome_exibicao.toLowerCase();
+  const detalhesNorm = apresentacao.detalhes.toLowerCase();
+
+  // Se todas as palavras de detalhes já estão no nome, é redundante
+  const palavrasDetalhes = detalhesNorm.split(/[,\s]+/).filter(Boolean);
+  const todasPresentes = palavrasDetalhes.every(p => nomeNorm.includes(p));
+
+  return !todasPresentes;
+};
+```
+
+---
+
+### 3.6 Separador da sublabel
+
+Categoria e fonte são separados por middle dot com espaço:
+
+```typescript
+const getSublabel = (apresentacao: ApresentacaoAlimento, alimento: Alimento): string => {
+  const categoria = apresentacao?.categoria || alimento.grupo_alimentar?.nome || '';
+  const fonte = apresentacao?.fonte || alimento.fonte_dados || '';
+
+  if (categoria && fonte) return `${categoria} · ${fonte}`;
+  if (categoria) return categoria;
+  if (fonte) return fonte;
+  return '';
+};
+```
+
+---
+
+## Parte 4 — Cards de macronutrientes
+
+### 4.1 Aplicar `formatNutrient()` em todos os valores
+
+**Atual:**
+```
+Calorias    Proteína    Carb.      Gordura    Fibra
+279.00      31.20       0.00       17.20      0.00
+kcal        g           g          g          g
+```
+
+**Esperado:**
+```
+Calorias    Proteína    Carboidrato    Gordura    Fibra
+279         31,2        0              17,2       0
+kcal        g           g              g          g
+```
+
+### 4.2 Estrutura do card
+
+```
+{label}          ← "Calorias", "Proteína", "Carboidrato", "Gordura", "Fibra"
+{valor}          ← formatNutrient(alimento.calorias) — bold, tamanho maior
+{unidade}        ← "kcal" ou "g" — cor terciária, tamanho menor
+```
+
+---
+
+## Parte 5 — Estados ausentes
+
+### 5.1 Busca sem resultados
+
+Quando a API retorna lista vazia:
+
+```
+Ícone: 🔍 (ou ícone de busca do design system)
+Linha 1: "Nenhum alimento encontrado para "{termo}""
+Linha 2: "Tente outro nome ou verifique a ortografia."
+```
+
+`{termo}` é o valor atual do campo de busca.
+
+---
+
+### 5.2 Validações inline
+
+| Campo | Condição | Mensagem |
+|-------|----------|----------|
+| Quantidade | Vazio | `Informe a quantidade.` |
+| Quantidade | Zero | `A quantidade deve ser maior que zero.` |
+| Quantidade | Negativo | `A quantidade deve ser um valor positivo.` |
+| Alimento | Nenhum selecionado + clique em Adicionar | `Selecione um alimento antes de adicionar.` |
+
+Exibir mensagem abaixo do campo, cor de erro (`#C0392B` ou token de erro do design system), font-size menor.
+
+---
+
+### 5.3 Toasts de feedback
+
+| Ação | Toast | Comportamento |
+|------|-------|---------------|
+| Adicionar | `Alimento adicionado à refeição` | Modal fecha |
+| Adicionar e buscar outro | `Alimento adicionado. Busque o próximo.` | Modal permanece aberto, campos limpos, foco no campo de busca |
+| Erro da API | `Não foi possível adicionar o alimento. Tente novamente.` | Modal permanece aberto, dados preservados |
+
+---
+
+## Parte 6 — Checklist de compatibilidade
+
+### 6.1 Payload antigo (sem bloco `apresentacao`)
+
+- [ ] Lista de resultados renderiza usando `formatFoodName(descricao)` + `grupo_alimentar.nome` + badge `fonte_dados`
+- [ ] Painel de detalhe renderiza usando `formatFoodName(descricao)` + sublabel `grupo_alimentar.nome · fonte_dados`
+- [ ] Cards de macros usam `formatNutrient()` para todos os valores
+- [ ] Unidades usam `formatUnit()` em todos os contextos
+- [ ] Nenhuma quebra visual ou erro de JS
+
+### 6.2 Payload novo (com bloco `apresentacao`)
+
+- [ ] Lista renderiza `nome_exibicao` quando disponível
+- [ ] Painel renderiza `nome_exibicao` + `modo_preparo` + sublabel
+- [ ] Tooltip de `detalhes` funciona quando `confianca_parse = 'alta'` ou `'manual'`
+- [ ] Fallback para `descricao` quando `confianca_parse = 'baixa'`
+- [ ] Supressão de redundância funciona (detalhes ⊂ nome)
+- [ ] Campos `null` ou ausentes não quebram layout
+
+### 6.3 Copy e formatação
+
+- [ ] Nenhuma abreviação `c/` ou `s/` visível na interface
+- [ ] Nenhum valor numérico com ponto como separador decimal
+- [ ] Nenhum valor inteiro com casas decimais (`279`, não `279,0`)
+- [ ] Nenhum valor zero com casas decimais (`0`, não `0,00`)
+- [ ] Placeholder de busca sem reticências
+- [ ] Mensagem de busca: "letras", não "caracteres"
+- [ ] "Carboidrato" por extenso (ou tooltip se abreviado)
+- [ ] Tooltips nas tabs TBCA, IBGE, Tucunduva
+- [ ] Botões desabilitados quando nenhum alimento selecionado
+- [ ] `aria-label="Fechar"` no botão X do modal
+
+### 6.4 Estados
+
+- [ ] Estado sem resultados implementado com mensagem e subtexto
+- [ ] Validações inline de quantidade implementadas
+- [ ] Toasts de feedback implementados
+- [ ] Estado de loading na busca (se aplicável)
+
+---
+
+## Regras gerais aplicadas (referência rápida)
+
+| Regra | Padrão |
+|-------|--------|
+| Títulos/subtítulos | Sentence case, sem ponto final |
+| Placeholders | Sem reticências ("...") |
+| Separador decimal | Vírgula (pt-BR) |
+| Casas decimais | 0 para inteiros, 1 para fracionários, 0 para zero |
+| Unidades de medida | Sempre minúsculas |
+| Sublabel composta | `Categoria · Fonte` (middle dot com espaço) |
+| Abreviações `c/`, `s/` | Sempre expandir para "com", "sem" |
+| Mensagens de erro | `[O que aconteceu] + [O que fazer agora]` |
+| Botão X | Sempre com `aria-label="Fechar"` |
+| Tom | Especialista amigável, não médico distante |
+
+---
+
+## Entrega esperada
+
+**Fase 1 (imediata — sem dependência de backend):**
+
+- [ ] Arquivo `utils/formatters.ts` com `formatFoodName`, `formatNutrient`, `formatUnit`
+- [ ] Funções aplicadas em todos os pontos de exibição deste modal
+- [ ] Todas as correções de copy (itens 1.1 a 1.6)
+- [ ] Estados ausentes (5.1 a 5.3)
+- [ ] Nenhuma lógica de negócio ou chamada de API modificada
+
+**Fase 2 (quando backend entregar bloco `apresentacao`):**
+
+- [ ] Consumo condicional do bloco `apresentacao`
+- [ ] Chain de prioridade implementado (apresentacao → formatFoodName → descricao)
+- [ ] Renderização por nível de `confianca_parse`
+- [ ] Tooltip de `detalhes` com supressão de redundância
+- [ ] Checklist 6.2 completo
+
+---
+
+*Documento consolidado a partir de:*
+- *Handoff original UI Writer (v1)*
+- *Retorno UI Writer aprovado pelo backend (v1)*
+- *Contrato `contratos/matriz_compatibilidade_contrato_alimentos_tbca.md`*
