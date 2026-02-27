@@ -1,0 +1,400 @@
+# UNIO — Validação de Copy: Prescrição Alimentar (Dashboard Profissional)
+
+**Plataforma:** Web (Dashboard Profissional)  
+**Tela:** Prescrição alimentar — Detalhe do plano por dia  
+**Data:** 27/02/2026  
+**Escopo:** Textos, copy, UX writing e ajustes visuais menores — não alterar lógica, chamadas de API ou estilos estruturais.
+
+---
+
+## Resumo da análise
+
+A tela é funcional e bem organizada, com boa hierarquia visual entre refeições. No entanto, há **problemas recorrentes de capitalização nas unidades de medida**, inconsistências terminológicas e oportunidades de melhoria na clareza dos rótulos de macronutrientes. Foram identificados **18 ajustes**.
+
+---
+
+## Regra terminológica ativa: Paciente → Cliente
+
+Usar **"Cliente"** em contextos administrativos e estruturais. Contextos clínicos (prescrição, plano alimentar) usam o nome da pessoa — já aplicado corretamente nesta tela ("Bruno Oliveira Santos").
+
+---
+
+## Correções
+
+### 1. Header — Subtítulo da tela
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Subtítulo | `Gerencie as refeições e dias da semana do plano alimentar` | `Gerencie as refeições e os dias da semana do plano alimentar` |
+
+**Motivo:** Ajuste gramatical — acrescentar o artigo "os" para manter paralelismo ("as refeições e os dias"). Sem ponto final — correto para subtítulo.
+
+---
+
+### 2. Dropdown de plano — Texto do seletor
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Label | `Plano:` | ✅ Correto |
+| Valor selecionado | `Dieta Hiperproteica (modelo de cardápio Dietbox)...` | `Dieta hiperproteica` |
+
+**Motivos:**
+1. Sentence case: "Hiperproteica" → "hiperproteica" (não é nome próprio).
+2. Remover reticências ("...") — o truncamento deve ser visual (CSS `text-overflow: ellipsis`), não textual.
+
+---
+
+### 3. Título do plano abaixo do dropdown
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Título | `Dieta Hiperproteica (modelo de cardápio Dietbox) (importado)` | `Dieta hiperproteica` |
+
+**Motivos:**
+1. Sentence case: "Hiperproteica" → "hiperproteica".
+2. Remover "(modelo de cardápio Dietbox)" — informação redundante com o dropdown logo acima. Se necessário manter a origem, usar tooltip no ícone de edição ao lado.
+
+---
+
+### 4. Chips de dias da semana
+
+| Item | Atual | Status |
+|------|-------|--------|
+| `Segunda-feira` | `Segunda-feira` | ✅ Correto |
+| `Terça-feira` | `Terça-feira` | ✅ Correto |
+| `Quarta-feira` | `Quarta-feira` | ✅ Correto |
+| `Quinta-feira` | `Quinta-feira` | ✅ Correto |
+| `Sexta-feira` | `Sexta-feira` | ✅ Correto |
+
+**Observação:** A prescrição mostra apenas dias de semana (segunda a sexta). Se o plano não cobre sábado e domingo, está correto. Se cobre, os chips estão faltando. Verificar com a regra de negócio.
+
+---
+
+### 5. Badge "Ativo" e link "Editar dias da semana"
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Badge | `Ativo` | ✅ Correto |
+| Link | `Editar dias da semana` | `Editar dias da semana` | ✅ Correto |
+
+---
+
+### 6. Legenda
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Legenda item 1 | `Plano alimentar atual` | ✅ Correto |
+| Legenda item 2 | `Outros planos alimentares` | ✅ Correto |
+| Legenda item 3 | `Sem planos alimentares` | ✅ Correto |
+
+**Status:** ✅ Corretos. Sentence case, claros.
+
+---
+
+### 7. Botões de ação acima das refeições
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Botão 1 | `Ver minhas refeições` | `Ver refeições` |
+| Botão 2 | `+ Adicionar nova refeição` | `+ Adicionar refeição` |
+
+**Motivos:**
+1. "minhas" — a tela é do profissional visualizando o plano do cliente, não as refeições dele. "Minhas" cria ambiguidade de posse. Remover.
+2. "nova" — redundante. Adicionar já implica algo novo.
+
+---
+
+### 8. Títulos das refeições — Capitalização
+
+| Atual | Novo | Motivo |
+|-------|------|--------|
+| `Desjejum` | `Desjejum` | ✅ Correto |
+| `Colação` | `Colação` | ✅ Correto |
+| `Almoço` | `Almoço` | ✅ Correto |
+| `Lanche da tarde` | `Lanche da tarde` | ✅ Correto — sentence case |
+| `Jantar` | `Jantar` | ✅ Correto |
+| `Ceia` | `Ceia` | ✅ Correto |
+
+**Horários:** `07:00`, `10:00`, `13:00`, `16:00`, `19:00`, `22:00` — ✅ Formato correto (HH:MM, 24h).
+
+---
+
+### 9. Cabeçalhos de coluna nas tabelas de refeição
+
+| Item | Atual | Novo | Motivo |
+|------|-------|------|--------|
+| Coluna 1 | `Alimento` | ✅ Correto | — |
+| Coluna 2 | `Qtd.` | `Qtd.` | ✅ Abreviação aceitável em tabela compacta |
+| Coluna 3 | `Unidade` | ✅ Correto | — |
+
+---
+
+### 10. ⚠️ Unidades de medida — Capitalização incorreta (problema recorrente)
+
+Este é o problema mais crítico da tela. As unidades de medida estão com capitalização inconsistente e incorreta, usando Title Case quando deveriam usar sentence case (ou minúsculas quando são unidades de medida padrão).
+
+**Regra:** Unidades de medida são substantivos comuns — devem estar em minúsculas ou sentence case, nunca Title Case.
+
+| Atual | Novo |
+|-------|------|
+| `Fatia` | `fatia` |
+| `Fatia Média (30g)` | `fatia média (30g)` |
+| `Colher De Sopa` | `colher de sopa` |
+| `Colher De Sobremesa` | `colher de sobremesa` |
+| `Copo Grande` | `copo grande` |
+| `Copo` | `copo` |
+| `Concha Pequena Cheia` | `concha pequena cheia` |
+| `Bifé` | `bifê` (verificar: possível erro de acentuação — a unidade correta seria "filé"? Ou é "bife" como porção? Se for unidade de medida "bife", manter `bife` em minúscula) |
+| `Colher De Arroz/Servir` | `colher de arroz/servir` |
+| `Copo Americano` | `copo americano` |
+| `Fatia fina` | ✅ Já correto |
+| `Grama` | `grama` |
+| `Xícara De Cafézinho` | `xícara de cafézinho` |
+| `Unidade` | `unidade` |
+| `Copo De Requeijão` | `copo de requeijão` |
+
+**Diagnóstico provável:** Os dados estão vindo do backend (possivelmente da tabela TACO ou Dietbox) com Title Case aplicado em cada palavra. A correção deve ser aplicada via formatação no frontend: converter todas as unidades para lowercase ao renderizar, ou aplicar `text-transform: lowercase` / transformação no componente.
+
+**Implementação sugerida:**
+```javascript
+// Ao renderizar a coluna "Unidade"
+const formatUnit = (unit) => unit.toLowerCase();
+```
+
+---
+
+### 11. Nomes de alimentos — Capitalização e formatação
+
+Os nomes de alimentos seguem padrões variados. Alguns estão adequados, outros precisam de ajuste:
+
+| Atual | Novo | Motivo |
+|-------|------|--------|
+| `Pão, aveia, forma` | `Pão de aveia, forma` | Verificar se a vírgula após "aveia" é intencional ou se deveria ser "de" |
+| `Queijo, minas, frescal` | `Queijo minas frescal` | Padrão TACO usa vírgulas, mas na interface fica mais legível sem elas |
+| `Mamão, Papaia, cru` | `Mamão papaia, cru` | "Papaia" não é nome próprio — minúscula |
+| `Quinoa` | `Quinoa` | ✅ Correto |
+| `Achocolatado em pó` | ✅ Correto | — |
+| `Leite de vaca desnatado` | ✅ Correto | — |
+| `Leite em pó desnatado` | ✅ Correto | — |
+| `Iogurte, natural, desnatado` | `Iogurte natural desnatado` | Remover vírgulas desnecessárias |
+| `Granola` | ✅ Correto | — |
+| `Arroz integral` | ✅ Correto | — |
+| `Feijão, carioca, cozido` | `Feijão carioca cozido` | Remover vírgulas |
+| `Filé de frango Grelhado(a)/brasa/churrasco` | `Filé de frango grelhado` | Sentence case. Remover "(a)/brasa/churrasco" — a variação de preparo não deve aparecer na prescrição, ou usar campo separado para modo de preparo |
+| `Salada ou verdura crua, exceto de fruta` | `Salada ou verdura crua` | Simplificar — "exceto de fruta" é detalhe técnico da tabela nutricional, não informação útil ao cliente |
+| `Suco de acerola` | ✅ Correto | — |
+| `Pão integral` | ✅ Correto | — |
+| `Queijo, cottage, magro, 1% gordura` | `Queijo cottage magro` | Remover vírgulas e "1% gordura" (detalhe técnico) |
+| `Abacaxi, cru, todas as variedades` | `Abacaxi` | Simplificar — "cru, todas as variedades" é metadado da tabela TACO, não informação para o cliente |
+| `Café, infusão 10%` | `Café` | Simplificar — "infusão 10%" é detalhe técnico |
+| `Torrada de qualquer pão` | `Torrada` | Simplificar |
+| `Omelete, de queijo` | `Omelete de queijo` | Remover vírgula |
+| `Castanha, japonesa, assada` | `Castanha japonesa assada` | Remover vírgulas |
+| `Maçã` | `Maçã` | ✅ Correto |
+| `Achocolatado, pó` | `Achocolatado em pó` | Adicionar preposição "em" para legibilidade |
+
+**Diagnóstico:** Os nomes vêm diretamente da tabela TACO/IBGE que usa formato técnico com vírgulas como separadores. O frontend deveria aplicar uma camada de formatação para legibilidade humana, ou o backend deveria fornecer um campo `display_name` separado.
+
+**Recomendação:** Criar um mapeamento de nomes de exibição no backend ou frontend, ou ao menos:
+1. Remover vírgulas entre palavras que formam o nome do alimento
+2. Remover metadados técnicos ("cru", "todas as variedades", "infusão 10%")
+3. Aplicar sentence case
+
+---
+
+### 12. Link "Adicionar Substituta"
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Link | `Adicionar Substituta` | `Adicionar substituta` |
+
+**Motivo:** Sentence case — apenas primeira palavra em maiúscula. Presente em todas as 6 refeições — correção única no componente.
+
+---
+
+### 13. Card "Resumo de Nutrientes" — Título
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Título | `Resumo de Nutrientes` | `Resumo de nutrientes` |
+
+**Motivo:** Sentence case.
+
+---
+
+### 14. Card "Resumo de Nutrientes" — Valor calórico
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Calorias | `2.050` + `KCAL` | `2.050` + `kcal` |
+
+**Motivos:**
+1. "KCAL" em ALL CAPS → `kcal` em minúsculas. Unidades de medida do SI são sempre minúsculas.
+2. Valor numérico com separador de milhar (ponto) — ✅ Correto para pt-BR.
+
+---
+
+### 15. Card "Resumo de Nutrientes" — Macronutrientes
+
+| Item | Atual | Novo | Motivo |
+|------|-------|------|--------|
+| Proteína label | `PTN` | `Proteína` | Sigla técnica — o cliente/profissional lê melhor o nome completo. Se espaço for limitação, manter `PTN` mas adicionar tooltip |
+| Proteína sublabel | `Proteínas` | Remover — redundante se o label principal já diz "Proteína" | — |
+| Proteína valor | `138g` | `138g` | ✅ Correto |
+| Proteína % | `26.9%` | `26,9%` | Usar vírgula como separador decimal (pt-BR) |
+| Carboidrato label | `CHO` | `Carboidrato` | Mesma razão — sigla técnica pouco acessível |
+| Carboidrato sublabel | `Carboidratos` | Remover | — |
+| Carboidrato valor | `245g` | `245g` | ✅ Correto |
+| Carboidrato % | `47.8%` | `47,8%` | Vírgula decimal |
+| Gordura label | `LIP` | `Gordura` | "LIP" (lipídios) é jargão bioquímico |
+| Gordura sublabel | `Gorduras` | Remover | — |
+| Gordura valor | `58g` | `58g` | ✅ Correto |
+| Gordura % | `25.3%` | `25,3%` | Vírgula decimal |
+| Fibra label | `Fibra` | ✅ Correto | Já usa nome legível |
+| Fibra valor | `32g` | `32g` | ✅ Correto |
+
+**Sobre PTN/CHO/LIP:** Entendo que profissionais de saúde conhecem essas siglas. No entanto, seguindo a diretriz UNIO de "especialista amigável, não médico distante", os nomes completos são preferíveis. Se o espaço for limitante, uma alternativa é manter a sigla como label primário e o nome por extenso como sublabel (invertendo a hierarquia atual):
+
+```
+PTN          138g
+Proteína     26,9%
+```
+
+Mas a solução ideal é:
+
+```
+■ Proteína     138g · 26,9%
+■ Carboidrato  245g · 47,8%
+■ Gordura       58g · 25,3%
+■ Fibra         32g
+```
+
+---
+
+### 16. Link "Ver todos os nutrientes"
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Link | `Ver todos os nutrientes` | ✅ Correto |
+
+**Status:** ✅ Sentence case, ação clara, sem ponto final.
+
+---
+
+### 17. Separador decimal nos percentuais
+
+**Problema recorrente:** Todos os percentuais do card de nutrientes usam **ponto** como separador decimal (`26.9%`, `47.8%`, `25.3%`).
+
+**Correção:** Em pt-BR, o separador decimal é **vírgula**: `26,9%`, `47,8%`, `25,3%`.
+
+**Implementação:**
+```javascript
+const formatPercent = (value) => value.toFixed(1).replace('.', ',') + '%';
+```
+
+---
+
+### 18. Ícones de ação nas refeições (editar, duplicar, excluir)
+
+Os ícones (lápis, copiar, lixeira) estão presentes mas **sem labels acessíveis nem tooltips visíveis**.
+
+**Recomendação:** Adicionar tooltip ao hover:
+
+| Ícone | Tooltip |
+|-------|---------|
+| ✏️ Lápis | `Editar refeição` |
+| 📋 Copiar | `Duplicar refeição` |
+| 🗑️ Lixeira | `Excluir refeição` |
+
+**Acessibilidade:** Cada ícone deve ter `aria-label` correspondente.
+
+---
+
+## Funcionalidades ausentes a considerar
+
+### A. Confirmação ao excluir refeição
+
+O ícone de lixeira (vermelho) deve exigir confirmação antes de excluir:
+
+| Elemento | Copy |
+|----------|------|
+| Título do modal | `Excluir refeição` |
+| Mensagem | `Tem certeza que deseja excluir o Desjejum? Esta ação não pode ser desfeita.` |
+| Botão confirmar | `Excluir` |
+| Botão cancelar | `Cancelar` |
+
+### B. Feedback após ações
+
+| Ação | Toast |
+|------|-------|
+| Refeição adicionada | `Refeição adicionada com sucesso` |
+| Refeição duplicada | `Refeição duplicada com sucesso` |
+| Refeição excluída | `Refeição excluída` |
+| Substituta adicionada | `Alimento substituto adicionado` |
+| Erro genérico | `Não foi possível completar a ação. Tente novamente.` |
+
+### C. Estado vazio (plano sem refeições)
+
+| Elemento | Copy |
+|----------|------|
+| Título | `Nenhuma refeição cadastrada para este dia` |
+| Subtexto | `Adicione a primeira refeição do plano alimentar.` |
+| CTA | `Adicionar refeição` |
+
+---
+
+## Resumo das alterações
+
+| # | Elemento | Tipo | Prioridade |
+|---|----------|------|------------|
+| 1 | Subtítulo — ajuste gramatical (artigo "os") | Copy | Baixa |
+| 2 | Nome do plano no dropdown e título — sentence case + simplificar | Copy | Média |
+| 3 | "Ver minhas refeições" → "Ver refeições" | Copy | Alta |
+| 4 | "+ Adicionar nova refeição" → "+ Adicionar refeição" | Copy | Média |
+| 5 | **Unidades de medida — converter todas para minúsculas** | Copy / Bug | **Crítica** |
+| 6 | **Nomes de alimentos — remover formato TACO (vírgulas, metadados técnicos)** | Copy / UX | **Crítica** |
+| 7 | "Adicionar Substituta" → sentence case | Copy | Média |
+| 8 | "Resumo de Nutrientes" → sentence case | Copy | Média |
+| 9 | "KCAL" → "kcal" | Copy | Alta |
+| 10 | **Separadores decimais ponto → vírgula (pt-BR)** | Copy / Bug | **Crítica** |
+| 11 | PTN/CHO/LIP → nomes por extenso (ou reorganizar hierarquia) | Copy / UX | Alta |
+| 12 | Remover sublabels redundantes (Proteínas, Carboidratos, Gorduras) | Copy | Média |
+| 13 | Tooltips nos ícones de ação (editar, duplicar, excluir) | Acessibilidade | Alta |
+| 14 | Confirmação ao excluir refeição | UX | Alta |
+| 15 | Toasts de feedback para ações | UX | Alta |
+| 16 | Estado vazio (plano sem refeições) | UX | Média |
+| 17 | "Bifé" → verificar se é "bife" ou "bifê" | Bug | Alta |
+| 18 | Possível campo `display_name` para alimentos (backend) | Arquitetura | Média |
+
+---
+
+## Regras gerais aplicadas (referência)
+
+- **Terminologia: "Paciente" → "Cliente"** em contextos administrativos (nesta tela, usa-se o nome do cliente — correto)
+- Nenhum texto de interface em ALL CAPS (inclui unidades: "KCAL" → "kcal")
+- Títulos e subtítulos: sem ponto final
+- Labels e links: sentence case
+- Unidades de medida: sempre minúsculas (SI e uso geral)
+- Separador decimal em pt-BR: vírgula, não ponto
+- Nomes de alimentos: legibilidade humana, sem formato de tabela técnica
+- Placeholders: sem reticências
+- Mensagens de erro: `[O que aconteceu] + [O que fazer agora]`
+- Tom: especialista amigável, não médico distante
+
+---
+
+## Entrega esperada
+
+- [ ] Unidades de medida convertidas para minúsculas (função de formatação no frontend)
+- [ ] Separadores decimais corrigidos para vírgula nos percentuais de macros
+- [ ] "KCAL" → "kcal"
+- [ ] Siglas PTN/CHO/LIP substituídas por nomes completos (ou hierarquia reorganizada)
+- [ ] "Adicionar Substituta" → sentence case (componente reutilizado em 6 refeições)
+- [ ] "Resumo de Nutrientes" → sentence case
+- [ ] Nomes de alimentos simplificados (remover vírgulas e metadados TACO)
+- [ ] Tooltips adicionados aos ícones de ação
+- [ ] Confirmação implementada para exclusão de refeição
+- [ ] Toasts de feedback implementados
+- [ ] "Bifé" corrigido
+- [ ] Nenhuma lógica de negócio, estilo estrutural ou chamada de API modificada
+- [ ] Listagem de strings não encontradas no código (caso o texto atual seja diferente do mapeado)

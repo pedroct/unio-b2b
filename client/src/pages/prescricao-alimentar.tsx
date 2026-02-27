@@ -61,7 +61,7 @@ export default function PrescricaoAlimentarPage() {
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                Gerencie as refeições e dias da semana do plano alimentar
+                Gerencie as refeições e os dias da semana do plano alimentar
               </p>
             </div>
           </div>

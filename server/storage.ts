@@ -216,7 +216,7 @@ function getPlanosMock(pacienteId: string): PlanoMockData[] {
   return [
     {
       id: plano1Id,
-      descricao: planoDescricoes[plano1Id] || "Dieta Hiperproteica (modelo de cardápio Dietbox) (importado)",
+      descricao: planoDescricoes[plano1Id] || "Dieta hiperproteica",
       status: "ativo",
       diasAtivos: planoDiasAtivosMap[plano1Id],
       dataCriacao: "26/02/2026",
@@ -245,7 +245,7 @@ function getPlanosMock(pacienteId: string): PlanoMockData[] {
           alimentos: [
             { id: "a8", nome: "Arroz integral", quantidade: 4, unidade: "Colher De Sopa", grupo: "Cereais e leguminosas" },
             { id: "a9", nome: "Feijão, carioca, cozido", quantidade: 1, unidade: "Concha Pequena Cheia", grupo: "Leguminosas e derivados" },
-            { id: "a10", nome: "Filé de frango Grelhado(a)/brasa/churrasco", quantidade: 2, unidade: "Bifé", grupo: "Aves e ovos" },
+            { id: "a10", nome: "Filé de frango Grelhado(a)/brasa/churrasco", quantidade: 2, unidade: "Bife", grupo: "Aves e ovos" },
             { id: "a11", nome: "Salada ou verdura crua, exceto de fruta", quantidade: 1, unidade: "Colher De Arroz/Servir", grupo: "Miscelâneas" },
             { id: "a13", nome: "Suco de acerola", quantidade: 1, unidade: "Copo Americano", grupo: "Miscelâneas" },
           ],

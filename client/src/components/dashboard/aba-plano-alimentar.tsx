@@ -45,6 +45,27 @@ interface AbaPlanoAlimentarProps {
   pacienteId: string;
 }
 
+const FOOD_NAME_SIMPLIFICATIONS: Record<string, string> = {
+  "Pão, aveia, forma": "Pão de aveia, forma",
+  "Queijo, minas, frescal": "Queijo minas frescal",
+  "Mamão, Papaia, cru": "Mamão papaia",
+  "Iogurte, natural, desnatado": "Iogurte natural desnatado",
+  "Feijão, carioca, cozido": "Feijão carioca cozido",
+  "Filé de frango Grelhado(a)/brasa/churrasco": "Filé de frango grelhado",
+  "Salada ou verdura crua, exceto de fruta": "Salada ou verdura crua",
+  "Queijo, cottage, magro, 1% gordura": "Queijo cottage magro",
+  "Abacaxi, cru, todas as variedades": "Abacaxi",
+  "Café, infusão 10%": "Café",
+  "Torrada de qualquer pão": "Torrada",
+  "Omelete, de queijo": "Omelete de queijo",
+  "Castanha, japonesa, assada": "Castanha japonesa assada",
+  "Achocolatado, pó": "Achocolatado em pó",
+};
+
+function formatFoodName(name: string): string {
+  return FOOD_NAME_SIMPLIFICATIONS[name] || name;
+}
+
 const DIAS_ROTULOS: Record<DiaSemana, string> = {
   segunda: "Segunda-feira",
   terca: "Terça-feira",
@@ -210,9 +231,9 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
   );
 
   const pieData = [
-    { name: "PTN", value: plano.nutrientes.proteina.gramas, color: "#5B8C6F" },
-    { name: "CHO", value: plano.nutrientes.carboidrato.gramas, color: "#D9A441" },
-    { name: "LIP", value: plano.nutrientes.gordura.gramas, color: "#D97952" },
+    { name: "Proteína", value: plano.nutrientes.proteina.gramas, color: "#5B8C6F" },
+    { name: "Carboidrato", value: plano.nutrientes.carboidrato.gramas, color: "#D9A441" },
+    { name: "Gordura", value: plano.nutrientes.gordura.gramas, color: "#D97952" },
   ];
 
   function iniciarEdicaoDescricao() {
@@ -409,7 +430,7 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" data-testid="button-ver-refeicoes">
               <List className="h-3.5 w-3.5 mr-1.5" />
-              Ver minhas refeições
+              Ver refeições
             </Button>
             <Button
               variant="outline"
@@ -418,7 +439,7 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
               data-testid="button-adicionar-refeicao"
             >
               <Plus className="h-3.5 w-3.5 mr-1.5" />
-              Adicionar nova refeição
+              Adicionar refeição
             </Button>
           </div>
 
@@ -444,6 +465,8 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
                     <Button
                       variant="ghost"
                       size="icon"
+                      title="Editar refeição"
+                      aria-label="Editar refeição"
                       data-testid={`button-editar-refeicao-${refeicao.id}`}
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -451,6 +474,8 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
                     <Button
                       variant="ghost"
                       size="icon"
+                      title="Duplicar refeição"
+                      aria-label="Duplicar refeição"
                       data-testid={`button-duplicar-refeicao-${refeicao.id}`}
                     >
                       <Copy className="h-3.5 w-3.5" />
@@ -459,6 +484,8 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
                       variant="ghost"
                       size="icon"
                       className="text-destructive"
+                      title="Excluir refeição"
+                      aria-label="Excluir refeição"
                       data-testid={`button-excluir-refeicao-${refeicao.id}`}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -483,9 +510,9 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
                         data-testid={`item-alimento-${alimento.id}`}
                         className="hover:bg-muted/30 transition-colors"
                       >
-                        <td className="px-4 py-2.5 text-foreground">{alimento.nome}</td>
+                        <td className="px-4 py-2.5 text-foreground">{formatFoodName(alimento.nome)}</td>
                         <td className="px-3 py-2.5 text-center text-foreground tabular-nums">{alimento.quantidade}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">{alimento.unidade}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">{alimento.unidade.toLowerCase()}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -498,7 +525,7 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
                     data-testid={`button-substituir-${refeicao.id}`}
                   >
                     <ArrowRightLeft className="h-3 w-3 mr-1.5" />
-                    Adicionar Substituta
+                    Adicionar substituta
                   </Button>
                 </div>
               </CardContent>
@@ -510,7 +537,7 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">
-                Resumo de Nutrientes
+                Resumo de nutrientes
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -556,51 +583,46 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
               <div className="space-y-3 mt-4">
                 {[
                   {
-                    sigla: "PTN",
-                    label: "Proteínas",
+                    nome: "Proteína",
                     gramas: plano.nutrientes.proteina.gramas,
                     percentual: plano.nutrientes.proteina.percentual,
                     color: "#5B8C6F",
+                    testId: "ptn",
                   },
                   {
-                    sigla: "CHO",
-                    label: "Carboidratos",
+                    nome: "Carboidrato",
                     gramas: plano.nutrientes.carboidrato.gramas,
                     percentual: plano.nutrientes.carboidrato.percentual,
                     color: "#D9A441",
+                    testId: "cho",
                   },
                   {
-                    sigla: "LIP",
-                    label: "Gorduras",
+                    nome: "Gordura",
                     gramas: plano.nutrientes.gordura.gramas,
                     percentual: plano.nutrientes.gordura.percentual,
                     color: "#D97952",
+                    testId: "lip",
                   },
                 ].map((macro) => (
                   <div
-                    key={macro.sigla}
+                    key={macro.nome}
                     className="flex items-center justify-between rounded-lg border px-3 py-2.5"
-                    data-testid={`card-macro-${macro.sigla.toLowerCase()}`}
+                    data-testid={`card-macro-${macro.testId}`}
                   >
                     <div className="flex items-center gap-2">
                       <div
                         className="h-3 w-3 rounded-sm"
                         style={{ backgroundColor: macro.color }}
                       />
-                      <div>
-                        <span className="text-xs font-bold text-muted-foreground">
-                          {macro.sigla}
-                        </span>
-                        <p className="text-[11px] text-muted-foreground">
-                          {macro.label}
-                        </p>
-                      </div>
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {macro.nome}
+                      </span>
                     </div>
-                    <div className="text-right">
+                    <div className="flex items-center gap-1.5">
                       <span className="text-sm font-semibold">{macro.gramas}g</span>
-                      <p className="text-[11px] text-muted-foreground">
-                        {macro.percentual}%
-                      </p>
+                      <span className="text-[11px] text-muted-foreground">
+                        · {macro.percentual.toFixed(1).replace(".", ",")}%
+                      </span>
                     </div>
                   </div>
                 ))}
