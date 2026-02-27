@@ -11,12 +11,14 @@ export const formatFoodName = (descricao: string): string => {
     .trim();
 };
 
-export const formatNutrient = (value: number): string => {
-  if (value == null || isNaN(value)) return '0';
-  if (value === 0) return '0';
-  if (Number.isInteger(value)) return value.toString();
+export const formatNutrient = (value: number | string): string => {
+  if (value == null) return '0';
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return '0';
+  if (num === 0) return '0';
+  if (Number.isInteger(num)) return num.toString();
 
-  const formatted = value.toFixed(1);
+  const formatted = num.toFixed(1);
   const cleaned = formatted.replace(/\.0$/, '');
   return cleaned.replace('.', ',');
 };
