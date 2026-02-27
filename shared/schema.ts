@@ -201,10 +201,10 @@ export const DESCRICOES_REFEICAO_PADRAO: string[] = [
 
 export type FonteAlimento = "TBCA" | "IBGE" | "TUCUNDUVA" | "SUPLEMENTOS" | "MEUS_ALIMENTOS";
 
-export const FONTES_ALIMENTO: { valor: FonteAlimento; rotulo: string; disponivel: boolean }[] = [
-  { valor: "TBCA", rotulo: "TBCA", disponivel: true },
-  { valor: "IBGE", rotulo: "IBGE", disponivel: false },
-  { valor: "TUCUNDUVA", rotulo: "Tucunduva", disponivel: false },
+export const FONTES_ALIMENTO: { valor: FonteAlimento; rotulo: string; disponivel: boolean; tooltip?: string }[] = [
+  { valor: "TBCA", rotulo: "TBCA", disponivel: true, tooltip: "Tabela Brasileira de Composição de Alimentos" },
+  { valor: "IBGE", rotulo: "IBGE", disponivel: false, tooltip: "Pesquisa de Orçamentos Familiares — IBGE" },
+  { valor: "TUCUNDUVA", rotulo: "Tucunduva", disponivel: false, tooltip: "Tabela de Composição de Alimentos — Tucunduva" },
   { valor: "SUPLEMENTOS", rotulo: "Suplementos", disponivel: false },
   { valor: "MEUS_ALIMENTOS", rotulo: "Meus alimentos", disponivel: false },
 ];

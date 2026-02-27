@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatFoodName, formatNutrient, formatUnit } from "@/lib/formatters";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -45,26 +46,6 @@ interface AbaPlanoAlimentarProps {
   pacienteId: string;
 }
 
-const FOOD_NAME_SIMPLIFICATIONS: Record<string, string> = {
-  "Pão, aveia, forma": "Pão de aveia, forma",
-  "Queijo, minas, frescal": "Queijo minas frescal",
-  "Mamão, Papaia, cru": "Mamão papaia",
-  "Iogurte, natural, desnatado": "Iogurte natural desnatado",
-  "Feijão, carioca, cozido": "Feijão carioca cozido",
-  "Filé de frango Grelhado(a)/brasa/churrasco": "Filé de frango grelhado",
-  "Salada ou verdura crua, exceto de fruta": "Salada ou verdura crua",
-  "Queijo, cottage, magro, 1% gordura": "Queijo cottage magro",
-  "Abacaxi, cru, todas as variedades": "Abacaxi",
-  "Café, infusão 10%": "Café",
-  "Torrada de qualquer pão": "Torrada",
-  "Omelete, de queijo": "Omelete de queijo",
-  "Castanha, japonesa, assada": "Castanha japonesa assada",
-  "Achocolatado, pó": "Achocolatado em pó",
-};
-
-function formatFoodName(name: string): string {
-  return FOOD_NAME_SIMPLIFICATIONS[name] || name;
-}
 
 const DIAS_ROTULOS: Record<DiaSemana, string> = {
   segunda: "Segunda-feira",
@@ -512,7 +493,7 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
                       >
                         <td className="px-4 py-2.5 text-foreground">{formatFoodName(alimento.nome)}</td>
                         <td className="px-3 py-2.5 text-center text-foreground tabular-nums">{alimento.quantidade}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">{alimento.unidade.toLowerCase()}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">{formatUnit(alimento.unidade)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -621,7 +602,7 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm font-semibold">{macro.gramas}g</span>
                       <span className="text-[11px] text-muted-foreground">
-                        · {macro.percentual.toFixed(1).replace(".", ",")}%
+                        · {formatNutrient(macro.percentual)}%
                       </span>
                     </div>
                   </div>

@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Check, Flame, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { formatFoodName, formatNutrient } from "@/lib/formatters";
 import { FONTES_ALIMENTO } from "@shared/schema";
 import type { AlimentoPlano, AlimentoBusca, FonteAlimento, ResumoMacros } from "@shared/schema";
 
@@ -69,10 +70,19 @@ function MacroCard({ label, valor, unidade }: { label: string; valor: number; un
   return (
     <div className="flex flex-col items-center rounded-lg border bg-muted/30 px-2 py-2 min-w-0 overflow-hidden">
       <span className="text-[11px] text-muted-foreground truncate w-full text-center">{label}</span>
-      <span className="text-sm font-semibold tabular-nums">{valor}</span>
+      <span className="text-sm font-semibold tabular-nums">{formatNutrient(valor)}</span>
       <span className="text-[10px] text-muted-foreground">{unidade}</span>
     </div>
   );
+}
+
+function getQuantidadeError(value: string): string | null {
+  if (!value.trim()) return "Informe a quantidade.";
+  const num = parseFloat(value);
+  if (isNaN(num)) return "Informe a quantidade.";
+  if (num < 0) return "A quantidade deve ser um valor positivo.";
+  if (num === 0) return "A quantidade deve ser maior que zero.";
+  return null;
 }
 
 export function ModalAdicionarAlimento({
@@ -91,8 +101,10 @@ export function ModalAdicionarAlimento({
   const [macros, setMacros] = useState<ResumoMacros | null>(null);
   const [calculando, setCalculando] = useState(false);
   const [buscaRealizada, setBuscaRealizada] = useState(false);
+  const [qtdTouched, setQtdTouched] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const calcDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const buscaInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
@@ -103,6 +115,7 @@ export function ModalAdicionarAlimento({
       setQuantidade("100");
       setMacros(null);
       setBuscaRealizada(false);
+      setQtdTouched(false);
     }
   }, [open]);
 
@@ -204,12 +217,16 @@ export function ModalAdicionarAlimento({
   function handleSelecionarAlimento(item: ResultadoBusca) {
     setSelecionado(item);
     setQuantidade("100");
+    setQtdTouched(false);
   }
 
   function handleAdicionar(fecharModal: boolean) {
     if (!selecionado) return;
+    setQtdTouched(true);
+    const qtdError = getQuantidadeError(quantidade);
+    if (qtdError) return;
+
     const qtd = parseFloat(quantidade);
-    if (isNaN(qtd) || qtd <= 0) return;
 
     const alimento: AlimentoPlano = {
       id: `${selecionado.id}-${Date.now()}`,
@@ -222,20 +239,33 @@ export function ModalAdicionarAlimento({
     onAdicionarAlimento(alimento);
 
     if (fecharModal) {
+      toast({
+        title: "Alimento adicionado à refeição",
+      });
       onOpenChange(false);
     } else {
+      toast({
+        title: "Alimento adicionado",
+        description: "Alimento adicionado. Busque o próximo.",
+      });
       setSelecionado(null);
       setMacros(null);
       setQuantidade("100");
+      setQtdTouched(false);
+      setTermoBusca("");
+      setResultados([]);
+      setBuscaRealizada(false);
+      setTimeout(() => buscaInputRef.current?.focus(), 100);
     }
   }
 
-  const filtros: { valor: FiltroOrigem; rotulo: string; disponivel: boolean }[] = [
+  const filtros: { valor: FiltroOrigem; rotulo: string; disponivel: boolean; tooltip?: string }[] = [
     { valor: "TODAS", rotulo: "Todas", disponivel: true },
-    ...FONTES_ALIMENTO.map((f) => ({ valor: f.valor as FiltroOrigem, rotulo: f.rotulo, disponivel: f.disponivel })),
+    ...FONTES_ALIMENTO.map((f) => ({ valor: f.valor as FiltroOrigem, rotulo: f.rotulo, disponivel: f.disponivel, tooltip: f.tooltip })),
   ];
 
-  const qtdValida = !isNaN(parseFloat(quantidade)) && parseFloat(quantidade) > 0;
+  const qtdError = qtdTouched ? getQuantidadeError(quantidade) : null;
+  const qtdValida = !getQuantidadeError(quantidade);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -261,6 +291,7 @@ export function ModalAdicionarAlimento({
                 key={f.valor}
                 type="button"
                 onClick={() => handleFiltroClick(f.valor)}
+                title={f.tooltip}
                 className={cn(
                   "rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors border",
                   filtro === f.valor
@@ -279,9 +310,10 @@ export function ModalAdicionarAlimento({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
+              ref={buscaInputRef}
               value={termoBusca}
               onChange={(e) => setTermoBusca(e.target.value)}
-              placeholder="Buscar alimento por nome..."
+              placeholder="Buscar alimento por nome"
               className="pl-9"
               data-testid="input-busca-alimento"
             />
@@ -298,11 +330,21 @@ export function ModalAdicionarAlimento({
               </div>
             ) : resultados.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                <span className="text-sm">
-                  {buscaRealizada
-                    ? "Nenhum alimento encontrado"
-                    : "Digite pelo menos 2 caracteres para buscar"}
-                </span>
+                {buscaRealizada ? (
+                  <>
+                    <Search className="h-8 w-8 mb-2 opacity-40" />
+                    <span className="text-sm font-medium">
+                      Nenhum alimento encontrado para "{termoBusca}"
+                    </span>
+                    <span className="text-xs mt-1">
+                      Tente outro nome ou verifique a ortografia.
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-sm">
+                    Digite ao menos 2 letras para buscar
+                  </span>
+                )}
               </div>
             ) : (
               <ul className="max-h-[240px] overflow-y-auto divide-y">
@@ -321,7 +363,7 @@ export function ModalAdicionarAlimento({
                         <Check className="h-4 w-4 shrink-0 text-primary" />
                       )}
                       <div className="flex-1 min-w-0 overflow-hidden">
-                        <p className="text-sm font-medium truncate">{item.nome}</p>
+                        <p className="text-sm font-medium truncate">{formatFoodName(item.nome)}</p>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           {item.grupo && (
                             <span className="text-[11px] text-muted-foreground truncate">
@@ -341,7 +383,7 @@ export function ModalAdicionarAlimento({
                         {item.caloriasPor100g != null && (
                           <span className="text-xs text-muted-foreground tabular-nums flex items-center gap-0.5">
                             <Flame className="h-3 w-3" />
-                            {item.caloriasPor100g}
+                            {formatNutrient(item.caloriasPor100g)}
                           </span>
                         )}
                       </div>
@@ -360,7 +402,7 @@ export function ModalAdicionarAlimento({
               <div className="flex items-start justify-between gap-2 overflow-hidden">
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium line-clamp-2 break-words" data-testid="text-alimento-selecionado">
-                    {selecionado.nome}
+                    {formatFoodName(selecionado.nome)}
                   </p>
                   <div className="flex items-center gap-2 mt-0.5 min-w-0">
                     {selecionado.grupo && (
@@ -384,10 +426,18 @@ export function ModalAdicionarAlimento({
                     min="0"
                     step="1"
                     value={quantidade}
-                    onChange={(e) => setQuantidade(e.target.value)}
-                    className="w-24 tabular-nums"
+                    onChange={(e) => {
+                      setQuantidade(e.target.value);
+                      setQtdTouched(true);
+                    }}
+                    className={cn("w-24 tabular-nums", qtdError && "border-destructive")}
                     data-testid="input-quantidade"
                   />
+                  {qtdError && (
+                    <p className="text-xs text-destructive" data-testid="error-quantidade">
+                      {qtdError}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-muted-foreground">Unidade</label>
@@ -409,7 +459,7 @@ export function ModalAdicionarAlimento({
                 >
                   <MacroCard label="Calorias" valor={macros.calorias} unidade="kcal" />
                   <MacroCard label="Proteína" valor={macros.proteinas} unidade="g" />
-                  <MacroCard label="Carb." valor={macros.carboidratos} unidade="g" />
+                  <MacroCard label="Carboidrato" valor={macros.carboidratos} unidade="g" />
                   <MacroCard label="Gordura" valor={macros.gorduras} unidade="g" />
                   <MacroCard label="Fibra" valor={macros.fibras} unidade="g" />
                 </div>
