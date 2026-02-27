@@ -1,0 +1,211 @@
+# UNIO — Validação de Copy: Login do Dashboard Profissional
+
+**Plataforma:** Web (Dashboard Profissional)  
+**Tela:** Login / Autenticação  
+**Data:** 27/02/2026  
+**Escopo:** Textos, copy, UX writing e ajustes visuais menores — não alterar lógica, chamadas de API ou estilos estruturais.
+
+---
+
+## Resumo da análise
+
+A tela de login do dashboard profissional está funcional e visualmente alinhada à identidade UNIO (paleta verde/terra, tipografia limpa). No entanto, foram identificados **9 ajustes** de copy, UX writing e consistência com as diretrizes da marca.
+
+---
+
+## Correções
+
+### 1. Painel esquerdo — Headline principal
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Headline | `O centro de controle da saúde dos seus pacientes.` | `O centro de controle da saúde dos seus pacientes` |
+
+**Motivo:** Títulos não levam ponto final, conforme regras de pontuação do design system UNIO.
+
+---
+
+### 2. Painel esquerdo — Subtexto
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Subtexto | `Nutrição, treino, biometria e hidratação em um único ecossistema. Dados que cruzam para decisões que transformam.` | `Nutrição, treino, biometria e hidratação em um único ecossistema. Dados que se cruzam para decisões que transformam.` |
+
+**Motivo:** A forma pronominal "se cruzam" é mais natural em português brasileiro. Manter o ponto final, pois é parágrafo descritivo.
+
+---
+
+### 3. Painel esquerdo — Módulos (pills/tags)
+
+| Item | Atual | Observação |
+|------|-------|------------|
+| Nutrição | `Nutrição` | ✅ Correto |
+| Treino | `Treino` | ✅ Correto |
+| Biometria | `Biometria` | ✅ Correto |
+| Hidratação | `Hidratação` | ✅ Correto |
+
+**Módulos faltantes:** Considerar adicionar `Suplementação` e `Inventário` se esses módulos estarão disponíveis no dashboard profissional. Caso contrário, manter apenas os 4 atuais.
+
+---
+
+### 4. Painel esquerdo — Rodapé
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Rodapé | `UNIO Performance OS — Dados que cuidam de você` | `UNIO Performance OS — Dados que cuidam de você` |
+
+**Status:** ✅ Correto. Tagline consistente com a marca.
+
+---
+
+### 5. Painel direito — Título de boas-vindas
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Título | `Bem-vindo de volta` | `Bem-vindo de volta` |
+
+**Status:** ✅ Correto. Sem ponto final em título — correto.
+
+**Observação importante:** O título assume que o usuário já tem conta. Considerar variação para primeiro acesso:
+- Primeiro acesso: `Bem-vindo ao UNIO`
+- Retorno: `Bem-vindo de volta`
+
+Se não for possível diferenciar no frontend sem lógica adicional, manter `Bem-vindo de volta` como padrão.
+
+---
+
+### 6. Painel direito — Subtítulo do formulário
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Subtítulo | `Acesse com seu registro profissional` | `Acesse com seu registro profissional` |
+
+**Status:** ✅ Correto. Sem ponto final — correto para subtítulo.
+
+---
+
+### 7. Painel direito — Labels e placeholders dos campos
+
+| Campo | Elemento | Atual | Novo | Motivo |
+|-------|----------|-------|------|--------|
+| Registro | Label | `Registro Profissional` | `Registro profissional` | Capitalização: apenas primeira palavra em maiúscula (sentence case) |
+| Registro | Placeholder | `CRM-12345` | `Ex: CRM-12345` | Adicionar prefixo "Ex:" para deixar claro que é exemplo, não dado real |
+| UF | Label | `UF` | `UF` | ✅ Correto — sigla permanece em maiúsculas |
+| UF | Placeholder | `UF` | Manter `UF` no dropdown | ✅ Correto |
+| Senha | Label | `Senha (CPF)` | `Senha` | Remover "(CPF)" do label. A informação de que a senha é o CPF já está no helper text abaixo do botão. Expor "CPF" no label é redundante e gera confusão sobre o que é realmente uma "senha" |
+| Senha | Placeholder | `000.000.000-00` | `Digite seu CPF` | O placeholder com máscara numérica parece um campo de CPF, não de senha. Trocar por texto descritivo. O campo deve mascarar o input (•••) por ser senha |
+
+---
+
+### 8. Painel direito — Botão CTA
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Botão | `Entrar` | `Entrar` |
+
+**Status:** ✅ Correto. Verbo no infinitivo, sentence case, direto.
+
+---
+
+### 9. Painel direito — Helper text abaixo do botão
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Helper | `Use seu número de registro profissional e CPF para acessar a plataforma.` | `Use seu registro profissional e CPF para acessar a plataforma.` |
+
+**Motivo:** Remover "número de" — é redundante. "Registro profissional" já implica o número. Manter ponto final pois é frase descritiva completa.
+
+---
+
+## Funcionalidades ausentes a considerar
+
+### A. Link "Esqueci minha senha"
+
+A tela atual **não possui** link de recuperação de senha/acesso. Segundo as diretrizes de UX do UNIO (seção 3.8 — Mensagens de Erro), o fluxo de login deve oferecer alternativa em caso de falha.
+
+**Sugestão:** Adicionar abaixo do helper text:
+```
+Não consegue acessar? Entre em contato com o suporte.
+```
+Ou, se houver fluxo de recuperação:
+```
+Esqueceu seu CPF? Recuperar acesso
+```
+
+### B. Mensagens de erro inline
+
+Implementar validações inline conforme padrão UNIO `[O que aconteceu] + [O que fazer agora]`:
+
+| Situação | Mensagem de erro |
+|----------|------------------|
+| Registro inválido | `Registro profissional não encontrado. Verifique o número e tente novamente.` |
+| UF não selecionada | `Selecione o estado do seu registro.` |
+| CPF inválido | `CPF inválido. Verifique os números e tente novamente.` |
+| Credenciais incorretas | `Registro ou CPF incorretos. Verifique seus dados e tente novamente.` |
+| Sem conexão | `Sem conexão. Verifique sua internet e tente de novo.` |
+
+### C. Estado de loading do botão
+
+Ao clicar "Entrar", o botão deve:
+- Exibir spinner ou texto `Entrando...`
+- Ficar desabilitado durante a requisição
+- Não usar "Carregando" ou "Aguarde"
+
+---
+
+## Ajustes visuais menores (observados)
+
+### D. Ícone no campo de senha
+
+O campo de senha possui dois ícones à direita: um ícone de fingerprint/biometria (🛡️) e um ícone de visibilidade (👁️). 
+
+**Recomendações:**
+- O ícone de biometria não faz sentido em login web — remover, a menos que haja integração com WebAuthn/passkeys
+- Manter apenas o ícone de visibilidade (olho) para toggle show/hide da senha
+
+### E. Contraste do placeholder
+
+Verificar se o placeholder `CRM-12345` tem contraste suficiente com o fundo do input (mínimo WCAG AA 4.5:1 para texto, ou 3:1 para texto grande).
+
+---
+
+## Resumo das alterações
+
+| # | Elemento | Tipo | Prioridade |
+|---|----------|------|------------|
+| 1 | Headline — remover ponto final | Copy | Alta |
+| 2 | Subtexto — "se cruzam" | Copy | Média |
+| 3 | Label "Registro Profissional" → sentence case | Copy | Alta |
+| 4 | Placeholder registro → "Ex: CRM-12345" | Copy | Média |
+| 5 | Label "Senha (CPF)" → "Senha" | Copy | Alta |
+| 6 | Placeholder senha → "Digite seu CPF" | Copy | Alta |
+| 7 | Helper text — remover "número de" | Copy | Baixa |
+| 8 | Remover ícone de biometria do campo senha | UI | Média |
+| 9 | Adicionar link de recuperação de acesso | UX | Alta |
+| 10 | Implementar mensagens de erro inline | UX | Alta |
+| 11 | Estado de loading no botão | UX | Média |
+
+---
+
+## Regras gerais aplicadas (referência)
+
+- Títulos: sem ponto final
+- Labels: sentence case (apenas primeira palavra em maiúscula)
+- Botões: sentence case, verbo no infinitivo
+- Nenhum texto em ALL CAPS
+- Helper texts: frases completas com ponto final
+- Placeholders: descritivos, com prefixo "Ex:" quando aplicável
+- Mensagens de erro: `[O que aconteceu] + [O que fazer agora]`
+- Tom: acolhedor, profissional, sem jargão técnico desnecessário
+
+---
+
+## Entrega esperada
+
+- [ ] Strings de texto alteradas conforme tabela
+- [ ] Nenhuma lógica, estilo estrutural ou chamada de API modificada
+- [ ] Ícone de biometria removido do campo de senha
+- [ ] Mensagens de erro inline implementadas
+- [ ] Link de recuperação de acesso adicionado
+- [ ] Estado de loading no botão implementado
+- [ ] Listagem de strings não encontradas no código (caso o texto atual seja diferente do mapeado)
