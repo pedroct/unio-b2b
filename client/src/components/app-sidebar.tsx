@@ -20,8 +20,8 @@ import unioLogo from "@assets/Unio_Logo_1771972757927.png";
 
 const navItems = [
   { title: "Clientes", url: "/pacientes", icon: Users },
-  { title: "Dashboard Global", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Prescrição Alimentar", url: "/prescricao-alimentar", icon: UtensilsCrossed },
+  { title: "Visão geral", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Prescrição alimentar", url: "/prescricao-alimentar", icon: UtensilsCrossed },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
@@ -38,7 +38,7 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         <div className="flex flex-col gap-1">
           <img src={unioLogo} alt="UNIO" className="h-6 object-contain object-left" data-testid="text-brand-name" />
-          <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium">Performance OS</p>
+          <p className="text-[10px] tracking-[0.2em] text-muted-foreground font-medium">Dados que cuidam de você</p>
         </div>
       </SidebarHeader>
 
@@ -46,7 +46,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
+          <SidebarGroupLabel>Menu principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => {

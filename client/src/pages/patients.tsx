@@ -48,8 +48,16 @@ function brDateToIso(dateStr: string): string | null {
 
 function AdherenceBadge({ value, label }: { value: number; label: string }) {
   const variant = value >= 80 ? "default" : value >= 50 ? "secondary" : "destructive";
+  const tooltipText = label === "diet"
+    ? "Aderência ao plano alimentar nos últimos 7 dias"
+    : "Aderência ao plano de treino nos últimos 7 dias";
   return (
-    <Badge variant={variant} className="text-xs" data-testid={`badge-adherence-${label.toLowerCase()}`}>
+    <Badge
+      variant={variant}
+      className="text-xs cursor-default"
+      title={tooltipText}
+      data-testid={`badge-adherence-${label.toLowerCase()}`}
+    >
       {value}%
     </Badge>
   );
@@ -229,7 +237,7 @@ export default function PatientsPage() {
             Clientes
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Gerencie e acompanhe seus clientes em um só lugar.
+            Gerencie e acompanhe seus clientes em um só lugar
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -271,7 +279,7 @@ export default function PatientsPage() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar cliente por nome ou e-mail..."
+            placeholder="Buscar por nome ou e-mail"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -386,7 +394,7 @@ export default function PatientsPage() {
                 <TableHead>Treino</TableHead>
                 <TableHead>Última atividade</TableHead>
                 <TableHead className="hidden lg:table-cell">Desde</TableHead>
-                <TableHead className="hidden lg:table-cell">Últ. consulta</TableHead>
+                <TableHead className="hidden lg:table-cell">Última consulta</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
@@ -406,12 +414,12 @@ export default function PatientsPage() {
               ? "Nenhum cliente encontrado"
               : statusFilter === "inativos"
                 ? "Nenhum cliente inativo"
-                : "Sem clientes cadastrados"
+                : "Você ainda não tem clientes vinculados"
           }
           description={
             hasActiveFilters
-              ? "Tente ajustar os filtros ou buscar com outro termo."
-              : "Quando seus clientes forem vinculados, eles aparecerão aqui."
+              ? "Tente buscar por outro nome, e-mail ou ajuste os filtros."
+              : "Adicione seu primeiro cliente para começar a acompanhar sua evolução."
           }
         />
       ) : (
@@ -426,7 +434,7 @@ export default function PatientsPage() {
                 <TableHead>Treino</TableHead>
                 <TableHead>Última atividade</TableHead>
                 <TableHead className="hidden lg:table-cell">Desde</TableHead>
-                <TableHead className="hidden lg:table-cell">Últ. consulta</TableHead>
+                <TableHead className="hidden lg:table-cell">Última consulta</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-10" />
               </TableRow>

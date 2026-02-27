@@ -1,0 +1,286 @@
+# UNIO — Validação de Copy: Listagem de Clientes (Dashboard Profissional)
+
+**Plataforma:** Web (Dashboard Profissional)  
+**Tela:** Clientes — Listagem principal  
+**Data:** 27/02/2026  
+**Escopo:** Textos, copy, UX writing e ajustes visuais menores — não alterar lógica, chamadas de API ou estilos estruturais.
+
+---
+
+## Resumo da análise
+
+A tela está bem estruturada e já utiliza a terminologia atualizada "Clientes" corretamente no título e no CTA. Foram identificados **12 ajustes** de copy, UX writing, consistência terminológica e melhorias de usabilidade.
+
+---
+
+## Regra terminológica ativa: Paciente → Cliente
+
+Usar **"Cliente"** em contextos administrativos e estruturais. Não forçar em contextos clínicos (prontuário, prescrição). Variáveis internas permanecem inalteradas.
+
+---
+
+## Correções
+
+### 1. Sidebar — Subtítulo do logo
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Subtítulo do logo | `PERFORMANCE OS` | `Dados que cuidam de você` |
+
+**Motivo:** "Performance OS" é redundante com o logo UNIO já visível. Substituir pela tagline oficial da marca reforça o posicionamento em todas as telas do dashboard. Nenhum texto em ALL CAPS.
+
+---
+
+### 2. Sidebar — "Menu Principal"
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Seção | `Menu Principal` | `Menu principal` |
+
+**Motivo:** Sentence case — apenas primeira palavra em maiúscula.
+
+---
+
+### 3. Sidebar — Itens de navegação
+
+| Item | Atual | Status |
+|------|-------|--------|
+| Clientes | `Clientes` | ✅ Correto — terminologia atualizada |
+| Dashboard Global | `Dashboard Global` | ⚠️ Ver abaixo |
+| Prescrição Alimentar | `Prescrição Alimentar` | ⚠️ Ver abaixo |
+| Configurações | `Configurações` | ✅ Correto |
+
+**Ajustes de capitalização e nomenclatura:**
+
+| Atual | Novo | Motivo |
+|-------|------|--------|
+| `Dashboard Global` | `Visão geral` | "Dashboard" é jargão técnico anglicizado. "Visão geral" comunica centralização e resumo de forma natural em pt-BR. Sentence case. |
+| `Prescrição Alimentar` | `Prescrição alimentar` | Sentence case — apenas primeira palavra em maiúscula |
+
+---
+
+### 4. Header da página — Subtítulo
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Subtítulo | `Gerencie e acompanhe seus clientes em um só lugar.` | `Gerencie e acompanhe seus clientes em um só lugar` |
+
+**Motivo:** Subtítulos não levam ponto final.
+
+---
+
+### 5. KPI Cards — Labels
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Card 1 | `Total` | ✅ Correto |
+| Card 2 | `Ativos` | ✅ Correto |
+| Card 3 | `Aderência` | ✅ Correto |
+
+**Status:** ✅ Todos corretos. Labels curtos, sem ponto, sentence case.
+
+---
+
+### 6. Botão CTA — "Adicionar cliente"
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Botão | `Adicionar cliente` | ✅ Correto |
+
+**Status:** ✅ Sentence case, verbo no infinitivo, terminologia "cliente" correta.
+
+---
+
+### 7. Tabs de filtro
+
+| Item | Atual | Novo | Motivo |
+|------|-------|------|--------|
+| Tab 1 | `Ativos (4)` | ✅ Correto | — |
+| Tab 2 | `Todos (5)` | ✅ Correto | — |
+| Tab 3 | `Inativos (1)` | ✅ Correto | — |
+
+**Status:** ✅ Corretos. Pluralização adequada, contagem entre parênteses.
+
+---
+
+### 8. Barra de busca — Placeholder
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Placeholder | `Buscar cliente por nome ou e-mail...` | `Buscar por nome ou e-mail` |
+
+**Motivos:**
+1. Remover "cliente" — redundante, o usuário já está na tela de clientes.
+2. Remover reticências — placeholders não devem usar "..." segundo padrão de pontuação.
+
+---
+
+### 9. Filtros — Labels e valores
+
+| Item | Atual | Novo | Motivo |
+|------|-------|------|--------|
+| Ordenação | `Nome A-Z` | ✅ Correto | — |
+| Filtro tag | `Filtrar por tag` | ✅ Correto | — |
+| Label período | `Periodo por` | `Período por` | Falta acento em "Período" |
+| Label "De" | `De` | ✅ Correto | — |
+| Label "Até" | `Até` | ✅ Correto | — |
+| Dropdown período | `Data de cadastro` | ✅ Correto | — |
+| Placeholder data | `dd / mm / aaaa` | `dd/mm/aaaa` | Remover espaços — formato padrão brasileiro sem espaços |
+
+---
+
+### 10. Cabeçalhos da tabela
+
+| Coluna | Atual | Novo | Motivo |
+|--------|-------|------|--------|
+| 1 | `Cliente` | ✅ Correto | Terminologia atualizada |
+| 2 | `Gênero / Idade` | `Gênero / Idade` | ✅ Correto |
+| 3 | `Tags` | ✅ Correto | — |
+| 4 | `Dieta` | ⚠️ Ver abaixo | Termo pode confundir |
+| 5 | `Treino` | ✅ Correto | — |
+| 6 | `Última atividade` | ✅ Correto | — |
+| 7 | `Desde` | ✅ Correto | — |
+| 8 | `Últ. consulta` | `Última consulta` | Não abreviar — há espaço suficiente na tabela |
+| 9 | `Status` | ✅ Correto | — |
+
+**Sobre a coluna "Dieta":**
+O termo "Dieta" é tecnicamente correto, mas no contexto UNIO o módulo se chama **"Nutrição"**. Avaliar se faz sentido renomear para `Nutrição` para manter consistência com a nomenclatura dos módulos, ou se "Dieta" refere-se especificamente à aderência ao plano alimentar. Se for aderência ao plano, considerar `Plano alimentar` como alternativa mais descritiva.
+
+---
+
+### 11. Dados da tabela — Consistência de formatação
+
+| Elemento | Atual | Novo | Motivo |
+|----------|-------|------|--------|
+| Idade | `33 anos` | ✅ Correto | — |
+| Gênero | `Feminino, 33 anos` | ✅ Correto | — |
+| Percentuais | `72%` | ✅ Correto | Sem decimal, com % — conforme padrão |
+| Timestamps | `Há 2 horas` / `Há 1 hora` / `Há 3 dias` / `Ontem` | ✅ Corretos | Contextualizado corretamente |
+| Datas | `10/01/2026` | ✅ Correto | Formato dd/mm/aaaa brasileiro |
+
+**Observação sobre cores dos percentuais:**
+Os percentuais de Dieta e Treino usam cores para indicar faixas (verde para alto, vermelho/laranja para baixo). Verificar se há tooltip ou legenda explicando os ranges, por exemplo:
+- Verde: ≥ 70%
+- Amarelo: 50–69%
+- Vermelho: < 50%
+
+Sem essa referência, o profissional não sabe interpretar os números de forma objetiva.
+
+---
+
+### 12. Rodapé da tabela — Contagem
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Contagem | `4 clientes encontrados` | ✅ Correto |
+
+**Status:** ✅ Terminologia "clientes" correta. Pluralização adequada.
+
+**Melhoria sugerida:** Implementar pluralização condicional:
+- `1 cliente encontrado` (singular)
+- `4 clientes encontrados` (plural)
+- `Nenhum cliente encontrado` (zero — ver estado vazio abaixo)
+
+---
+
+### 13. Sidebar — Rodapé com dados do profissional
+
+| Item | Atual | Novo | Motivo |
+|------|-------|------|--------|
+| Nome | `Dr. Rafael Mendes` | `Rafael Mendes` | Remover título honorífico. A plataforma atende diferentes profissionais (nutricionistas, personal trainers, médicos) — usar apenas o nome mantém a interface neutra e genérica. A especialidade abaixo já contextualiza a formação. |
+| Especialidade | `Médico do Esporte` | ✅ Correto | — |
+
+---
+
+## Funcionalidades ausentes a considerar
+
+### A. Estado vazio (sem clientes)
+
+Implementar estado vazio caso o profissional não tenha nenhum cliente vinculado.
+
+| Elemento | Copy |
+|----------|------|
+| Título | `Você ainda não tem clientes vinculados` |
+| Subtexto | `Adicione seu primeiro cliente para começar a acompanhar sua evolução.` |
+| CTA | `Adicionar primeiro cliente` |
+
+---
+
+### B. Estado vazio de busca (sem resultados)
+
+| Elemento | Copy |
+|----------|------|
+| Título | `Nenhum cliente encontrado` |
+| Subtexto | `Tente buscar por outro nome, e-mail ou ajuste os filtros.` |
+
+---
+
+### C. Tooltip nos percentuais de Dieta/Treino
+
+Adicionar tooltip ao hover sobre os badges de porcentagem explicando o que o número representa:
+
+| Tooltip | Copy |
+|---------|------|
+| Dieta | `Aderência ao plano alimentar nos últimos 7 dias` |
+| Treino | `Aderência ao plano de treino nos últimos 7 dias` |
+
+---
+
+### D. Confirmação ao adicionar cliente
+
+Após o CTA "Adicionar cliente", garantir que o fluxo siga o padrão de feedback UNIO:
+- Toast de sucesso: `Cliente adicionado com sucesso`
+- Toast de erro: `Não foi possível adicionar o cliente. Tente novamente.`
+
+---
+
+## Resumo das alterações
+
+| # | Elemento | Tipo | Prioridade |
+|---|----------|------|------------|
+| 1 | "PERFORMANCE OS" → tagline "Dados que cuidam de você" | Copy / Marca | Alta |
+| 2 | "Menu Principal" → sentence case | Copy | Média |
+| 3 | "Dashboard Global" → "Visão geral" + "Prescrição Alimentar" → sentence case | Copy / Terminologia | Alta |
+| 4 | Subtítulo da página — remover ponto final | Copy | Alta |
+| 5 | Placeholder busca — remover "cliente" e reticências | Copy | Média |
+| 6 | "Periodo" → "Período" (acento) | Copy / Bug | Alta |
+| 7 | Placeholder data — remover espaços | Copy | Baixa |
+| 8 | "Últ. consulta" → "Última consulta" | Copy | Média |
+| 9 | Avaliar "Dieta" → "Nutrição" ou "Plano alimentar" | Terminologia | Média |
+| 10 | Pluralização condicional na contagem de clientes | UX | Média |
+| 11 | "Dr. Rafael Mendes" → "Rafael Mendes" (remover título) | Copy | Alta |
+| 12 | Implementar estado vazio (sem clientes) | UX | Alta |
+| 13 | Implementar estado vazio de busca (sem resultados) | UX | Alta |
+| 14 | Tooltips nos percentuais de aderência | UX | Média |
+
+---
+
+## Regras gerais aplicadas (referência)
+
+- **Terminologia: "Paciente" → "Cliente"** em contextos administrativos e estruturais
+- Nenhum texto de interface em ALL CAPS
+- Títulos e subtítulos: sem ponto final
+- Labels de navegação e campos: sentence case
+- Placeholders: sem reticências, descritivos, sem redundância com contexto da tela
+- Timestamps contextualizados: "Há X horas", "Ontem", "Há 3 dias"
+- Datas: formato dd/mm/aaaa (sem espaços)
+- Percentuais: sem decimal, com símbolo %
+- Pluralização sempre condicional — nunca expor "(s)"
+- Mensagens de erro: `[O que aconteceu] + [O que fazer agora]`
+- Tom: acolhedor, profissional, sem jargão técnico desnecessário
+
+---
+
+## Entrega esperada
+
+- [ ] Subtítulo do logo alterado para tagline "Dados que cuidam de você"
+- [ ] "Dashboard Global" renomeado para "Visão geral" na sidebar
+- [ ] Título honorífico "Dr." removido — exibir apenas o nome do profissional
+- [ ] Strings de texto alteradas conforme tabelas acima
+- [ ] Acento corrigido em "Período"
+- [ ] Abreviação "Últ." expandida para "Última"
+- [ ] Placeholder de busca simplificado
+- [ ] Placeholders de data sem espaços
+- [ ] Estado vazio implementado (sem clientes e sem resultados de busca)
+- [ ] Nenhuma lógica, estilo estrutural ou chamada de API modificada
+- [ ] Listagem de strings não encontradas no código (caso o texto atual seja diferente do mapeado)

@@ -54,7 +54,7 @@ export default function PrescricaoAlimentarPage() {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl font-semibold tracking-tight" data-testid="text-prescricao-paciente">
-                  Prescrição Alimentar
+                  Prescrição alimentar
                 </h1>
                 <Badge variant="outline" className="text-xs">
                   {patient.name}

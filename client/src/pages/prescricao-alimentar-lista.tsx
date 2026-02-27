@@ -39,7 +39,7 @@ export default function PrescricaoAlimentarListaPage() {
           </div>
           <div>
             <h1 className="text-xl font-semibold tracking-tight" data-testid="titulo-prescricao-lista">
-              Prescrição Alimentar
+              Prescrição alimentar
             </h1>
             <p className="text-sm text-muted-foreground">
               Selecione um cliente para gerenciar o plano alimentar
