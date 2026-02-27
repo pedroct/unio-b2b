@@ -1,0 +1,196 @@
+# UNIO — Validação de Copy: Modal "Nova refeição" (Dashboard Profissional)
+
+**Plataforma:** Web (Dashboard Profissional)  
+**Tela:** Modal — Nova refeição (dentro de Prescrição alimentar)  
+**Data:** 27/02/2026  
+**Escopo:** Textos, copy, UX writing e ajustes visuais menores — não alterar lógica, chamadas de API ou estilos estruturais.
+
+---
+
+## Resumo da análise
+
+Modal enxuto e funcional. A estrutura está boa, mas há **8 ajustes** de copy, placeholder, acessibilidade e consistência com o padrão UNIO.
+
+---
+
+## Correções
+
+### 1. Título do modal
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Título | `Nova refeição` | ✅ Correto |
+
+**Status:** ✅ Sentence case, sem ponto final, direto.
+
+---
+
+### 2. Subtítulo do modal
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Subtítulo | `Dieta hiperproteica` | ✅ Correto |
+
+**Status:** ✅ Sentence case. Contextualiza o plano ao qual a refeição será adicionada.
+
+---
+
+### 3. Label "Horário"
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Label | `Horário *` | `Horário` |
+
+**Motivo:** O asterisco vermelho indica campo obrigatório, mas não há legenda explicando o significado do `*`. Duas opções:
+
+- **Opção A (preferida):** Remover o asterisco e validar inline — se o campo for enviado vazio, exibir mensagem: `Informe o horário da refeição.`
+- **Opção B:** Manter o asterisco e adicionar legenda abaixo do formulário: `* Campos obrigatórios`
+
+---
+
+### 4. Label "Descrição" e placeholder
+
+| Item | Atual | Novo | Motivo |
+|------|-------|------|--------|
+| Label | `Descrição *` | `Descrição` | Mesma regra do asterisco (item 3) |
+| Placeholder | `Selecione ou digite...` | `Selecione ou digite` | Remover reticências — placeholders não usam "..." |
+| Helper text | `Selecione da lista ou digite um nome personalizado` | ✅ Correto | Frase descritiva clara |
+
+**Observação sobre o label "Descrição":** O campo parece ser o nome da refeição (ex: "Desjejum", "Colação", "Almoço"). O label "Descrição" é ambíguo — pode ser confundido com o campo de observações abaixo. Considerar renomear:
+
+| Atual | Sugestão |
+|-------|----------|
+| `Descrição` | `Nome da refeição` |
+
+Isso elimina a ambiguidade e deixa claro que o profissional está nomeando a refeição, não descrevendo-a.
+
+---
+
+### 5. Seção "Alimentos selecionados"
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Título da seção | `Alimentos selecionados` | ✅ Correto |
+| Botão | `+ Adicionar alimento` | ✅ Correto |
+
+**Status:** ✅ Sentence case, ação clara.
+
+---
+
+### 6. Estado vazio de alimentos
+
+| Item | Atual | Novo |
+|------|-------|------|
+| Mensagem | `Nenhum alimento adicionado` | `Nenhum alimento adicionado` |
+
+**Status:** ✅ Correto. Sentence case, sem ponto final, tom neutro.
+
+**Melhoria sugerida:** Complementar com uma instrução de ação para reduzir a passividade do estado vazio:
+
+| Atual | Sugestão |
+|-------|----------|
+| `Nenhum alimento adicionado` | `Nenhum alimento adicionado. Use o botão acima para incluir.` |
+
+Ou de forma mais direta:
+
+| Alternativa |
+|-------------|
+| `Adicione alimentos usando o botão acima` |
+
+---
+
+### 7. Label e placeholder "Observação"
+
+| Item | Atual | Novo | Motivo |
+|------|-------|------|--------|
+| Label | `Observação` | ✅ Correto | Sentence case |
+| Placeholder | `Orientações ou observações sobre esta refeição...` | `Orientações ou observações sobre esta refeição` | Remover reticências |
+| Helper text | `Visível via aplicativo` | `Visível para o cliente no aplicativo` | Especificar quem vê e onde — "via aplicativo" é vago |
+
+---
+
+### 8. Botões de ação
+
+| Item | Atual | Novo | Motivo |
+|------|-------|------|--------|
+| Botão terciário | `Cancelar` | ✅ Correto | — |
+| Botão secundário | `Salvar e adicionar outra` | ✅ Correto | Ação clara, sentence case |
+| Botão primário | `Salvar` | ✅ Correto | — |
+
+**Status:** ✅ Hierarquia correta — ação destrutiva (cancelar) à esquerda, ação primária (salvar) à direita com destaque visual.
+
+**Melhoria de acessibilidade:** O botão "Cancelar" e o "X" no canto superior direito fazem a mesma coisa. Garantir que o `X` tenha `aria-label="Fechar"`.
+
+---
+
+## Funcionalidades ausentes a considerar
+
+### A. Validações inline
+
+| Campo | Condição | Mensagem de erro |
+|-------|----------|------------------|
+| Horário | Vazio | `Informe o horário da refeição.` |
+| Descrição/Nome | Vazio | `Informe o nome da refeição.` |
+| Alimentos | Lista vazia ao salvar | `Adicione ao menos um alimento à refeição.` |
+
+### B. Feedback após salvar
+
+| Ação | Toast |
+|------|-------|
+| Salvar | `Refeição adicionada com sucesso` |
+| Salvar e adicionar outra | `Refeição adicionada. Preencha a próxima.` (manter modal aberto com campos limpos) |
+| Erro | `Não foi possível salvar a refeição. Tente novamente.` |
+
+### C. Confirmação ao cancelar com dados preenchidos
+
+Se o profissional preencheu campos e clica "Cancelar" ou "X":
+
+| Elemento | Copy |
+|----------|------|
+| Mensagem | `Deseja descartar esta refeição? Os dados preenchidos serão perdidos.` |
+| Botão confirmar | `Descartar` |
+| Botão voltar | `Continuar editando` |
+
+---
+
+## Resumo das alterações
+
+| # | Elemento | Tipo | Prioridade |
+|---|----------|------|------------|
+| 1 | Asteriscos de obrigatório — remover ou adicionar legenda | UX | Alta |
+| 2 | Placeholder "Selecione ou digite..." → remover reticências | Copy | Média |
+| 3 | Label "Descrição" → "Nome da refeição" | Copy / UX | Alta |
+| 4 | Estado vazio — complementar com instrução de ação | Copy | Média |
+| 5 | Placeholder observação → remover reticências | Copy | Baixa |
+| 6 | Helper "Visível via aplicativo" → especificar quem e onde | Copy | Alta |
+| 7 | Validações inline para campos obrigatórios | UX | Alta |
+| 8 | Toasts de feedback após salvar | UX | Alta |
+| 9 | Confirmação ao cancelar com dados preenchidos | UX | Média |
+| 10 | `aria-label="Fechar"` no botão X | Acessibilidade | Média |
+
+---
+
+## Regras gerais aplicadas (referência)
+
+- Títulos e subtítulos: sem ponto final
+- Labels: sentence case
+- Placeholders: sem reticências ("...")
+- Helper texts: frases descritivas com contexto útil
+- Campos obrigatórios: validação inline > asterisco sem legenda
+- Mensagens de erro: `[O que aconteceu] + [O que fazer agora]`
+- Botões: sentence case, hierarquia visual (terciário → secundário → primário)
+- Tom: especialista amigável, não médico distante
+
+---
+
+## Entrega esperada
+
+- [ ] Reticências removidas dos placeholders
+- [ ] Label "Descrição" renomeado para "Nome da refeição" (ou decisão documentada para manter)
+- [ ] Helper "Visível via aplicativo" atualizado
+- [ ] Asteriscos removidos ou legenda adicionada
+- [ ] Validações inline implementadas
+- [ ] Toasts de feedback implementados
+- [ ] `aria-label` no botão X
+- [ ] Nenhuma lógica, estilo estrutural ou chamada de API modificada
+- [ ] Listagem de strings não encontradas no código (caso o texto atual seja diferente do mapeado)

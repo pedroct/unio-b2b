@@ -94,7 +94,7 @@ function DescricaoCombobox({
             setDropdownOpen(true);
           }}
           onFocus={() => setDropdownOpen(true)}
-          placeholder="Selecione ou digite..."
+          placeholder="Selecione ou digite"
           className={cn(
             "pr-8",
             hasError && "border-destructive"
@@ -160,7 +160,7 @@ export function ModalNovaRefeicao({
 }: ModalNovaRefeicaoProps) {
   const { toast } = useToast();
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
-  const [errors, setErrors] = useState<{ descricao?: string }>({});
+  const [errors, setErrors] = useState<{ descricao?: string; alimentos?: string }>({});
   const [modalAlimentoAberta, setModalAlimentoAberta] = useState(false);
 
   useEffect(() => {
@@ -200,9 +200,12 @@ export function ModalNovaRefeicao({
   });
 
   function validate(): boolean {
-    const newErrors: { descricao?: string } = {};
+    const newErrors: { descricao?: string; alimentos?: string } = {};
     if (!form.descricao.trim()) {
       newErrors.descricao = "Informe o nome da refeição.";
+    }
+    if (form.alimentos.length === 0) {
+      newErrors.alimentos = "Adicione ao menos um alimento à refeição.";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -212,20 +215,23 @@ export function ModalNovaRefeicao({
     if (!validate()) return;
     try {
       await mutation.mutateAsync(form);
-      toast({
-        title: "Refeição adicionada",
-        description: `${form.descricao} foi adicionada ao plano.`,
-      });
       if (keepOpen) {
+        toast({
+          title: "Refeição adicionada",
+          description: "Refeição adicionada. Preencha a próxima.",
+        });
         setForm(INITIAL_FORM);
         setErrors({});
       } else {
+        toast({
+          title: "Refeição adicionada com sucesso",
+        });
         onOpenChange(false);
       }
     } catch {
       toast({
         title: "Erro ao salvar",
-        description: "Não foi possível adicionar a refeição. Tente novamente.",
+        description: "Não foi possível salvar a refeição. Tente novamente.",
         variant: "destructive",
       });
     }
@@ -247,6 +253,7 @@ export function ModalNovaRefeicao({
       ...prev,
       alimentos: [...prev.alimentos, alimento],
     }));
+    setErrors((prev) => ({ ...prev, alimentos: undefined }));
   }
 
   return (
@@ -268,7 +275,7 @@ export function ModalNovaRefeicao({
           <div className="grid grid-cols-[140px_1fr] gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="horario" className="text-sm font-medium">
-                Horário <span className="text-destructive">*</span>
+                Horário
               </Label>
               <Select
                 value={form.horario}
@@ -289,7 +296,7 @@ export function ModalNovaRefeicao({
 
             <div className="space-y-1.5">
               <Label className="text-sm font-medium">
-                Descrição <span className="text-destructive">*</span>
+                Nome da refeição
               </Label>
               <DescricaoCombobox
                 value={form.descricao}
@@ -331,11 +338,19 @@ export function ModalNovaRefeicao({
 
             {form.alimentos.length === 0 ? (
               <div
-                className="flex flex-col items-center justify-center rounded-lg border border-dashed py-8 text-muted-foreground"
+                className={cn(
+                  "flex flex-col items-center justify-center rounded-lg border border-dashed py-8 text-muted-foreground",
+                  errors.alimentos && "border-destructive"
+                )}
                 data-testid="empty-alimentos"
               >
                 <UtensilsCrossed className="h-8 w-8 mb-2 opacity-40" />
-                <span className="text-sm">Nenhum alimento adicionado</span>
+                <span className="text-sm">Adicione alimentos usando o botão acima</span>
+                {errors.alimentos && (
+                  <p className="text-xs text-destructive mt-2" data-testid="error-alimentos">
+                    {errors.alimentos}
+                  </p>
+                )}
               </div>
             ) : (
               <div className="rounded-lg border overflow-hidden">
@@ -387,11 +402,11 @@ export function ModalNovaRefeicao({
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, observacao: e.target.value }))
               }
-              placeholder="Orientações ou observações sobre esta refeição..."
+              placeholder="Orientações ou observações sobre esta refeição"
               rows={3}
               data-testid="textarea-observacao"
             />
-            <p className="text-xs text-muted-foreground">Visível via aplicativo</p>
+            <p className="text-xs text-muted-foreground">Visível para o cliente no aplicativo</p>
           </div>
         </div>
 
