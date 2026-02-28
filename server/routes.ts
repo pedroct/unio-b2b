@@ -148,6 +148,46 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/nutricao/catalogo/grupos", async (req, res) => {
+    try {
+      const result = await stagingFetch("/api/nutricao/catalogo/grupos");
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[proxy] /catalogo/grupos error:", err.message);
+      return res.status(502).json({ message: "Erro ao conectar com o servidor." });
+    }
+  });
+
+  app.get("/api/nutricao/catalogo/tipos", async (req, res) => {
+    try {
+      const result = await stagingFetch("/api/nutricao/catalogo/tipos");
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[proxy] /catalogo/tipos error:", err.message);
+      return res.status(502).json({ message: "Erro ao conectar com o servidor." });
+    }
+  });
+
+  app.get("/api/nutricao/catalogo/nutrientes", async (req, res) => {
+    try {
+      const result = await stagingFetch("/api/nutricao/catalogo/nutrientes");
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[proxy] /catalogo/nutrientes error:", err.message);
+      return res.status(502).json({ message: "Erro ao conectar com o servidor." });
+    }
+  });
+
+  app.get("/api/nutricao/catalogo/alimentos/codigo/:codigo", async (req, res) => {
+    try {
+      const result = await stagingFetch(`/api/nutricao/catalogo/alimentos/codigo/${req.params.codigo}`);
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[proxy] /catalogo/alimentos/codigo/:codigo error:", err.message);
+      return res.status(502).json({ message: "Erro ao conectar com o servidor." });
+    }
+  });
+
   app.get("/api/nutricao/catalogo/alimentos/:id", async (req, res) => {
     try {
       const result = await stagingFetch(`/api/nutricao/catalogo/alimentos/${req.params.id}`);

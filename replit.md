@@ -80,8 +80,12 @@ shared/
 - POST /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/refeicoes — Create meal
 - GET /api/nutricao/catalogo/alimentos?busca&fontes&limite&offset — Search foods from catalog (proxied to staging, paginated response `{ items, total, limite, offset }`)
 - GET /api/nutricao/catalogo/alimentos/:id — Food detail with nutrients (proxied to staging)
+- GET /api/nutricao/catalogo/alimentos/codigo/:codigo — Search food by code (proxied to staging)
 - POST /api/nutricao/catalogo/calcular — Calculate nutrients for quantity (proxied to staging)
 - GET /api/nutricao/catalogo/fontes — List available food sources with counts (proxied to staging)
+- GET /api/nutricao/catalogo/grupos — List food groups (proxied to staging)
+- GET /api/nutricao/catalogo/tipos — List food types (proxied to staging)
+- GET /api/nutricao/catalogo/nutrientes — List available nutrients (proxied to staging)
 
 ## Staging API Integration
 The nutrition module endpoints are proxied through Express to the real backend at staging.unio.tec.br.
