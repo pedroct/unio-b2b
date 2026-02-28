@@ -87,6 +87,10 @@ shared/
 - GET /api/nutricao/catalogo/tipos — List food types (proxied to staging)
 - GET /api/nutricao/catalogo/nutrientes — List available nutrients (proxied to staging)
 
+## Cliente App Base (New Repl Package)
+A self-contained project scaffold for the UNIO client area lives in `cliente-app-base/`.
+It contains all files needed to bootstrap a new Repl: design system (index.css, shadcn components, theme toggle), auth (email+password), sidebar, login page, home page with module cards, mock server, and clean package.json (no DB/passport deps). See `cliente-app-base/README.md` for setup instructions.
+
 ## Staging API Integration
 The nutrition module endpoints are proxied through Express to the real backend at staging.unio.tec.br.
 Authentication is handled server-side using env vars STAGING_API_URL, STAGING_EMAIL, STAGING_PASSWORD.
