@@ -23,12 +23,12 @@ O frontend já está implementado e consome os endpoints listados abaixo. Atualm
 
 ## 2. Endpoints necessários
 
-### 2.1. Buscar alimentos — TBCA
+### 2.1. Buscar alimentos — Catálogo
 
-Já existe no staging e é usado via proxy.
+Já existe no staging e é usado via proxy. Migrado de `/tbca/alimentos` para `/catalogo/alimentos`.
 
 ```
-GET /api/nutricao/tbca/alimentos
+GET /api/nutricao/catalogo/alimentos
 ```
 
 **Query params:**
@@ -36,38 +36,39 @@ GET /api/nutricao/tbca/alimentos
 | Param   | Tipo   | Obrigatório | Descrição                                      |
 |---------|--------|-------------|-------------------------------------------------|
 | busca   | string | sim         | Termo de busca (mín. 2 caracteres no frontend) |
-| fonte   | string | não         | Filtro por fonte: `"TBCA"`, `"IBGE"`, etc.      |
+| fontes  | string | não         | Filtro multi-fonte, comma-separated: `"TBCA,TACO"` |
 | grupo   | string | não         | Filtro por grupo alimentar                      |
 | limite  | string | não         | Máx. resultados (frontend envia `"30"`)         |
 | offset  | string | não         | Paginação                                       |
 
-**Response `200 OK`** — array de objetos:
+**Response `200 OK`** — objeto paginado:
 
 ```jsonc
-[
-  {
-    "id": "63da4a38-fd01-4d80-a5e4-c238ba4529ed",       // UUID — usado como identificador único do alimento
-    "codigo_tbca": "BRC0732F",
-    "descricao": "Carne, boi, de segunda (...), c/ sal", // Nome completo do alimento
-    "nome_cientifico": "Bos taurus",                     // Opcional
-    "grupo_alimentar": {
-      "id": "e7acb656-...",
-      "codigo_tbca": "F",
-      "nome": "Carnes e derivados"
-    },
-    "fonte_dados": "TBCA"                                // Enum: "TBCA" | "IBGE" | "TUCUNDUVA" | "SUPLEMENTOS" | "MEUS_ALIMENTOS"
-  }
-]
+{
+  "items": [
+    {
+      "id": "63da4a38-fd01-4d80-a5e4-c238ba4529ed",
+      "descricao": "Carne, boi, de segunda (...), c/ sal",
+      "nome_cientifico": "Bos taurus",
+      "grupo_alimentar": "Carnes e derivados",
+      "fonte_dados": "TBCA"
+    }
+  ],
+  "total": 142,
+  "limite": 30,
+  "offset": 0
+}
 ```
 
 > **Nota:** O frontend aplica `formatFoodName()` para limpeza visual (remove ", Brasil", ", todas as variedades", ", cru", expande `c/` → "com", `s/` → "sem"). Isso é feito no client — o backend deve retornar a descrição original completa.
+> O frontend usa `normalizarListagemCatalogo(raw)` para tratar tanto resposta paginada quanto array legado.
 
 ---
 
 ### 2.2. Detalhe de alimento — TBCA
 
 ```
-GET /api/nutricao/tbca/alimentos/:id
+GET /api/nutricao/catalogo/alimentos/:id
 ```
 
 **Path params:**
@@ -85,7 +86,7 @@ GET /api/nutricao/tbca/alimentos/:id
 Recalcula a composição nutricional para uma quantidade específica de alimento.
 
 ```
-POST /api/nutricao/tbca/calcular
+POST /api/nutricao/catalogo/calcular
 ```
 
 **Request body:**
@@ -298,7 +299,7 @@ GET /api/profissional/dashboard/pacientes/:pacienteId/plano-alimentar?planoId=X&
 ```typescript
 type DiaSemana = "segunda" | "terca" | "quarta" | "quinta" | "sexta" | "sabado" | "domingo";
 
-type FonteAlimento = "TBCA" | "IBGE" | "TUCUNDUVA" | "SUPLEMENTOS" | "MEUS_ALIMENTOS";
+type FonteAlimento = "TBCA" | "TACO" | "IBGE" | "USDA" | "SUPLEMENTOS" | "MEUS_ALIMENTOS";
 
 interface AlimentoPlano {
   id: string;
@@ -399,7 +400,7 @@ Estes endpoints já estão mapeados no frontend mas ainda não implementados:
 | Excluir refeição         | DELETE | `.../planos-alimentares/:planoId/refeicoes/:refeicaoId`                    |
 | Duplicar refeição        | POST   | `.../planos-alimentares/:planoId/refeicoes/:refeicaoId/duplicar`           |
 | Remover alimento         | DELETE | `.../planos-alimentares/:planoId/refeicoes/:refeicaoId/alimentos/:alimentoId` |
-| Busca legado (não-TBCA)  | GET    | `/api/nutricao/alimentos/buscar?q=...&limite=...`                          |
+| Busca catálogo (multi-fonte)  | GET    | `/api/nutricao/catalogo/alimentos?busca=...&fontes=...&limite=...`    |
 
 ---
 
@@ -407,7 +408,7 @@ Estes endpoints já estão mapeados no frontend mas ainda não implementados:
 
 Todos os endpoints sob `/api/profissional/...` devem ser autenticados via **Bearer token JWT** no header `Authorization`. O frontend envia o token obtido no login (`POST /api/auth/pair`).
 
-Os endpoints sob `/api/nutricao/...` (busca e cálculo de alimentos) são chamados pelo frontend sem auth header — a autenticação com o serviço TBCA é feita server-side (o Express proxy adiciona o token do staging). O backend real deve manter esse comportamento ou exigir o mesmo token do profissional.
+Os endpoints sob `/api/nutricao/catalogo/...` (busca e cálculo de alimentos) são chamados pelo frontend sem auth header — a autenticação com o serviço de catálogo é feita server-side (o Express proxy adiciona o token do staging). O backend real deve manter esse comportamento ou exigir o mesmo token do profissional.
 
 ---
 
@@ -422,10 +423,10 @@ STAGING_PASSWORD=...
 ```
 
 Token JWT cacheado por 25 minutos. Endpoints proxied:
-- `GET /api/nutricao/tbca/alimentos` → `GET staging/api/nutricao/tbca/alimentos`
-- `GET /api/nutricao/tbca/alimentos/:id` → `GET staging/api/nutricao/tbca/alimentos/:id`
-- `POST /api/nutricao/tbca/calcular` → `POST staging/api/nutricao/tbca/calcular`
-- `GET /api/nutricao/alimentos/buscar` → `GET staging/api/nutricao/alimentos/buscar`
+- `GET /api/nutricao/catalogo/alimentos` → `GET staging/api/nutricao/catalogo/alimentos`
+- `GET /api/nutricao/catalogo/alimentos/:id` → `GET staging/api/nutricao/catalogo/alimentos/:id`
+- `POST /api/nutricao/catalogo/calcular` → `POST staging/api/nutricao/catalogo/calcular`
+- `GET /api/nutricao/catalogo/fontes` → `GET staging/api/nutricao/catalogo/fontes`
 
 ---
 

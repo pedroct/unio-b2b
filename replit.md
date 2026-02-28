@@ -78,14 +78,14 @@ shared/
 - PUT /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/dias — Update active days
 - PUT /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/descricao — Update description
 - POST /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/refeicoes — Create meal
-- GET /api/nutricao/alimentos/buscar?q&limite — Search legacy foods (proxied to staging)
-- GET /api/nutricao/tbca/alimentos?busca&fonte&limite — Search TBCA foods (proxied to staging)
-- GET /api/nutricao/tbca/alimentos/:id — Food detail with nutrients (proxied to staging)
-- POST /api/nutricao/tbca/calcular — Calculate nutrients for quantity (proxied to staging)
+- GET /api/nutricao/catalogo/alimentos?busca&fontes&limite&offset — Search foods from catalog (proxied to staging, paginated response `{ items, total, limite, offset }`)
+- GET /api/nutricao/catalogo/alimentos/:id — Food detail with nutrients (proxied to staging)
+- POST /api/nutricao/catalogo/calcular — Calculate nutrients for quantity (proxied to staging)
+- GET /api/nutricao/catalogo/fontes — List available food sources with counts (proxied to staging)
 
 ## Staging API Integration
 The nutrition module endpoints are proxied through Express to the real backend at staging.unio.tec.br.
 Authentication is handled server-side using env vars STAGING_API_URL, STAGING_EMAIL, STAGING_PASSWORD.
 The proxy module is in `server/staging-proxy.ts` — it manages JWT token caching and renewal.
-Currently only TBCA table data is available from the backend.
-Planned future sources: IBGE, Tucunduva, Suplementos, Meus alimentos (shown as "Em breve" in UI).
+Available food sources: TBCA, TACO, IBGE, USDA. Planned future sources: Suplementos, Meus alimentos (shown as "Em breve" in UI).
+The `fontes` parameter accepts comma-separated values for multi-source filtering (e.g. `fontes=TBCA,TACO`).

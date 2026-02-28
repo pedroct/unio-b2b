@@ -138,65 +138,63 @@ export async function registerRoutes(
     return res.status(201).json(refeicao);
   });
 
-  app.get("/api/nutricao/alimentos/buscar", async (req, res) => {
-    const q = req.query.q as string;
-    const limite = req.query.limite as string || "20";
-    if (!q) {
-      return res.status(422).json({ message: "Parâmetro 'q' é obrigatório." });
-    }
+  app.get("/api/nutricao/catalogo/fontes", async (req, res) => {
     try {
-      const result = await stagingFetch("/api/nutricao/alimentos/buscar", {
-        params: { q, limite },
-      });
+      const result = await stagingFetch("/api/nutricao/catalogo/fontes");
       return res.status(result.status).json(result.data);
     } catch (err: any) {
-      console.error("[proxy] /alimentos/buscar error:", err.message);
+      console.error("[proxy] /catalogo/fontes error:", err.message);
       return res.status(502).json({ message: "Erro ao conectar com o servidor." });
     }
   });
 
-  app.get("/api/nutricao/tbca/alimentos/:id", async (req, res) => {
+  app.get("/api/nutricao/catalogo/alimentos/:id", async (req, res) => {
     try {
-      const result = await stagingFetch(`/api/nutricao/tbca/alimentos/${req.params.id}`);
+      const result = await stagingFetch(`/api/nutricao/catalogo/alimentos/${req.params.id}`);
       return res.status(result.status).json(result.data);
     } catch (err: any) {
-      console.error("[proxy] /tbca/alimentos/:id error:", err.message);
+      console.error("[proxy] /catalogo/alimentos/:id error:", err.message);
       return res.status(502).json({ message: "Erro ao conectar com o servidor." });
     }
   });
 
-  app.get("/api/nutricao/tbca/alimentos", async (req, res) => {
+  app.get("/api/nutricao/catalogo/alimentos", async (req, res) => {
     const busca = (req.query.busca as string) || "";
     if (!busca) {
-      return res.json([]);
+      return res.json({ items: [], total: 0, limite: 50, offset: 0 });
     }
     const params: Record<string, string> = { busca };
-    if (req.query.fonte) params.fonte = req.query.fonte as string;
+    if (req.query.fontes) params.fontes = req.query.fontes as string;
+    else if (req.query.fonte) params.fonte = req.query.fonte as string;
     if (req.query.grupo) params.grupo = req.query.grupo as string;
     if (req.query.limite) params.limite = req.query.limite as string;
     if (req.query.offset) params.offset = req.query.offset as string;
     try {
-      const result = await stagingFetch("/api/nutricao/tbca/alimentos", { params });
-      return res.status(result.status).json(result.data);
+      const result = await stagingFetch("/api/nutricao/catalogo/alimentos", { params });
+      const data = result.data;
+      const normalized = Array.isArray(data)
+        ? { items: data, total: data.length, limite: parseInt(params.limite || "50"), offset: parseInt(params.offset || "0") }
+        : data;
+      return res.status(result.status).json(normalized);
     } catch (err: any) {
-      console.error("[proxy] /tbca/alimentos error:", err.message);
+      console.error("[proxy] /catalogo/alimentos error:", err.message);
       return res.status(502).json({ message: "Erro ao conectar com o servidor." });
     }
   });
 
-  app.post("/api/nutricao/tbca/calcular", async (req, res) => {
+  app.post("/api/nutricao/catalogo/calcular", async (req, res) => {
     const { alimento_id, quantidade_consumida } = req.body;
     if (!alimento_id || !quantidade_consumida) {
       return res.status(422).json({ message: "alimento_id e quantidade_consumida são obrigatórios." });
     }
     try {
-      const result = await stagingFetch("/api/nutricao/tbca/calcular", {
+      const result = await stagingFetch("/api/nutricao/catalogo/calcular", {
         method: "POST",
         body: { alimento_id, quantidade_consumida },
       });
       return res.status(result.status).json(result.data);
     } catch (err: any) {
-      console.error("[proxy] /tbca/calcular error:", err.message);
+      console.error("[proxy] /catalogo/calcular error:", err.message);
       return res.status(502).json({ message: "Erro ao conectar com o servidor." });
     }
   });

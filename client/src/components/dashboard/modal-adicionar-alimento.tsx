@@ -14,7 +14,7 @@ import { Search, Check, Flame, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { formatFoodName, formatNutrient } from "@/lib/formatters";
-import { normalizarResultadosTBCA, type ResultadoBuscaNormalizado } from "@/lib/api-normalizers";
+import { normalizarListagemCatalogo, type ResultadoBuscaNormalizado } from "@/lib/api-normalizers";
 import { FONTES_ALIMENTO } from "@shared/schema";
 import type { AlimentoPlano, FonteAlimento, ResumoMacros, ApresentacaoAlimento } from "@shared/schema";
 
@@ -121,16 +121,14 @@ export function ModalAdicionarAlimento({
     try {
       const resultadosCombinados: ResultadoBusca[] = [];
 
-      if (origem === "TODAS" || origem === "TBCA") {
-        const params = new URLSearchParams({ busca: termo, limite: "30" });
-        if (origem === "TBCA") {
-          params.set("fonte", "TBCA");
-        }
-        const resTbca = await fetch(`/api/nutricao/tbca/alimentos?${params}`);
-        if (resTbca.ok) {
-          const dados = await resTbca.json();
-          resultadosCombinados.push(...normalizarResultadosTBCA(dados));
-        }
+      const params = new URLSearchParams({ busca: termo, limite: "30" });
+      if (origem !== "TODAS") {
+        params.set("fontes", origem);
+      }
+      const resCatalogo = await fetch(`/api/nutricao/catalogo/alimentos?${params}`);
+      if (resCatalogo.ok) {
+        const dados = await resCatalogo.json();
+        resultadosCombinados.push(...normalizarListagemCatalogo(dados));
       }
 
       const unicos = resultadosCombinados.filter(
@@ -158,7 +156,7 @@ export function ModalAdicionarAlimento({
   const calcularMacrosRemoto = useCallback(async (alimentoId: string, qtd: number) => {
     setCalculando(true);
     try {
-      const res = await fetch("/api/nutricao/tbca/calcular", {
+      const res = await fetch("/api/nutricao/catalogo/calcular", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ alimento_id: alimentoId, quantidade_consumida: qtd }),

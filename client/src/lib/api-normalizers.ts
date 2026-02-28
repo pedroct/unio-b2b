@@ -26,7 +26,7 @@ function formatHorarioInterno(h: string): string {
 
 function toUpperFonte(fonte: string): FonteAlimento {
   const upper = (fonte || "TBCA").toUpperCase();
-  if (["TBCA", "IBGE", "TUCUNDUVA", "SUPLEMENTOS", "MEUS_ALIMENTOS"].includes(upper)) {
+  if (["TBCA", "TACO", "IBGE", "USDA", "SUPLEMENTOS", "MEUS_ALIMENTOS"].includes(upper)) {
     return upper as FonteAlimento;
   }
   return "TBCA";
@@ -60,7 +60,9 @@ export function normalizarAlimentoTBCA(item: any): ResultadoBuscaNormalizado {
   const grupo =
     typeof item.grupo === "string"
       ? item.grupo
-      : item.grupo_alimentar?.nome ?? undefined;
+      : typeof item.grupo_alimentar === "string"
+        ? item.grupo_alimentar
+        : item.grupo_alimentar?.nome ?? undefined;
 
   return {
     id: item.id,
@@ -78,6 +80,11 @@ export function normalizarAlimentoTBCA(item: any): ResultadoBuscaNormalizado {
 
 export function normalizarResultadosTBCA(dados: any[]): ResultadoBuscaNormalizado[] {
   return dados.map(normalizarAlimentoTBCA);
+}
+
+export function normalizarListagemCatalogo(raw: any): ResultadoBuscaNormalizado[] {
+  const items = Array.isArray(raw) ? raw : (raw?.items ?? []);
+  return items.map(normalizarAlimentoTBCA);
 }
 
 export function normalizarAlimentoPlano(raw: any): AlimentoPlano {

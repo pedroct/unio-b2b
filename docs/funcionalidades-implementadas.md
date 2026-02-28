@@ -339,20 +339,20 @@
 | Item | Detalhe |
 |------|---------|
 | Componente | `ModalAdicionarAlimento` |
-| Endpoints | `GET /api/nutricao/tbca/alimentos`, `POST /api/nutricao/tbca/calcular` |
+| Endpoints | `GET /api/nutricao/catalogo/alimentos`, `POST /api/nutricao/catalogo/calcular` |
 
 ### 9.1. Busca de Alimentos
 
 | Parametro | Detalhe |
 |-----------|---------|
-| Endpoint | `GET /api/nutricao/tbca/alimentos?busca=X&limite=30` |
+| Endpoint | `GET /api/nutricao/catalogo/alimentos?busca=X&fontes=TBCA&limite=30` |
 | Debounce | 300ms |
 | Minimo | 2 caracteres |
 
 **Funcionalidades:**
 
 - Campo de busca com placeholder "Buscar alimento por nome"
-- Abas de fonte de dados: TBCA (ativa), IBGE, Tucunduva, Suplementos, Meus alimentos (marcadas "Em breve" com tooltips)
+- Abas de fonte de dados: TBCA, TACO, IBGE, USDA (ativas), Suplementos, Meus alimentos (marcadas "Em breve" com tooltips)
 - Lista de resultados com:
   - Nome do alimento (formatado: `c/` -> "com", `s/` -> "sem", remove ", Brasil", ", todas as variedades", ", cru")
   - Badge com grupo alimentar
@@ -467,8 +467,9 @@ O frontend possui uma camada de normalizacao (`client/src/lib/api-normalizers.ts
 
 | Funcao | Uso |
 |--------|-----|
-| `normalizarAlimentoTBCA(raw)` | Normaliza resultado individual da busca TBCA |
-| `normalizarResultadosTBCA(dados)` | Normaliza array de resultados |
+| `normalizarAlimentoTBCA(raw)` | Normaliza resultado individual da busca de catalogo |
+| `normalizarResultadosTBCA(dados)` | Normaliza array de resultados (legado) |
+| `normalizarListagemCatalogo(raw)` | Normaliza resposta paginada `{ items, total }` ou array |
 | `normalizarAlimentoPlano(raw)` | Normaliza alimento dentro de refeicao (leitura) |
 | `normalizarRefeicao(raw)` | Normaliza refeicao com alimentos e horario |
 | `normalizarPlanoAlimentar(raw)` | Normaliza plano alimentar completo |
@@ -513,14 +514,14 @@ O frontend possui uma camada de normalizacao (`client/src/lib/api-normalizers.ts
 | PUT | `.../planos-alimentares/:planoId/descricao` | Atualizar descricao do plano |
 | POST | `.../planos-alimentares/:planoId/refeicoes` | Criar nova refeicao |
 
-### 11.5. Modulo TBCA (Nutricao)
+### 11.5. Modulo Catalogo de Alimentos (Nutricao)
 
 | Metodo | Endpoint | Descricao |
 |--------|----------|-----------|
-| GET | `/api/nutricao/tbca/alimentos?busca&limite` | Buscar alimentos TBCA |
-| GET | `/api/nutricao/tbca/alimentos/:id` | Detalhe do alimento |
-| POST | `/api/nutricao/tbca/calcular` | Calcular macros por quantidade |
-| GET | `/api/nutricao/alimentos/buscar?q&limite` | Busca legado (fallback) |
+| GET | `/api/nutricao/catalogo/alimentos?busca&fontes&limite&offset` | Buscar alimentos (paginado, multi-fonte) |
+| GET | `/api/nutricao/catalogo/alimentos/:id` | Detalhe do alimento |
+| POST | `/api/nutricao/catalogo/calcular` | Calcular macros por quantidade |
+| GET | `/api/nutricao/catalogo/fontes` | Listar fontes disponiveis com contagem |
 
 ---
 
@@ -555,7 +556,7 @@ O frontend possui uma camada de normalizacao (`client/src/lib/api-normalizers.ts
 
 ```typescript
 type DiaSemana = "segunda" | "terca" | "quarta" | "quinta" | "sexta" | "sabado" | "domingo";
-type FonteAlimento = "TBCA" | "IBGE" | "TUCUNDUVA" | "SUPLEMENTOS" | "MEUS_ALIMENTOS";
+type FonteAlimento = "TBCA" | "TACO" | "IBGE" | "USDA" | "SUPLEMENTOS" | "MEUS_ALIMENTOS";
 
 interface AlimentoPlano {
   id: string;

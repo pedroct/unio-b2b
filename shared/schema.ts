@@ -200,12 +200,13 @@ export const DESCRICOES_REFEICAO_PADRAO: string[] = [
   "Jantar",
 ];
 
-export type FonteAlimento = "TBCA" | "IBGE" | "TUCUNDUVA" | "SUPLEMENTOS" | "MEUS_ALIMENTOS";
+export type FonteAlimento = "TBCA" | "TACO" | "IBGE" | "USDA" | "SUPLEMENTOS" | "MEUS_ALIMENTOS";
 
 export const FONTES_ALIMENTO: { valor: FonteAlimento; rotulo: string; disponivel: boolean; tooltip?: string }[] = [
   { valor: "TBCA", rotulo: "TBCA", disponivel: true, tooltip: "Tabela Brasileira de Composição de Alimentos" },
-  { valor: "IBGE", rotulo: "IBGE", disponivel: false, tooltip: "Pesquisa de Orçamentos Familiares — IBGE" },
-  { valor: "TUCUNDUVA", rotulo: "Tucunduva", disponivel: false, tooltip: "Tabela de Composição de Alimentos — Tucunduva" },
+  { valor: "TACO", rotulo: "TACO", disponivel: true, tooltip: "Tabela TACO 4ª edição" },
+  { valor: "IBGE", rotulo: "IBGE", disponivel: true, tooltip: "Pesquisa de Orçamentos Familiares — IBGE" },
+  { valor: "USDA", rotulo: "USDA", disponivel: true, tooltip: "USDA Foundation Foods" },
   { valor: "SUPLEMENTOS", rotulo: "Suplementos", disponivel: false },
   { valor: "MEUS_ALIMENTOS", rotulo: "Meus alimentos", disponivel: false },
 ];
