@@ -1,0 +1,305 @@
+# Refatoração: /tbca/* → /catalogo/* com Filtro Multi-Fonte
+
+> **Status:** Em implementação
+> **Data:** 2025-02-28
+> **Versão:** 1.1
+
+---
+
+## 1. Contexto
+
+O sistema possui 4 fontes de dados nutricionais armazenadas no PostgreSQL (`unio_db`):
+
+| Fonte | Alimentos | Descrição |
+|-------|-----------|-----------|
+| TBCA | 5.563 | Tabela Brasileira de Composição de Alimentos |
+| IBGE | 1.121 | POF 2008-2009 |
+| TACO | 596 | Tabela TACO 4ª edição |
+| USDA | 365 | USDA Foundation Foods |
+| **Total** | **7.645** | |
+
+Os endpoints atuais usam o namespace `/tbca/*`, que não reflete a natureza multi-fonte do catálogo. O frontend precisa filtrar por uma ou mais fontes simultaneamente.
+
+---
+
+## 2. Mudanças de Nomenclatura
+
+### 2.1 Endpoints
+
+| Path Antigo | Path Novo | Método | Descrição |
+|-------------|-----------|--------|-----------|
+| `/tbca/alimentos` | `/catalogo/alimentos` | GET | Listagem com filtro multi-fonte |
+| `/tbca/alimentos/{id}` | `/catalogo/alimentos/{id}` | GET | Detalhe do alimento |
+| `/tbca/alimentos/codigo/{codigo}` | `/catalogo/alimentos/codigo/{codigo}` | GET | Busca por código |
+| `/tbca/calcular` | `/catalogo/calcular` | POST | Cálculo nutricional |
+| `/tbca/grupos` | `/catalogo/grupos` | GET | Grupos alimentares |
+| `/tbca/tipos` | `/catalogo/tipos` | GET | Tipos de alimento |
+| `/tbca/nutrientes` | `/catalogo/nutrientes` | GET | Nutrientes disponíveis |
+| *(novo)* | `/catalogo/fontes` | GET | Fontes disponíveis com contagem |
+
+> **Base path completo:** `/api/nutricao/catalogo/*`
+
+### 2.2 Schemas
+
+| Schema Antigo | Schema Novo |
+|---------------|-------------|
+| `AlimentoTBCAResumoSchema` | `CatalogoAlimentoResumoSchema` |
+| `AlimentoTBCADetalheSchema` | `CatalogoAlimentoDetalheSchema` |
+| `ResumoMacrosTBCASchema` | `ResumoMacrosSchema` |
+| *(novo)* | `FonteDadosSchema` |
+| *(novo)* | `CatalogoAlimentoListagemSchema` |
+
+### 2.3 Service
+
+| Método Antigo | Método Novo |
+|---------------|-------------|
+| `AlimentoService.buscar_tbca()` | `AlimentoService.buscar_catalogo()` |
+| *(novo)* | `AlimentoService.listar_fontes()` |
+
+---
+
+## 3. Filtro Multi-Fonte
+
+### 3.1 Parâmetro `fontes`
+
+O endpoint `GET /catalogo/alimentos` aceita o parâmetro `fontes` como **lista de valores separados por vírgula na query string**:
+
+```
+GET /api/nutricao/catalogo/alimentos?fontes=TACO,USDA&busca=abacate
+```
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `fontes` | string | Não | Valores separados por vírgula (ex: `TACO,USDA`). Filtra múltiplas fontes |
+| `fonte` | string | Não | Fonte única (backward compat). Ignorado se `fontes` presente |
+| `busca` | string | Não | Texto livre para busca por nome |
+| `grupo` | string | Não | Código do grupo alimentar |
+| `limite` | int | Não | Máximo de resultados (default: 50) |
+| `offset` | int | Não | Paginação (default: 0) |
+
+### 3.2 Regras de Prioridade
+
+| Cenário | Query String | Comportamento |
+|---------|-------------|---------------|
+| Todas as fontes | (sem `fontes` nem `fonte`) | Retorna todos os 7.645 alimentos |
+| Multi-fonte | `fontes=TACO,USDA` | Filtra por TACO **e** USDA |
+| Fonte única (novo) | `fontes=TBCA` | Filtra só TBCA |
+| Fonte única (legado) | `fonte=TBCA` | Filtra só TBCA (backward compat) |
+| Ambos presentes | `fontes=TACO,USDA&fonte=TBCA` | `fontes` tem prioridade, `fonte` ignorado |
+| Valor inválido | `fontes=TACO,XYZ` | Ignora `XYZ` silenciosamente, filtra só TACO |
+| Todos inválidos | `fontes=XYZ,ABC` | Retorna vazio (nenhuma fonte match) |
+
+### 3.3 Valores Aceitos
+
+Validados contra o enum `OrigemDados` do banco:
+
+| Valor | Label |
+|-------|-------|
+| `TBCA` | Tabela Brasileira de Composição de Alimentos |
+| `TACO` | Tabela TACO |
+| `IBGE` | Pesquisa de Orçamentos Familiares |
+| `USDA` | USDA Foundation Foods |
+
+---
+
+## 4. Novos Schemas
+
+### 4.1 `FonteDadosSchema`
+
+```python
+class FonteDadosSchema(Schema):
+    codigo: str      # "TBCA", "TACO", "IBGE", "USDA"
+    nome: str        # Label legível
+    total: int       # Contagem de alimentos ativos
+```
+
+**Exemplo de resposta `GET /catalogo/fontes`:**
+
+```json
+[
+    {"codigo": "TBCA", "nome": "TBCA", "total": 5563},
+    {"codigo": "IBGE", "nome": "IBGE", "total": 1121},
+    {"codigo": "TACO", "nome": "TACO", "total": 596},
+    {"codigo": "USDA", "nome": "USDA", "total": 365}
+]
+```
+
+### 4.2 `CatalogoAlimentoListagemSchema`
+
+```python
+class CatalogoAlimentoListagemSchema(Schema):
+    items: list[CatalogoAlimentoResumoSchema]
+    total: int       # Total de registros (sem paginação)
+    limite: int      # Limite aplicado
+    offset: int      # Offset aplicado
+```
+
+**Exemplo de resposta `GET /catalogo/alimentos?fontes=TACO,USDA&busca=abacate&limite=10`:**
+
+```json
+{
+    "items": [
+        {
+            "id": "uuid-...",
+            "codigo": "TACO_42",
+            "nome": "Abacate, cru",
+            "grupo_alimentar": "Frutas e derivados",
+            "fonte_dados": "TACO"
+        },
+        {
+            "id": "uuid-...",
+            "codigo": "USDA_171688",
+            "nome": "Abacate, cru, todas as variedades comerciais",
+            "grupo_alimentar": "Frutas e Sucos",
+            "fonte_dados": "USDA"
+        }
+    ],
+    "total": 2,
+    "limite": 10,
+    "offset": 0
+}
+```
+
+---
+
+## 5. Endpoint `GET /catalogo/fontes`
+
+### 5.1 Definição
+
+| Campo | Valor |
+|-------|-------|
+| Path | `/api/nutricao/catalogo/fontes` |
+| Método | GET |
+| Autenticação | Sim (usuário logado) |
+| Response | `list[FonteDadosSchema]` |
+| Cache | Recomendado (dados mudam raramente) |
+
+### 5.2 Lógica
+
+```python
+@staticmethod
+def listar_fontes() -> list[dict]:
+    """Retorna fontes disponíveis com contagem de alimentos ativos."""
+    from django.db.models import Count
+
+    return list(
+        AlimentoTBCA.objects
+        .filter(deletado_em__isnull=True)
+        .values("fonte_dados")
+        .annotate(total=Count("id"))
+        .order_by("-total")
+    )
+```
+
+### 5.3 Mapeamento Frontend
+
+Os botões da tela de pesquisa são alimentados dinamicamente por este endpoint:
+
+| Botão | Chamada API |
+|-------|------------|
+| **Todas** | `GET /catalogo/alimentos?busca=...` (sem `fontes`) |
+| **Taco** | `GET /catalogo/alimentos?fontes=TACO&busca=...` |
+| **IBGE** | `GET /catalogo/alimentos?fontes=IBGE&busca=...` |
+| **USDA** | `GET /catalogo/alimentos?fontes=USDA&busca=...` |
+| **TBCA** | `GET /catalogo/alimentos?fontes=TBCA&busca=...` |
+| **Tucunduva** | *(futuro — fonte ainda não importada)* |
+| **Taco + USDA** | `GET /catalogo/alimentos?fontes=TACO,USDA&busca=...` |
+
+---
+
+## 6. Lógica do Service
+
+### 6.1 `buscar_catalogo()`
+
+```python
+@staticmethod
+def buscar_catalogo(
+    busca: str = "",
+    fonte: str | None = None,      # backward compat (single)
+    fontes: list[str] | None = None,  # multi-fonte (prioridade)
+    grupo: str | None = None,
+    limite: int = 50,
+    offset: int = 0,
+) -> dict:
+    qs = AlimentoTBCA.objects.filter(deletado_em__isnull=True)
+
+    # Filtro multi-fonte (prioridade sobre fonte single)
+    if fontes:
+        valores_validos = [f for f in fontes if f in OrigemDados.values]
+        if valores_validos:
+            qs = qs.filter(fonte_dados__in=valores_validos)
+        else:
+            return {"items": [], "total": 0}
+    elif fonte:
+        qs = qs.filter(fonte_dados=fonte)
+
+    if busca:
+        qs = qs.filter(nome__icontains=busca)
+
+    if grupo:
+        qs = qs.filter(grupo_alimentar__codigo=grupo)
+
+    total = qs.count()
+    items = list(qs.order_by("nome")[offset:offset + limite])
+
+    return {"items": items, "total": total}
+```
+
+---
+
+## 7. Arquivos Impactados
+
+| Arquivo | Tipo de Mudança |
+|---------|----------------|
+| `apps/nutricao/schemas.py` | Renomear 3 schemas + criar 2 novos |
+| `apps/nutricao/services.py` | Renomear método + criar `listar_fontes()` |
+| `apps/nutricao/api.py` | Renomear 7 endpoints + criar 1 novo |
+| `apps/nutricao/tests/teste_nutricao.py` | Atualizar referências |
+| `apps/nucleo/tests/teste_cobertura_fase1.py` | Atualizar referências |
+| `contratos/contrato_consulta_alimentos_frontend.md` | Atualizar paths e schemas |
+| `contratos/contrato_nutricao_nova_refeicao.md` | Atualizar referências |
+
+---
+
+## 8. Breaking Changes
+
+| Mudança | Impacto | Mitigação |
+|---------|---------|-----------|
+| Paths `/tbca/*` removidos | Frontend quebra se não atualizar | Deploy sincronizado front+back |
+| Response de listagem agora é objeto (não array) | Frontend precisa acessar `.items` | Documentado no contrato |
+| Schemas renomeados | Quem importa diretamente quebra | Busca global e substitui |
+| Parâmetro `fonte` marcado como deprecated | Funciona, mas será removido v2.0 | Log de warning no backend |
+
+---
+
+## 9. Checklist de Implementação
+
+- [ ] Renomear schemas em `schemas.py`
+- [ ] Criar `FonteDadosSchema`
+- [ ] Criar `CatalogoAlimentoListagemSchema`
+- [ ] Renomear `buscar_tbca()` → `buscar_catalogo()` em `services.py`
+- [ ] Adicionar param `fontes` no `buscar_catalogo()`
+- [ ] Criar `listar_fontes()` em `services.py`
+- [ ] Renomear 7 endpoints em `api.py`
+- [ ] Criar endpoint `GET /catalogo/fontes`
+- [ ] Atualizar response type da listagem para wrapper com paginação
+- [ ] Atualizar imports em `api.py`
+- [ ] Atualizar `teste_nutricao.py`
+- [ ] Atualizar `teste_cobertura_fase1.py`
+- [ ] Atualizar `contrato_consulta_alimentos_frontend.md`
+- [ ] Atualizar `contrato_nutricao_nova_refeicao.md`
+- [ ] Testar no PostgreSQL via curl/httpie
+- [ ] Verificar Django check sem erros
+
+---
+
+## 10. Estimativa
+
+| Fase | Tempo |
+|------|-------|
+| Schemas + Service | ~30min |
+| Endpoints | ~30min |
+| Testes | ~30min |
+| Contratos + Docs | ~15min |
+| Verificação PostgreSQL | ~15min |
+| **Total** | **~2h** |
