@@ -1,0 +1,239 @@
+# Correções de UI — Aba Recuperação & Sono
+
+> **Versão:** 1.0
+> **Data:** 2026-03-03
+> **Autor:** Pedro Teixeira (UI Writer / UX Review)
+> **Referências:** [[PRD Painel de Longevidade v3]], [[UNIO Design Tokens Longevidade V1]], [[Correções UI Cockpit V1]], [[Correções UI Cardiometabólico V1]]
+> **Escopo:** Aba 3 — Recuperação & Sono (estado bloqueado)
+> **Prioridades:** 🔴 Crítico | 🟠 Alto | 🟡 Médio | 🔵 Baixo
+
+---
+
+## Avaliação Geral
+
+Esta aba implementa corretamente o padrão de estado bloqueado definido no PRD V3 (seção 6.3). Os elementos essenciais estão presentes: ícone de cadeado, título, descrição contextual dos biomarcadores que serão disponibilizados e botão de coleta de interesse. As correções são de refinamento visual e de copy — não há problemas estruturais ou críticos.
+
+**Este mock deve se tornar o padrão de referência para todas as abas bloqueadas** (Performance e Nutrição devem seguir o mesmo layout).
+
+---
+
+## 1. Navegação (Tab Bar)
+
+### 1.1 🟠 Aba bloqueada selecionada com estilo de aba ativa
+
+- **O que está:** "Recuperação & Sono" está com visual de aba selecionada — parece ter um contorno ou background de destaque, similar a uma aba ativa funcional.
+- **O que deveria ser:** A aba está bloqueada. O usuário pode clicar nela (para ver o estado bloqueado), mas o estilo visual deve comunicar que é uma aba **selecionada porém indisponível** — diferente de uma aba ativa com conteúdo funcional.
+- **Proposta de diferenciação:**
+
+| Estado da aba | Estilo visual |
+|---|---|
+| Ativa (Cockpit, Cardiometabólico) | Texto `--mod-longevidade-text`, underline `--mod-longevidade-base`, sem cadeado |
+| Selecionada bloqueada | Texto `--mod-longevidade-disabled`, underline `--mod-longevidade-disabled`, cadeado visível |
+| Não selecionada bloqueada | Texto `--mod-longevidade-disabled`, sem underline, cadeado visível |
+| Não selecionada disponível | Texto `--sys-text-secondary`, sem underline, sem cadeado |
+
+- **Token aba selecionada bloqueada:** Indicador/underline em `--mod-longevidade-disabled` (`#B3B9D6`) — presente mas atenuado.
+
+### 1.2 🟡 Problemas recorrentes da tab bar
+
+Mesmos itens de [[Correções UI Cockpit V1]] seções 1.1 e 1.2. Aplicar o sistema de estados definido acima resolve todos os casos.
+
+---
+
+## 2. Empty State — Conteúdo Bloqueado
+
+### 2.1 ✅ Estrutura correta
+
+O layout segue o padrão esperado:
+- Ícone de cadeado centralizado
+- Título da aba
+- Descrição dos biomarcadores que serão disponibilizados
+- Botão de coleta de interesse
+
+**Manter esta estrutura como template para Performance e Nutrição.**
+
+### 2.2 🟠 Ícone de cadeado em cor do módulo — ajustar
+
+- **O que está:** Ícone de cadeado dentro de um círculo com fundo lilás/roxo sutil.
+- **O que deveria ser:** O cadeado representa um estado indisponível — não deve usar a cor ativa do módulo. Deve usar tokens de estado desabilitado ou global.
+- **Tokens:**
+  - Círculo de fundo: `--sys-bg-secondary` (`#F5F3EE`) ou `--sys-border-light` (`#E8EBE5`)
+  - Ícone de cadeado: `--mod-longevidade-disabled` (`#B3B9D6`)
+- **Justificativa:** O lilás/roxo atual não pertence a nenhum token do sistema. Parece um resquício da paleta de Suplementos (`--mod-suplementos-*`) — exatamente o tipo de contaminação entre módulos que os Design Tokens v3 foram criados para evitar.
+
+### 2.3 🟡 Título "Recuperação & Sono" em negrito preto
+
+- **O que está:** Título em preto/escuro com peso bold.
+- **O que deveria ser:** O título da aba bloqueada pode manter destaque visual (é o nome da funcionalidade), mas deveria usar a cor do módulo Longevidade para manter coerência, mesmo em estado bloqueado.
+- **Token:** `--mod-longevidade-text` (`#333F73`), font-weight 600.
+- **Alternativa aceita:** `--sys-text-primary` (`#2D4A3A`) se a decisão for que abas bloqueadas não herdam identidade de módulo.
+
+### 2.4 🟡 Descrição com copy a melhorar
+
+- **O que está:** "Recuperação & Sono estará disponível em breve. Aqui você acompanhará tempo de sono, estágios REM e profundo, HRV noturna e equilíbrio entre carga de treino e recuperação."
+- **Problemas identificados:**
+  - "Aqui você acompanhará" — tom genérico, poderia ser mais orientado ao valor clínico
+  - Lista de biomarcadores está boa, mas poderia destacar o benefício, não apenas as features
+  - Falta menção à exposição solar (PRD seção 9.1)
+- **Copy sugerida:**
+
+> Recuperação & Sono estará disponível em breve.
+>
+> Você terá acesso a indicadores de qualidade do sono, HRV noturna, estágios REM e profundo, e o equilíbrio entre carga de treino e capacidade de recuperação — dados essenciais para otimizar protocolos de treino e nutrição.
+
+- **Justificativa:** A nova copy conecta os biomarcadores com o benefício clínico ("otimizar protocolos") em vez de apenas listar features. Isso é coerente com o tom "especialista mas acessível" definido no PRD.
+- **Token texto:** `--sys-text-secondary` (`#5F6B5A`)
+
+### 2.5 🟡 Botão "Me avise quando disponível" — ajustar tokens
+
+- **O que está:** Botão com borda e ícone de sino em tom neutro/cinza.
+- **O que deveria ser:** O botão é o único elemento de ação da aba — precisa de destaque suficiente para ser percebido, mas sem parecer um botão primário (a ação primária é voltar ao Cockpit).
+- **Tokens recomendados (botão secundário/outline):**
+  - Borda: `--mod-longevidade-border` (`#B3B9D6`)
+  - Texto: `--mod-longevidade-text` (`#333F73`)
+  - Ícone sino: `--mod-longevidade-icon` (`#4A5899`)
+  - Background: transparente
+  - Hover: `--mod-longevidade-bg` (`#EDEEF5`)
+  - Focus ring: `--mod-longevidade-ring` (`rgba(74, 88, 153, 0.35)`)
+- **CSS:**
+```css
+.notify-btn {
+  background: transparent;
+  border: 1px solid var(--mod-longevidade-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  color: var(--mod-longevidade-text);
+  font-family: var(--font-body);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.notify-btn__icon {
+  color: var(--mod-longevidade-icon);
+}
+
+.notify-btn:hover {
+  background: var(--mod-longevidade-bg);
+}
+
+.notify-btn:focus-visible {
+  outline: 2px solid var(--mod-longevidade-ring);
+  outline-offset: 2px;
+}
+```
+
+### 2.6 🔵 Estado pós-clique do botão não definido
+
+- **O que está:** Botão sem estado de confirmação definido.
+- **O que deveria ser:** Após clicar, o botão deve mudar para estado de confirmação.
+- **Comportamento sugerido:**
+  - Texto muda para: "Notificação ativada ✓"
+  - Estilo muda para: fundo `--mod-longevidade-bg` com texto `--mod-longevidade-text`
+  - Ícone muda de sino para check
+  - Botão fica desabilitado (não permite clicar novamente)
+- **Se o usuário já se inscreveu anteriormente:** A aba deve abrir já com o estado "Notificação ativada ✓".
+
+---
+
+## 3. Header do Paciente
+
+### 3.1 Mesmos problemas do Cardiometabólico
+
+Todos os itens da seção 1 de [[Correções UI Cardiometabólico V1]] se aplicam:
+- **1.1** — Decisão pendente sobre avatar (global vs módulo)
+- **1.3** — E-mail exposto sem hierarquia
+- **1.4** — Botão "Metas" sem especificação no PRD
+
+**Não duplicar. Aplicar mesmas correções.**
+
+---
+
+## 4. Tokens — Verificação de Aplicação
+
+| Elemento | Token Esperado | Hex |
+|---|---|---|
+| Background da página | `--sys-bg-primary` | `#FAFBF8` |
+| Círculo do cadeado — fundo | `--sys-bg-secondary` | `#F5F3EE` |
+| Ícone cadeado | `--mod-longevidade-disabled` | `#B3B9D6` |
+| Título da aba | `--mod-longevidade-text` | `#333F73` |
+| Descrição | `--sys-text-secondary` | `#5F6B5A` |
+| Botão — borda | `--mod-longevidade-border` | `#B3B9D6` |
+| Botão — texto | `--mod-longevidade-text` | `#333F73` |
+| Botão — ícone sino | `--mod-longevidade-icon` | `#4A5899` |
+| Botão — hover fundo | `--mod-longevidade-bg` | `#EDEEF5` |
+| Tab selecionada bloqueada — texto | `--mod-longevidade-disabled` | `#B3B9D6` |
+| Tab selecionada bloqueada — indicador | `--mod-longevidade-disabled` | `#B3B9D6` |
+
+---
+
+## 5. Copy Consolidada
+
+### Descrição do Empty State
+
+| Campo | Copy Atual | Copy Corrigida |
+|---|---|---|
+| Título | Recuperação & Sono | Recuperação & Sono ✅ |
+| Descrição | Recuperação & Sono estará disponível em breve. Aqui você acompanhará tempo de sono, estágios REM e profundo, HRV noturna e equilíbrio entre carga de treino e recuperação. | Recuperação & Sono estará disponível em breve. Você terá acesso a indicadores de qualidade do sono, HRV noturna, estágios REM e profundo, e o equilíbrio entre carga de treino e capacidade de recuperação — dados essenciais para otimizar protocolos de treino e nutrição. |
+| Botão | Me avise quando disponível | Me avise quando disponível ✅ |
+| Botão pós-clique | (não definido) | Notificação ativada ✓ |
+
+---
+
+## 6. Template para Abas Bloqueadas
+
+Esta aba deve ser o template para Performance e Nutrição. Estrutura padronizada:
+
+```
+[Ícone de cadeado em círculo]
+
+[Título da Aba]
+
+[Descrição contextual — 2 frases:
+  1. "[Nome] estará disponível em breve."
+  2. Benefício + lista de biomarcadores/funcionalidades.]
+
+[Botão: Me avise quando disponível]
+```
+
+**Copy por aba (para implementação):**
+
+### Performance & Funcionalidade
+
+> Performance & Funcionalidade estará disponível em breve.
+>
+> Você terá acesso a volume semanal de treino, zonas de frequência cardíaca, velocidade de caminhada e indicadores de força e estabilidade — dados essenciais para ajustar periodização e acompanhar capacidade funcional.
+
+### Nutrição
+
+> Nutrição estará disponível em breve.
+>
+> Você terá acesso a correlações entre ingestão alimentar e biomarcadores: proteína relativa versus massa magra, carga glicêmica versus variabilidade da glicose, e balanço calórico versus tendência de peso — dados que transformam nutrição em driver de saúde.
+
+---
+
+## 7. Checklist de Implementação
+
+### 🟠 Alto
+- [ ] Ajustar cor do ícone de cadeado: remover lilás, aplicar `--mod-longevidade-disabled`
+- [ ] Ajustar fundo do círculo do cadeado para `--sys-bg-secondary`
+- [ ] Implementar sistema de estados na tab bar (ativa / selecionada-bloqueada / não-selecionada-bloqueada / não-selecionada-disponível)
+
+### 🟡 Médio
+- [ ] Atualizar copy da descrição (orientada a valor, não a features)
+- [ ] Aplicar tokens do módulo Longevidade no botão "Me avise" (borda, texto, ícone)
+- [ ] Aplicar cor `--mod-longevidade-text` no título
+- [ ] Definir estado pós-clique do botão ("Notificação ativada ✓")
+
+### 🔵 Baixo
+- [ ] Padronizar este layout como template reutilizável para Performance e Nutrição
+- [ ] Criar copy pré-aprovada para as 3 abas bloqueadas (conteúdo na seção 6 deste documento)
+- [ ] Persistir estado "já inscrito" para exibir botão no estado correto ao reabrir a aba
+
+---
+
+## Changelog
+
+| Versão | Data | Alteração |
+|---|---|---|
+| 1.0 | 2026-03-03 | Análise da aba Recuperação & Sono (bloqueada). 9 correções de refinamento. Template definido para abas bloqueadas com copy pré-aprovada para Performance e Nutrição |

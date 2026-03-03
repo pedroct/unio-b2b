@@ -416,6 +416,11 @@
   color: var(--mod-longevidade-text);
 }
 
+.tabs-longevidade [data-state="active"].tab-bloqueada {
+  border-bottom: 2px solid var(--mod-longevidade-disabled);
+  color: var(--mod-longevidade-disabled) !important;
+}
+
 .tabs-longevidade [data-state="inactive"] {
   color: var(--sys-text-secondary);
 }
@@ -426,6 +431,41 @@
 
 .tabs-longevidade .tab-bloqueada svg {
   color: var(--mod-longevidade-disabled);
+}
+
+.notify-btn {
+  background: transparent;
+  border: 1px solid var(--mod-longevidade-border);
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  color: var(--mod-longevidade-text);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.notify-btn svg {
+  color: var(--mod-longevidade-icon);
+}
+
+.notify-btn:hover {
+  background: var(--mod-longevidade-bg);
+}
+
+.notify-btn:focus-visible {
+  outline: 2px solid var(--mod-longevidade-ring);
+  outline-offset: 2px;
+}
+
+.notify-btn--active {
+  background: var(--mod-longevidade-bg);
+  cursor: default;
+  pointer-events: none;
 }
 
 .section-label-longevidade {

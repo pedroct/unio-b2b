@@ -133,19 +133,19 @@ export default function PatientDashboardPage() {
           <TabsContent value="recuperacao">
             <AbaTrancada
               titulo="Recuperação & Sono"
-              mensagem="Recuperação & Sono estará disponível em breve. Aqui você acompanhará tempo de sono, estágios REM e profundo, HRV noturna e equilíbrio entre carga de treino e recuperação."
+              mensagem="Recuperação & Sono estará disponível em breve. Você terá acesso a indicadores de qualidade do sono, HRV noturna, estágios REM e profundo, e o equilíbrio entre carga de treino e capacidade de recuperação — dados essenciais para otimizar protocolos de treino e nutrição."
             />
           </TabsContent>
           <TabsContent value="performance">
             <AbaTrancada
               titulo="Performance & Funcionalidade"
-              mensagem="Performance & Funcionalidade estará disponível em breve. Aqui você acompanhará volume semanal de treino, zonas de frequência cardíaca, velocidade de caminhada e indicadores de força."
+              mensagem="Performance & Funcionalidade estará disponível em breve. Você terá acesso a volume semanal de treino, zonas de frequência cardíaca, velocidade de caminhada e indicadores de força e estabilidade — dados essenciais para ajustar periodização e acompanhar capacidade funcional."
             />
           </TabsContent>
           <TabsContent value="nutricao">
             <AbaTrancada
               titulo="Nutrição"
-              mensagem="Nutrição como driver biológico estará disponível em breve. Aqui você verá correlações entre proteína relativa e massa magra, calorias vs gasto energético, e impacto da alimentação nos biomarcadores."
+              mensagem="Nutrição estará disponível em breve. Você terá acesso a correlações entre ingestão alimentar e biomarcadores: proteína relativa versus massa magra, carga glicêmica versus variabilidade da glicose, e balanço calórico versus tendência de peso — dados que transformam nutrição em driver de saúde."
             />
           </TabsContent>
         </div>
