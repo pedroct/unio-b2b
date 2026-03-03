@@ -23,7 +23,7 @@ export function AbaTrancada({ titulo, mensagem }: AbaTrancadaProps) {
 
       <h3
         className="text-lg font-semibold mb-2"
-        style={{ color: "var(--mod-longevidade-text)" }}
+        style={{ color: "var(--mod-longevidade-text)", fontFamily: "var(--font-sans)" }}
         data-testid="text-titulo-trancada"
       >
         {titulo}

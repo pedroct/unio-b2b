@@ -1,0 +1,184 @@
+# Correções de UI — Abas Performance e Nutrição
+
+> **Versão:** 1.0
+> **Data:** 2026-03-03
+> **Autor:** Pedro Teixeira (UI Writer / UX Review)
+> **Referências:** [[PRD Painel de Longevidade v3]], [[UNIO Design Tokens Longevidade V1]], [[Correções UI Recuperação Sono V1]]
+> **Escopo:** Aba 4 — Performance & Funcionalidade + Aba 5 — Nutrição (ambas em estado bloqueado)
+> **Prioridades:** 🔴 Crítico | 🟠 Alto | 🟡 Médio | 🔵 Baixo
+
+---
+
+## Avaliação Geral
+
+Ambas as abas seguem corretamente o template definido em [[Correções UI Recuperação Sono V1]] seção 6. A copy foi absorvida quase literalmente do documento de handoff anterior. O e-mail do paciente já aparece truncado (`b****@email.com`), indicando que a correção de privacidade do Cardiometabólico foi aplicada.
+
+As correções são mínimas e compartilhadas entre as duas abas. Não há problemas críticos ou altos exclusivos destas telas.
+
+---
+
+## 1. Correções Compartilhadas (Ambas as Abas)
+
+### 1.1 🟠 Ícone de cadeado em lilás — mesmo problema de Recuperação & Sono
+
+- **O que está:** Ícone de cadeado dentro de círculo com fundo lilás/roxo sutil. Idêntico ao mock de Recuperação & Sono.
+- **O que deveria ser:** Mesmo fix já documentado em [[Correções UI Recuperação Sono V1]] item 2.2.
+- **Tokens:**
+  - Círculo fundo: `--sys-bg-secondary` (`#F5F3EE`)
+  - Ícone cadeado: `--mod-longevidade-disabled` (`#B3B9D6`)
+- **Ação:** Corrigir no componente compartilhado `<LockedTab />`. Ao corrigir uma vez, as 3 abas bloqueadas são corrigidas simultaneamente.
+
+### 1.2 🟠 Tab bar — estado selecionada-bloqueada
+
+- **O que está:** Aba selecionada com estilo similar a aba ativa funcional.
+- **O que deveria ser:** Sistema de 4 estados da tab bar definido em [[Correções UI Recuperação Sono V1]] item 1.1.
+- **Ação:** Implementação única no componente de navegação. Resolve as 3 abas bloqueadas.
+
+### 1.3 🟡 Título em negrito/itálico — padronizar
+
+- **O que está:** Títulos "Performance & Funcionalidade" e "Nutrição" parecem estar em itálico bold, possivelmente usando `--font-display` (Playfair Display, que é serifada e naturalmente parece itálica).
+- **O que deveria ser:** Consistente com o título de Recuperação & Sono. Se a decisão é usar `--font-display` para títulos de abas bloqueadas, manter em todas. Se é `--font-body`, corrigir todas.
+- **Recomendação:** Usar `--font-body` (Inter) weight 600 para títulos de empty states. `--font-display` (Playfair Display) é reservado para valores numéricos de destaque (como o score "84" no Cockpit), não para títulos de seção.
+- **CSS:**
+```css
+.locked-tab__title {
+  font-family: var(--font-body);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--mod-longevidade-text);
+}
+```
+
+### 1.4 🟡 Botão "Me avise quando disponível" — aplicar tokens
+
+- **O que está:** Botão em tom neutro/cinza, sem identidade do módulo.
+- **O que deveria ser:** Mesmo padrão definido em [[Correções UI Recuperação Sono V1]] item 2.5.
+- **Ação:** Componente compartilhado — corrigir uma vez.
+
+### 1.5 🔵 Estado pós-clique não definido
+
+- **Mesmo item** de [[Correções UI Recuperação Sono V1]] item 2.6. Aplica-se a todas as 3 abas bloqueadas.
+
+---
+
+## 2. Correções Específicas — Aba Performance
+
+### 2.1 ✅ Copy aprovada
+
+- **O que está:** "Performance & Funcionalidade estará disponível em breve. Você terá acesso a volume semanal de treino, zonas de frequência cardíaca, velocidade de caminhada e indicadores de força e estabilidade — dados essenciais para ajustar periodização e acompanhar capacidade funcional."
+- **Avaliação:** Copy corresponde ao template definido em [[Correções UI Recuperação Sono V1]] seção 6. Tom orientado a valor, biomarcadores listados, benefício clínico ao final.
+- **Status:** ✅ Aprovada sem alterações.
+
+### 2.2 🟡 Tab bar mostra "Performance" em vez do título completo
+
+- **O que está:** Aba na navegação mostra "Performance". Conteúdo mostra "Performance & Funcionalidade".
+- **O que deveria ser:** Essa inconsistência é aceitável se documentada como decisão intencional — a tab bar usa nome curto por limitação de espaço, o conteúdo usa nome completo.
+- **Ação:** Documentar formalmente:
+  - **Label da aba (tab bar):** "Performance"
+  - **Título interno (conteúdo):** "Performance & Funcionalidade"
+  - Isso é consistente com a decisão já levantada em [[Correções UI Cockpit V1]] item 1.3.
+
+---
+
+## 3. Correções Específicas — Aba Nutrição
+
+### 3.1 🟡 Copy com ajuste de pontuação e fluidez
+
+- **O que está:** "Nutrição estará disponível em breve. Você terá acesso a correlações entre ingestão alimentar e biomarcadores: proteína relativa versus massa magra, carga glicêmica versus variabilidade da glicose, e balanço calórico versus tendência de peso — dados que transformam nutrição em driver de saúde."
+- **Avaliação:** Copy absorvida corretamente do template. Conteúdo preciso. Dois ajustes finos:
+  - "versus" aparece 3 vezes na mesma frase — substitituir a segunda ocorrência por "e" ou "↔" para variar ritmo
+  - "driver de saúde" — termo técnico em inglês. Considerar versão pt-BR
+- **Copy sugerida (ajuste fino):**
+
+> Nutrição estará disponível em breve.
+>
+> Você terá acesso a correlações entre ingestão alimentar e biomarcadores: proteína relativa versus massa magra, carga glicêmica e variabilidade da glicose, e balanço calórico versus tendência de peso — dados que transformam nutrição em motor de saúde.
+
+- **Mudanças:** Segundo "versus" → "e" (leitura mais fluida). "driver" → "motor" (equivalente pt-BR natural).
+
+### 3.2 🔵 Ícone do módulo Nutrição na tab bar
+
+- **O que está:** Ícone genérico (parece uma estrela/flor) ao lado de "Nutrição".
+- **O que deveria ser:** Verificar se o ícone é semanticamente adequado para Nutrição como driver biológico. Ícones recomendados no PRD para Nutrição: folha, prato, ou um ícone que sugira correlação (como um gráfico com garfo). O ícone atual não comunica alimentação nem correlação biológica.
+- **Ação:** Revisão de ícone — baixa prioridade mas vale alinhar com a identidade da aba quando for desbloqueada na V2.
+
+---
+
+## 4. Tokens — Verificação (Ambas as Abas)
+
+Mesma tabela de [[Correções UI Recuperação Sono V1]] seção 4. Nenhum token novo. Todos os elementos usam os mesmos tokens do template de aba bloqueada.
+
+| Elemento | Token Esperado | Hex |
+|---|---|---|
+| Background da página | `--sys-bg-primary` | `#FAFBF8` |
+| Círculo do cadeado — fundo | `--sys-bg-secondary` | `#F5F3EE` |
+| Ícone cadeado | `--mod-longevidade-disabled` | `#B3B9D6` |
+| Título da aba | `--mod-longevidade-text` | `#333F73` |
+| Descrição | `--sys-text-secondary` | `#5F6B5A` |
+| Botão — borda | `--mod-longevidade-border` | `#B3B9D6` |
+| Botão — texto | `--mod-longevidade-text` | `#333F73` |
+| Botão — ícone sino | `--mod-longevidade-icon` | `#4A5899` |
+
+---
+
+## 5. Checklist de Implementação
+
+### 🟠 Alto
+- [ ] Corrigir cor do ícone de cadeado no componente `<LockedTab />` (resolve 3 abas)
+- [ ] Implementar sistema de 4 estados na tab bar (resolve 5 abas)
+
+### 🟡 Médio
+- [ ] Padronizar título dos empty states para `--font-body` weight 600 (não `--font-display`)
+- [ ] Aplicar tokens do módulo Longevidade no botão "Me avise" (componente compartilhado)
+- [ ] Documentar decisão: tab bar "Performance" vs conteúdo "Performance & Funcionalidade"
+- [ ] Ajustar copy de Nutrição: segundo "versus" → "e", "driver" → "motor"
+
+### 🔵 Baixo
+- [ ] Implementar estado pós-clique "Notificação ativada ✓" (componente compartilhado)
+- [ ] Revisar ícone de Nutrição na tab bar para melhor semântica
+- [ ] Persistir estado "já inscrito" entre sessões
+
+---
+
+## 6. Resumo da Revisão — Todas as 5 Abas
+
+Consolidação do status de todas as abas revisadas:
+
+| Aba | Documento | Correções | Críticas | Altas | Status |
+|---|---|---|---|---|---|
+| Cockpit | [[Correções UI Cockpit V1]] | 25 | 2 | 8 | Revisão completa |
+| Cardiometabólico | [[Correções UI Cardiometabólico V1]] | 22 + 5 decisões | 1 | 5 | Revisão completa |
+| Recuperação & Sono | [[Correções UI Recuperação Sono V1]] | 9 | 0 | 3 | Revisão completa — template definido |
+| Performance | Este documento | 6 compartilhadas | 0 | 2 | Revisão completa — segue template |
+| Nutrição | Este documento | 6 compartilhadas + 1 copy | 0 | 2 | Revisão completa — segue template |
+
+### Correções que resolvem múltiplas abas simultaneamente
+
+| Correção | Abas impactadas | Prioridade |
+|---|---|---|
+| Sistema de 4 estados na tab bar | Todas (5) | 🟠 |
+| Cor do ícone de cadeado (componente `<LockedTab />`) | Recuperação, Performance, Nutrição (3) | 🟠 |
+| Tokens do botão "Me avise" | Recuperação, Performance, Nutrição (3) | 🟡 |
+| Estado pós-clique do botão | Recuperação, Performance, Nutrição (3) | 🔵 |
+| Background e borda dos cards bloqueados | Cockpit, Cardiometabólico (2) | 🟡 |
+| Inversão semântica FCR | Cockpit, Cardiometabólico (2) | 🔴 |
+| Tokens de cor do módulo Longevidade nos cards ativos | Cockpit, Cardiometabólico (2) | 🟠 |
+
+### Decisões pendentes (acumuladas)
+
+| # | Decisão | Origem |
+|---|---|---|
+| D1 | Avatar do paciente: global vs módulo? | Cardiometabólico |
+| D2 | E-mail visível por padrão? | Cardiometabólico (✅ resolvido — truncado) |
+| D3 | "Metas" no escopo V1? | Cardiometabólico |
+| D4 | Sparklines nos cards do Cardiometabólico na V1? | Cardiometabólico |
+| D5 | Grid 2×2 por eixo fisiológico? | Cardiometabólico |
+| D6 | Font dos títulos em empty states: display ou body? | Este documento |
+
+---
+
+## Changelog
+
+| Versão | Data | Alteração |
+|---|---|---|
+| 1.0 | 2026-03-03 | Análise das abas Performance e Nutrição. 7 correções (maioria compartilhada). Resumo consolidado de todas as 5 abas. 6 decisões pendentes listadas |

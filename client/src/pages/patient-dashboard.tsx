@@ -145,7 +145,7 @@ export default function PatientDashboardPage() {
           <TabsContent value="nutricao">
             <AbaTrancada
               titulo="Nutrição"
-              mensagem="Nutrição estará disponível em breve. Você terá acesso a correlações entre ingestão alimentar e biomarcadores: proteína relativa versus massa magra, carga glicêmica versus variabilidade da glicose, e balanço calórico versus tendência de peso — dados que transformam nutrição em driver de saúde."
+              mensagem="Nutrição estará disponível em breve. Você terá acesso a correlações entre ingestão alimentar e biomarcadores: proteína relativa versus massa magra, carga glicêmica e variabilidade da glicose, e balanço calórico versus tendência de peso — dados que transformam nutrição em motor de saúde."
             />
           </TabsContent>
         </div>
