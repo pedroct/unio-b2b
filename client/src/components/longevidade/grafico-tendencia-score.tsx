@@ -40,7 +40,7 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
   const [periodo, setPeriodo] = useState<"30d" | "90d" | "365d">("30d");
 
   const { data, isLoading } = useQuery<RespostaTendenciaScore>({
-    queryKey: [`/api/profissional/dashboard/pacientes/${pacienteId}/cardiovascular-score/tendencia?periodo=${periodo}`],
+    queryKey: [`/api/painel-longevidade/clientes/${pacienteId}/tendencia-score?periodo=${periodo}`],
     enabled: !!pacienteId,
   });
 

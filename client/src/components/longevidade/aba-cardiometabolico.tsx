@@ -2,11 +2,19 @@ import { useQuery } from "@tanstack/react-query";
 import { Lock, Bell } from "lucide-react";
 import { CardBiomarcador } from "./card-biomarcador";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { ScoreCardiovascular } from "@shared/schema";
+import type { RespostaCardiometabolico, MetricaCardio } from "@shared/schema";
+import { LABELS_BIOMARCADOR } from "@shared/schema";
 
 interface AbaCardiometabolicoProps {
   pacienteId: string;
 }
+
+const METRIC_CONFIG: Record<string, { invertedSemantics: boolean; labelSecundario?: string; eixo: "autonomico" | "aerobio" }> = {
+  hrv_rmssd: { invertedSemantics: false, eixo: "autonomico" },
+  resting_hr: { invertedSemantics: true, eixo: "autonomico" },
+  vo2_max: { invertedSemantics: false, labelSecundario: "P75 · idade/sexo", eixo: "aerobio" },
+  hr_recovery_1min: { invertedSemantics: false, labelSecundario: "Média das últimas 5 sessões", eixo: "aerobio" },
+};
 
 const biomarcadoresMetabolicos = [
   { nome: "% Gordura corporal" },
@@ -15,10 +23,33 @@ const biomarcadoresMetabolicos = [
   { nome: "Glicemia (CGM)" },
 ];
 
+function renderMetrica(m: MetricaCardio) {
+  const config = METRIC_CONFIG[m.metric_type];
+  if (!config) return null;
+  const nome = LABELS_BIOMARCADOR[m.metric_type] ?? m.metric_type;
+  return (
+    <CardBiomarcador
+      key={m.metric_type}
+      nome={nome}
+      valor={m.valor_atual}
+      unidade={m.unidade}
+      tendencia={m.tendencia}
+      baseline={m.media_30d ?? undefined}
+      invertedSemantics={config.invertedSemantics}
+      labelSecundario={config.labelSecundario}
+      sparklineData={m._sparkline_mock}
+      aguardandoLeitura={m.valor_atual === null}
+    />
+  );
+}
+
 export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
-  const { data, isLoading } = useQuery<ScoreCardiovascular>({
-    queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "cardiovascular-score"],
+  const { data, isLoading } = useQuery<RespostaCardiometabolico>({
+    queryKey: ["/api/painel-longevidade/clientes", pacienteId, "cardiometabolico"],
   });
+
+  const metricasAutonomico = data?.metricas_cardio.filter(m => METRIC_CONFIG[m.metric_type]?.eixo === "autonomico") ?? [];
+  const metricasAerobio = data?.metricas_cardio.filter(m => METRIC_CONFIG[m.metric_type]?.eixo === "aerobio") ?? [];
 
   return (
     <div className="space-y-8" data-testid="aba-cardiometabolico">
@@ -40,52 +71,19 @@ export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
               ))}
             </div>
           </div>
-        ) : data?.components ? (
+        ) : data?.metricas_cardio ? (
           <div className="space-y-6">
             <div>
               <p className="axis-sublabel mb-3" data-testid="label-eixo-autonomico">Controle autonômico</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <CardBiomarcador
-                  nome="HRV (RMSSD)"
-                  valor={data.components.hrv.value}
-                  unidade={data.components.hrv.unit}
-                  tendencia={data.components.hrv.trend}
-                  baseline={data.components.hrv.baseline}
-                  sparklineData={data.components.hrv.sparkline}
-                />
-                <CardBiomarcador
-                  nome="FC de Repouso"
-                  valor={data.components.rhr.value}
-                  unidade={data.components.rhr.unit}
-                  tendencia={data.components.rhr.trend}
-                  baseline={data.components.rhr.baseline}
-                  invertedSemantics
-                  sparklineData={data.components.rhr.sparkline}
-                />
+                {metricasAutonomico.map(renderMetrica)}
               </div>
             </div>
 
             <div>
               <p className="axis-sublabel mb-3" data-testid="label-eixo-aerobio">Capacidade aeróbia</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <CardBiomarcador
-                  nome="VO₂ Máximo"
-                  valor={data.components.vo2.value}
-                  unidade={data.components.vo2.unit}
-                  tendencia={data.components.vo2.trend}
-                  baseline={data.components.vo2.baseline}
-                  labelSecundario="P75 · idade/sexo"
-                  sparklineData={data.components.vo2.sparkline}
-                />
-                <CardBiomarcador
-                  nome="Recuperação da FC"
-                  valor={data.components.recovery.value}
-                  unidade={data.components.recovery.unit}
-                  tendencia={data.components.recovery.trend}
-                  baseline={data.components.recovery.baseline}
-                  labelSecundario="Média das últimas 5 sessões"
-                  sparklineData={data.components.recovery.sparkline}
-                />
+                {metricasAerobio.map(renderMetrica)}
               </div>
             </div>
           </div>
@@ -100,7 +98,9 @@ export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
             Metabólico
           </h3>
           <Lock className="h-3.5 w-3.5" style={{ color: "var(--mod-longevidade-disabled)" }} />
-          <span className="text-[10px] font-medium" style={{ color: "var(--sys-text-muted)" }}>Em breve</span>
+          <span className="text-[10px] font-medium" style={{ color: "var(--sys-text-muted)" }}>
+            {data?.secao_metabolica_bloqueada ? (data.mensagem_bloqueio ?? "Em breve") : "Em breve"}
+          </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

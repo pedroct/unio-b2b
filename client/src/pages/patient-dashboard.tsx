@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AbaCockpit } from "@/components/longevidade/aba-cockpit";
 import { AbaCardiometabolico } from "@/components/longevidade/aba-cardiometabolico";
 import { AbaTrancada } from "@/components/longevidade/aba-trancada";
+import { ErroAcessoPaciente } from "@/components/longevidade/erro-acesso";
 import type { Patient } from "@shared/schema";
 
 function truncarEmail(email: string): string {
@@ -32,10 +33,19 @@ export default function PatientDashboardPage() {
   const [, params] = useRoute("/pacientes/:id/dashboard");
   const patientId = params?.id || "";
 
-  const { data: patient, isLoading } = useQuery<Patient>({
+  const { data: patient, isLoading, error } = useQuery<Patient>({
     queryKey: ["/api/profissional/pacientes", patientId],
     enabled: !!patientId,
   });
+
+  const httpStatus = error?.message ? parseInt(error.message.split(":")[0]) : null;
+
+  if (!isLoading && httpStatus === 403) {
+    return <ErroAcessoPaciente tipo="forbidden" />;
+  }
+  if (!isLoading && (httpStatus === 404 || (!patient && !isLoading))) {
+    return <ErroAcessoPaciente tipo="not-found" />;
+  }
 
   const initials = patient?.name
     ? patient.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()

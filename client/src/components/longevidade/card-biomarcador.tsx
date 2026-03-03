@@ -11,6 +11,7 @@ interface CardBiomarcadorProps {
   invertedSemantics?: boolean;
   labelSecundario?: string;
   sparklineData?: number[];
+  aguardandoLeitura?: boolean;
 }
 
 const ICONE_TENDENCIA = {
@@ -94,8 +95,9 @@ export function CardBiomarcador({
   invertedSemantics = false,
   labelSecundario,
   sparklineData,
+  aguardandoLeitura = false,
 }: CardBiomarcadorProps) {
-  const insuficiente = valor === null;
+  const insuficiente = valor === null || aguardandoLeitura;
   const IconeTendencia = tendencia ? ICONE_TENDENCIA[tendencia] : null;
   const diff = calcularDiff(valor, baseline);
   const cor = corTendencia(tendencia, invertedSemantics);
@@ -123,7 +125,7 @@ export function CardBiomarcador({
       </div>
 
       {insuficiente ? (
-        <p className="text-xs text-muted-foreground mt-2">Dados insuficientes</p>
+        <p className="text-xs text-muted-foreground mt-2">{aguardandoLeitura ? "Aguardando leitura" : "Dados insuficientes"}</p>
       ) : (
         <div className="mt-2 space-y-0.5">
           {IconeTendencia && (
@@ -174,6 +176,7 @@ export function GradeBiomarcadores({ componentes }: GradeBiomarcadoresProps) {
           baseline={item.baseline}
           invertedSemantics={item.invertedSemantics}
           labelSecundario={item.labelSecundario}
+          aguardandoLeitura={item.value === null}
         />
       ))}
     </div>

@@ -83,7 +83,32 @@ shared/
 - **Múltiplos planos por paciente**: cada cliente pode ter vários planos alimentares. Cada plano tem ID, descrição editável, dias ativos e refeições próprias.
 - **Prescrição Alimentar (Edição)**: página completa no sidebar (restrita a Nutricionista). Permite selecionar plano via dropdown, editar descrição inline, editar refeições e dias ativos.
 
-## API Endpoints (Mock)
+## API Endpoints
+
+### Painel de Longevidade (contrato real — doc integração v1)
+- GET /api/painel-longevidade/clientes/:id/cockpit — Retorna `RespostaCockpit` { cliente_id, scores: ScorePilar[], data_atualizacao }. Cada score tem: tipo, ativo, score, classificacao (PT-BR: "Bom"), is_partial, mensagem_bloqueio, tendencia
+- GET /api/painel-longevidade/clientes/:id/cardiometabolico — Retorna `RespostaCardiometabolico` { metricas_cardio: MetricaCardio[], secao_metabolica_bloqueada, mensagem_bloqueio }. Métricas: metric_type (vo2_max, hrv_rmssd, resting_hr, hr_recovery_1min), valor_atual, unidade, media_30d, tendencia, data_ultima_leitura. Valores podem ser null (ex: hr_recovery_1min)
+- GET /api/painel-longevidade/clientes/:id/tendencia-score?periodo=30d|90d|365d — Tendência do score (MOCK — sem correspondente na doc real ainda)
+- POST /api/auth/refresh — Refresh JWT token { refresh } → { access, refresh }
+
+### Classificação PT-BR → EN
+Backend retorna classificação como texto PT-BR. Frontend converte via `CLASSIFICACAO_FROM_LABEL`: "Excelente"→excellent, "Bom"→good, "Atenção"→attention, "Risco Aumentado"→risk
+
+### Auth: JWT Bearer
+Todas as requisições enviam `Authorization: Bearer {token}`. Token lido de localStorage `unio_auth`. Em 401, tenta refresh silencioso antes de redirecionar para login.
+
+### Sparklines
+Backend NÃO fornece séries temporais por métrica. Campo `_sparkline_mock` (prefixo _ = não é do contrato real) gerado no mock para desenvolvimento. Componente SparklineMini pronto para quando a API evoluir.
+
+### Null handling
+`valor_atual === null` → card mostra "—" + "Aguardando leitura" (não zero gráfico). Tratado via prop `aguardandoLeitura` no CardBiomarcador.
+
+### Erros HTTP
+- 401: refresh silencioso → redirect to login
+- 403: componente ErroAcessoPaciente "Você não possui acesso clínico autorizado a este paciente."
+- 404: componente ErroAcessoPaciente "Cliente não encontrado"
+
+### Outros (mock/legacy)
 - POST /api/auth/pair — Login
 - GET /api/profissional/pacientes — List patients
 - GET /api/profissional/pacientes/:id — Patient details
@@ -97,8 +122,6 @@ shared/
 - PUT /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/dias — Update active days
 - PUT /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/descricao — Update description
 - POST /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/refeicoes — Create meal
-- GET /api/profissional/dashboard/pacientes/:id/cardiovascular-score — Score cardiovascular (mock, inclui sparkline[] por biomarcador)
-- GET /api/profissional/dashboard/pacientes/:id/cardiovascular-score/tendencia?periodo=30d|90d|365d — Tendência do score
 - GET /api/nutricao/catalogo/alimentos?busca&fontes&limite&offset — Search foods from catalog (proxied to staging, paginated response `{ items, total, limite, offset }`)
 - GET /api/nutricao/catalogo/alimentos/:id — Food detail with nutrients (proxied to staging)
 - GET /api/nutricao/catalogo/alimentos/codigo/:codigo — Search food by code (proxied to staging)

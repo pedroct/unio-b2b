@@ -1,12 +1,13 @@
-import { HeartPulse, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { HeartPulse, TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { ClassificacaoScore } from "@shared/schema";
+import type { ClassificacaoScore, TendenciaBiomarcador } from "@shared/schema";
 import { LABELS_CLASSIFICACAO } from "@shared/schema";
 
 interface CardScoreProps {
   score: number | null;
   classification: ClassificacaoScore | null;
-  delta_30d: number | null;
+  tendencia: TendenciaBiomarcador;
+  is_partial?: boolean;
   updated_at: string | null;
   isLoading?: boolean;
 }
@@ -18,7 +19,13 @@ function formatarData(iso: string): string {
   return `${data} às ${hora}`;
 }
 
-export function CardScore({ score, classification, delta_30d, updated_at, isLoading }: CardScoreProps) {
+const ICONE_TENDENCIA = {
+  up: TrendingUp,
+  down: TrendingDown,
+  stable: Minus,
+};
+
+export function CardScore({ score, classification, tendencia, is_partial = false, updated_at, isLoading }: CardScoreProps) {
   if (isLoading) {
     return (
       <div
@@ -53,7 +60,7 @@ export function CardScore({ score, classification, delta_30d, updated_at, isLoad
     );
   }
 
-  const DeltaIcon = delta_30d !== null && delta_30d > 0 ? TrendingUp : delta_30d !== null && delta_30d < 0 ? TrendingDown : Minus;
+  const TendenciaIcon = tendencia ? ICONE_TENDENCIA[tendencia] : null;
 
   return (
     <div
@@ -69,7 +76,7 @@ export function CardScore({ score, classification, delta_30d, updated_at, isLoad
       </div>
 
       <p className="font-serif text-5xl font-bold leading-none" style={{ color: "var(--mod-longevidade-text)" }} data-testid="text-score-value">
-        {score}
+        {Math.round(score)}
       </p>
 
       <div className="flex items-center gap-3 mt-4">
@@ -80,10 +87,20 @@ export function CardScore({ score, classification, delta_30d, updated_at, isLoad
           {LABELS_CLASSIFICACAO[classification]}
         </span>
 
-        {delta_30d !== null && (
-          <span className="flex items-center gap-1 text-sm" style={{ color: `var(--score-${classification}-icon)` }} data-testid="text-delta">
-            <DeltaIcon className="h-3.5 w-3.5" />
-            {delta_30d > 0 ? "+" : ""}{delta_30d} pts nos últimos 30 dias
+        {is_partial && (
+          <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold"
+            style={{ background: "var(--score-attention-bg)", color: "var(--score-attention-icon)" }}
+            data-testid="badge-parcial"
+          >
+            <AlertTriangle className="h-3 w-3" />
+            Score parcial
+          </span>
+        )}
+
+        {TendenciaIcon && (
+          <span className="flex items-center gap-1 text-sm" style={{ color: `var(--score-${classification}-icon)` }} data-testid="text-tendencia">
+            <TendenciaIcon className="h-3.5 w-3.5" />
+            {tendencia === "up" ? "Em alta" : tendencia === "down" ? "Em queda" : "Estável"}
           </span>
         )}
       </div>

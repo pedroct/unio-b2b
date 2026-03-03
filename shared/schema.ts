@@ -278,25 +278,37 @@ export type ClassificacaoScore = "excellent" | "good" | "attention" | "risk";
 
 export type TendenciaBiomarcador = "up" | "down" | "stable" | null;
 
-export interface ComponenteBiomarcador {
-  value: number | null;
-  unit: string;
-  trend: TendenciaBiomarcador;
-  baseline?: number;
-  sparkline?: number[];
+export interface ScorePilar {
+  tipo: string;
+  ativo: boolean;
+  score: number | null;
+  classificacao: string | null;
+  is_partial: boolean;
+  mensagem_bloqueio: string | null;
+  tendencia: TendenciaBiomarcador;
 }
 
-export interface ScoreCardiovascular {
-  score: number;
-  classification: ClassificacaoScore;
-  delta_30d: number;
-  updated_at: string;
-  components: {
-    hrv: ComponenteBiomarcador;
-    rhr: ComponenteBiomarcador;
-    vo2: ComponenteBiomarcador;
-    recovery: ComponenteBiomarcador;
-  };
+export interface RespostaCockpit {
+  cliente_id: number | string;
+  scores: ScorePilar[];
+  data_atualizacao: string;
+}
+
+export interface MetricaCardio {
+  metric_type: string;
+  valor_atual: number | null;
+  unidade: string;
+  media_30d: number | null;
+  tendencia: TendenciaBiomarcador;
+  data_ultima_leitura: string | null;
+  _sparkline_mock?: number[];
+}
+
+export interface RespostaCardiometabolico {
+  cliente_id: number | string;
+  metricas_cardio: MetricaCardio[];
+  secao_metabolica_bloqueada: boolean;
+  mensagem_bloqueio: string | null;
 }
 
 export interface PontoTendenciaScore {
@@ -316,11 +328,18 @@ export const LABELS_CLASSIFICACAO: Record<ClassificacaoScore, string> = {
   risk: "Risco Aumentado",
 };
 
+export const CLASSIFICACAO_FROM_LABEL: Record<string, ClassificacaoScore> = {
+  "Excelente": "excellent",
+  "Bom": "good",
+  "Atenção": "attention",
+  "Risco Aumentado": "risk",
+};
+
 export const LABELS_BIOMARCADOR: Record<string, string> = {
-  hrv: "HRV (RMSSD)",
-  rhr: "Freq. Cardíaca de Repouso",
-  vo2: "VO₂ Máximo",
-  recovery: "Recuperação da FC",
+  hrv_rmssd: "HRV (RMSSD)",
+  resting_hr: "FC de Repouso",
+  vo2_max: "VO₂ Máximo",
+  hr_recovery_1min: "Recuperação da FC",
 };
 
 export const BRAZILIAN_STATES = [
