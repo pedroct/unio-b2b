@@ -1,0 +1,75 @@
+# Documentação de Integração - Módulo Clientes (Listagem Frontend WEB)
+
+Esta documentação define o contrato do endpoint responsável por fornecer a listagem geral de clientes (pacientes) vinculados a um profissional de saúde, alimentando a tabela principal do Dashboard (menu "Clientes").
+
+---
+
+## 1. Visão Geral (Listagem de Clientes)
+O endpoint retorna um *array* contendo o resumo dos dados cadastrais, indicadores de engajamento preenchidos e o status da conta de cada paciente sob a tutela do profissional autenticado.
+
+*   **Método:** `GET`
+*   **Acesso:** Protegido (Requer token JWT Bearer do Profissional)
+*   **URL Base:** `/api/profissional/clientes`
+
+### 1.1 Exemplo de Resposta de Sucesso (200 OK)
+A resposta é um `Array` de objetos.
+
+```json
+[
+  {
+    "id": "4",
+    "name": "Ana Carolina Silva",
+    "email": "ana.silva@email.com",
+    "phone": "(00) 00000-0000",
+    "birthDate": "1993-05-20",
+    "gender": "F",
+    "age": 30,
+    "avatarUrl": "https://url-do-bucket.s3/avatar.jpg",
+    "adherenceTraining": 85,
+    "adherenceDiet": 72,
+    "lastActivity": "recentemente",
+    "status": "active"
+  },
+  {
+    "id": "7",
+    "name": "Bruno Oliveira",
+    "email": "bruno@email.com",
+    "phone": "(00) 00000-0000",
+    "birthDate": "1987-11-05",
+    "gender": "M",
+    "age": 36,
+    "avatarUrl": null,
+    "adherenceTraining": 92,
+    "adherenceDiet": 88,
+    "lastActivity": "recentemente",
+    "status": "active"
+  }
+]
+```
+
+---
+
+## 2. Mapeamento Frontend vs Banco de Dados
+
+A fim de orientar a construção dos componentes Visuais (Tabela de Clientes UI), detalhamos o mapeamento exato das propriedades retornadas pela API e as colunas do layout.
+
+| Coluna na UI | Propriedade da API | Descrição e Comportamento Frontend |
+| :--- | :--- | :--- |
+| **Cliente** | [name](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nucleo/api_b2b.py#496-549), `email`, `avatarUrl` | O [name](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nucleo/api_b2b.py#496-549) deve ser o cabeçalho. Se `avatarUrl` for [null](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/painel_longevidade/tests/test_calculadora_scores.py#20-37), exibir as iniciais do nome (Fallback UI). |
+| **Gênero / Idade** | `gender`, [age](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/.coverage) | O `gender` é retornado em Char unicoule (`F`, `M`, `"N"`). O Front deve tratar a tradução visual (ex: F -> Feminino). |
+| **Tags** | *Ausente na V1* | **Hardcodeação temporária / Ocultar:** O Backend ainda não armazena matrizes de Tags por cliente nesta rota. Sugere-se omitir a coluna ou mantê-la vazia nesta sprint. |
+| **Dieta** | `adherenceDiet` | Retorna um inteiro (Ex: `72`). O Front deve concatenar com `%` e colorizar (verdes para altos, amarelos/vermelhos para baixos). *Nota Backend: No momento, esse cálculo é um Mock dentro do Backend enquanto o motor analítico não é refatorado.* |
+| **Treino** | `adherenceTraining` | Idem a Dieta. Inteiro variando de 0 a 100. *Também é um Mock vindo do Backend na versão atual.* |
+| **Última atividade** | `lastActivity` | Retorna uma string textual (ex: `"recentemente"`). |
+| **Desde** | *Ausente na V1* | Atualmente não exposto no sumário. Usar `birthDate` ou manter colunas vazias até adição do `created_at`. |
+| **Última consulta** | *Ausente na V1* | O motor de agendamentos não está conectado a esta listagem ainda. Manter vazia no Front. |
+| **Status** | [status](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/integracoes/api.py#675-694) | Se `"active"`, renderizar a label verde (Ativo). Se falso, renderizar inativo. |
+| **Ação `>` (Click)** | [id](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nucleo/models.py#256-274) | O clique na linha da tabela deve extrair o [id](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nucleo/models.py#256-274) e rotear o usuário para a página de detalhes daquele paciente específico (ex: `/dashboard/clientes/{id}`). |
+
+---
+
+## 3. Comportamento e Tratamento de Erro (HTTP)
+
+*   **`401 Unauthorized`**: O Token JWT não foi enviado pelo Axios/Fetch na chave `Authorization: Bearer <token>` ou expirou. O frontend deve forçar o fluxo de Refresh ou Logout do profissional.
+*   **`403 Forbidden`**: Tentativa de burlar privilégios. O endpoint é travado apenas para usuários contendo o Perfil `"medico"`, `"personal"`, ou `"nutricionista"`.
+*   **Filtros de Tabela**: O Backend não preverá *Query Strings* (ex: `?search=Ana` ou `?sort=name`) nesta entrega inicial. A busca, filtros de tags e ordenações (A-Z) devem ser performadas **Client-Side** (React/Vue/Angular) na listagem renderizada após a captura total do Array `200 OK`. 
