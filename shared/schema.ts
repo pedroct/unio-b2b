@@ -3,7 +3,7 @@ import { z } from "zod";
 export const loginSchema = z.object({
   registrationNumber: z.string().min(1, "Informe seu registro profissional."),
   uf: z.string().min(2, "Selecione o estado do seu registro.").max(2),
-  password: z.string().min(1, "Digite sua senha para continuar."),
+  password: z.string().min(1, "Digite seu CPF para continuar."),
 });
 
 export type LoginCredentials = z.infer<typeof loginSchema>;
