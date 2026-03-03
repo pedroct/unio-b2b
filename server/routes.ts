@@ -35,7 +35,24 @@ export async function registerRoutes(
         return res.status(result.status).json({ message: msg });
       }
 
-      return res.status(result.status).json(result.data);
+      const { access, refresh } = result.data;
+      let userId = "";
+      try {
+        const payload = JSON.parse(Buffer.from(access.split(".")[1], "base64").toString());
+        userId = String(payload.user_id || "");
+      } catch {}
+
+      return res.json({
+        tokens: { access, refresh },
+        professional: {
+          id: userId,
+          name: registrationNumber,
+          registrationNumber,
+          uf,
+          specialty: "",
+          email: "",
+        },
+      });
     } catch (err: any) {
       console.error("[auth/pair] proxy error:", err.message);
       return res.status(502).json({ message: "Erro ao conectar com o servidor de autenticação." });

@@ -62,13 +62,12 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginCredentials) => {
     setIsSubmitting(true);
     try {
-      const rawPassword = data.password.replace(/\D/g, "");
-      await login(data.registrationNumber, data.uf, rawPassword);
+      await login(data.registrationNumber, data.uf, data.password);
       navigate("/pacientes");
     } catch (error: any) {
       toast({
         title: "Erro de autenticação",
-        description: "Registro ou CPF incorretos. Verifique seus dados e tente novamente.",
+        description: "Registro ou senha incorretos. Verifique seus dados e tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -205,10 +204,8 @@ export default function LoginPage() {
                       <div className="relative">
                         <Input
                           type={showPassword ? "text" : "password"}
-                          placeholder="Digite seu CPF"
+                          placeholder="Digite sua senha"
                           {...field}
-                          onChange={(e) => field.onChange(formatCPF(e.target.value))}
-                          maxLength={14}
                           data-testid="input-password"
                         />
                         <button
