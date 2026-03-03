@@ -1,0 +1,336 @@
+# Correções de UI — Aba Cardiometabólico
+
+> **Versão:** 1.0
+> **Data:** 2026-03-03
+> **Autor:** Pedro Teixeira (UI Writer / UX Review)
+> **Referências:** [[PRD Painel de Longevidade v3]], [[UNIO Design Tokens Longevidade V1]], [[UNIO Design Tokens v3]], [[Correções UI Cockpit V1]]
+> **Escopo:** Aba 2 — Sistema Cardiometabólico do Painel de Longevidade
+> **Prioridades:** 🔴 Crítico | 🟠 Alto | 🟡 Médio | 🔵 Baixo
+
+---
+
+## Como usar este documento
+
+Mesmo padrão do handoff do Cockpit. Cada correção indica o estado atual, o estado correto, o token aplicável e a prioridade. Correções que repetem problemas já documentados no Cockpit são referenciadas, não duplicadas.
+
+---
+
+## 1. Header do Paciente
+
+### 1.1 🟠 Avatar com iniciais em cor do sistema
+
+- **O que está:** Avatar circular com iniciais "BO" em fundo verde institucional (parece `--sys-primary` `#3B5F4A`).
+- **O que deveria ser:** O avatar está no contexto do Painel de Longevidade. Duas abordagens válidas:
+  - **Opção A (recomendada):** Manter verde institucional — o avatar é identidade do usuário, não do módulo. Avatares pertencem ao chrome da aplicação (`--sys-*`), não ao conteúdo de módulo.
+  - **Opção B:** Trocar para `--mod-longevidade-base` (`#4A5899`) se a decisão for que o header do paciente herda identidade do módulo ativo.
+- **Ação:** Definir como decisão de design system — o avatar segue o módulo ativo ou é sempre global? Documentar para consistência.
+
+### 1.2 🟡 Badge "Ativo" sem token definido
+
+- **O que está:** Badge verde com texto "Ativo" ao lado do nome do paciente.
+- **O que deveria ser:** O badge de status do vínculo profissional–paciente é informação de sistema, não de módulo. Deve usar tokens de feedback.
+- **Token:** Fundo: `--sys-success` (`#4CA785`) com opacidade, ou um badge dedicado. Texto: branco ou `--sys-text-primary`. A cor verde é semanticamente correta (ativo = sucesso), mas precisa estar definida no design system para outros estados futuros (pendente, revogado).
+- **Estados futuros a prever:**
+
+| Status | Cor sugerida | Token |
+|---|---|---|
+| Ativo | Verde | `--sys-success` |
+| Pendente | Amarelo | `--sys-warning` |
+| Revogado | Vermelho | `--sys-error` |
+
+### 1.3 🟡 Informações pessoais expostas sem hierarquia
+
+- **O que está:** `37 anos · Masculino · bruno.santos@email.com` — tudo no mesmo peso visual.
+- **O que deveria ser:** Nome em destaque (`--sys-text-primary`, font-weight 600), metadados em segundo plano (`--sys-text-secondary`). O e-mail especificamente pode ser sensível em contextos de tela compartilhada — considerar truncar ou ocultar parcialmente (`b****@email.com`) com opção de revelar.
+- **Ação:** Avaliar se e-mail deve ser visível por padrão no dashboard ou apenas sob interação.
+
+### 1.4 🔵 Botão "Metas" sem contexto
+
+- **O que está:** Botão "Metas" no canto superior direito com ícone.
+- **O que deveria ser:** Funcionalidade não documentada no PRD V3. Se existe, precisa ser especificada. Se é placeholder, deve ser removido do mock.
+- **Ação:** Definir se "Metas" entra no escopo da V1 ou é funcionalidade futura. Se futura, remover do mock para não criar expectativa.
+
+---
+
+## 2. Navegação (Tab Bar)
+
+### 2.1 🟠 Mesmos problemas do Cockpit
+
+Os seguintes problemas documentados em [[Correções UI Cockpit V1]] se repetem aqui:
+
+- **1.1** — Aba ativa sem indicador visual forte (agora "Cardiometabólico" ativa)
+- **1.2** — Abas bloqueadas com diferenciação fraca
+
+Não duplicar correção — aplicar as mesmas regras de token já definidas.
+
+### 2.2 🟡 Aba "Cardiometabólico" com ícone de coração
+
+- **O que está:** Ícone de batimento cardíaco ao lado de "Cardiometabólico".
+- **O que deveria ser:** O ícone é adequado semanticamente. Verificar se está usando `--mod-longevidade-icon` (`#4A5899`) quando a aba está ativa e `--sys-text-secondary` (`#5F6B5A`) quando inativa.
+
+---
+
+## 3. Seção Cardiovascular — Cards de Biomarcadores
+
+### 3.1 🟠 Cards idênticos ao Cockpit sem diferenciação de contexto
+
+- **O que está:** Os 4 mini-cards (HRV, FCR, VO₂, Recuperação FC) parecem ser o mesmo componente do Cockpit, com os mesmos dados e o mesmo visual.
+- **O que deveria ser:** Na aba Cardiometabólico, estes cards devem ter **mais profundidade informacional** do que no Cockpit. O Cockpit é resumo; o Cardiometabólico é análise.
+- **Diferenças esperadas (V1):**
+
+| Elemento | No Cockpit | No Cardiometabólico |
+|---|---|---|
+| Dados exibidos | Valor + tendência resumida | Valor + tendência + gráfico sparkline individual |
+| Interação | Estático (visão rápida) | Clicável (abre detalhe do biomarcador) |
+| Baseline/referência | Uma linha | Comparação com baseline 90d + range por idade/sexo |
+| Período | Fixo (30 dias) | Selecionável (30/90/365) |
+
+- **Ação V1 mínima:** Se não houver tempo para diferenciar completamente, pelo menos adicionar um sparkline (mini-gráfico de tendência 30d) dentro de cada card. Isso já cria valor adicional em relação ao Cockpit e justifica a existência da aba.
+
+### 3.2 🟠 Todos os problemas de cor e copy do Cockpit se repetem
+
+Os seguintes problemas já documentados em [[Correções UI Cockpit V1]] se aplicam identicamente:
+
+- **4.1** — Background dos cards branco em vez de `--mod-longevidade-bg-subtle` (`#F4F5FA`)
+- **4.2** — Nomes dos biomarcadores em cor do sistema em vez de `--mod-longevidade-text` (`#333F73`)
+- **4.3** — Borda em tom genérico em vez de `--mod-longevidade-border` (`#B3B9D6`)
+- **4.4** 🔴 — Tendência da FCR "Descendo" sem inversão semântica (descendo = positivo para FCR)
+- **4.5** — "Freq. Cardíaca de Repouso" → "Frequência Cardíaca de Repouso" ou "FC de Repouso"
+- **4.6** — Redundância seta + palavra de direção
+- **4.7** — VO₂ com travessão ambíguo (usar `→ Estável`)
+- **4.8** — Recuperação FC sem dado de referência
+
+**Não duplicar correções — aplicar os mesmos fixes do Cockpit. O componente deve ser o mesmo `<BiomarkerCard />` com props de contexto.**
+
+### 3.3 🟡 Label da seção "CARDIOVASCULAR" em uppercase hardcoded
+
+- **O que está:** "CARDIOVASCULAR" em caixa alta, possivelmente hardcoded.
+- **O que deveria ser:** Texto no código em sentence case: "Cardiovascular". Uppercase aplicado via CSS.
+- **Token/CSS:**
+```css
+.section-label {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mod-longevidade-text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+```
+- **Justificativa:** Uppercase via CSS permite flexibilidade futura. Hardcoded dificulta mudanças de estilo e quebra acessibilidade em leitores de tela (alguns leem letra por letra).
+
+### 3.4 🟡 VO₂ mostra "Percentil 75 para idade e sexo" — positivo, mas ajustar copy
+
+- **O que está:** `Percentil 75 para idade e sexo` — este é o dado secundário do VO₂ no Cardiometabólico.
+- **O que deveria ser:** A informação é excelente e correta (o Cockpit não tem esse detalhe). Ajustar copy para ser mais concisa.
+- **Copy sugerida:** `P75 para idade e sexo` ou `Percentil 75 · idade/sexo`
+- **Nota:** Este tipo de dado secundário expandido é exatamente o que diferencia o Cardiometabólico do Cockpit. Replicar padrão nos demais cards.
+
+---
+
+## 4. Seção Metabólico — Cards Bloqueados
+
+### 4.1 🟡 Referência de versão visível para o usuário
+
+- **O que está:** Cards de % Gordura, Circunferência, Peso mostram "V2". Glicemia mostra "V3+".
+- **O que deveria ser:** **Remover todas as referências de versão.** Mesmo problema documentado no Cockpit (item 3.1).
+- **Copy corrigida:** Substituir "V2" e "V3+" por nada — o label "Em breve" da seção já comunica o estado.
+- **Ação:** Remover o texto de versão de todos os cards bloqueados. A informação de versão pertence ao PRD, não à interface.
+
+### 4.2 🟡 Inconsistência no label da seção bloqueada
+
+- **O que está:** `METABÓLICO  🔒 Em breve` — label + cadeado + estado na mesma linha.
+- **O que deveria ser:** O padrão é bom. Verificar apenas:
+  - Label "METABÓLICO" deve seguir mesmo tratamento CSS da seção "CARDIOVASCULAR" (uppercase via CSS, cor `--mod-longevidade-text`)
+  - "Em breve" deve usar `--sys-text-muted` (`#8B9286`)
+  - Ícone de cadeado deve usar `--mod-longevidade-disabled` (`#B3B9D6`)
+
+### 4.3 🟡 Cards bloqueados sem diferenciação visual adequada
+
+- **O que está:** Cards com fundo levemente cinza e ícone de cadeado, mas a diferença visual com cards ativos é sutil.
+- **O que deveria ser:** Mesma regra do Cockpit — cards bloqueados usam tokens globais, não do módulo.
+- **Tokens:**
+  - Fundo: `--sys-bg-secondary` (`#F5F3EE`)
+  - Borda: `--sys-border-light` (`#E8EBE5`)
+  - Texto: `--sys-text-muted` (`#8B9286`)
+  - Ícone cadeado: `--mod-longevidade-disabled` (`#B3B9D6`)
+  - Valor "—": `--sys-text-muted` (`#8B9286`)
+
+### 4.4 🟡 Nome "Peso (tendência)" com parênteses
+
+- **O que está:** `Peso (tendência)`
+- **O que deveria ser:** O parênteses indica que "tendência" é um qualificador, não o nome do biomarcador. Duas opções:
+  1. `Peso corporal` — nome do biomarcador. A tendência é como ele é exibido, não parte do nome.
+  2. `Tendência de peso` — se o foco é a tendência, inverter a ordem.
+- **Copy sugerida:** `Tendência de peso` — mais natural em pt-BR e comunica que o valor não é o peso atual, mas sua direção ao longo do tempo.
+
+### 4.5 🟡 "Glicemia contínua" — ajustar nomenclatura
+
+- **O que está:** `Glicemia contínua`
+- **O que deveria ser:** O termo mais preciso e reconhecido é **"Glicemia (CGM)"** ou **"Monitoramento contínuo de glicose"**. "Glicemia contínua" é ambíguo — pode ser lido como "glicemia que não para".
+- **Copy sugerida:** `Glicemia (CGM)` — conciso, preciso, reconhecido pelo público profissional.
+
+### 4.6 🔵 Ausência do botão "Me avise quando disponível"
+
+- **O que está:** Cards bloqueados sem ação interativa.
+- **O que deveria ser:** Mesmo padrão definido no Cockpit (item 3.3) — link discreto para coleta de interesse.
+- **Ação:** Pode ser implementado na seção inteira (um botão para toda a seção Metabólico) em vez de por card individual, dado que os 4 biomarcadores chegam juntos na V2.
+
+---
+
+## 5. Estrutura Geral da Aba
+
+### 5.1 🟠 Ausência de gráficos de tendência individual
+
+- **O que está:** Apenas cards com valores estáticos. Sem gráficos.
+- **O que deveria ser:** A aba Cardiometabólico é a aba de **análise** — diferente do Cockpit que é **resumo**. Cada biomarcador cardiovascular deveria ter, no mínimo, um sparkline de tendência 30 dias dentro do card, ou uma seção expandida abaixo com gráficos individuais.
+- **Proposta de estrutura V1:**
+
+```
+CARDIOVASCULAR (label)
+├── 4 cards de biomarcadores (com sparkline interno)
+└── [Expandir detalhes] → Gráficos individuais 30/90/365 dias
+
+METABÓLICO (label + 🔒 Em breve)
+├── 4 cards bloqueados
+└── [Me avise quando disponível]
+```
+
+- **Justificativa:** Sem gráficos, a aba Cardiometabólico é apenas uma cópia dos mini-cards do Cockpit. Isso não justifica a existência da aba e viola o princípio de profundidade crescente (Cockpit = resumo → Cardiometabólico = análise).
+
+### 5.2 🟡 Ausência de correlações visuais entre biomarcadores
+
+- **O que está:** 4 cards independentes sem conexão visual.
+- **O que deveria ser (V1 mínimo viável):** Mesmo sem correlações computadas, a aba pode indicar relações visuais — por exemplo, posicionar HRV e FCR lado a lado (ambos são controle autonômico) e VO₂ e Recuperação FC lado a lado (ambos são capacidade aeróbia). A disposição espacial comunica relação fisiológica.
+- **Proposta de layout:**
+
+```
+Linha 1 — Controle Autonômico
+  [HRV (RMSSD)]  [FC de Repouso]
+
+Linha 2 — Capacidade Aeróbia
+  [VO₂ Máximo]  [Recuperação da FC]
+```
+
+- **Ação V1:** Reorganizar grid em 2×2 com sub-labels opcionais de eixo. Não requer dados novos — apenas reorganização visual.
+
+### 5.3 🔵 Ausência de resumo textual / insight
+
+- **O que está:** Cards soltos sem contexto narrativo.
+- **O que deveria ser (futuro):** Um parágrafo de resumo gerado pelo sistema — ex: "Seus indicadores de controle autonômico estão em tendência positiva. HRV subindo e FCR em queda sugerem melhora na resiliência cardiovascular." Isso é funcionalidade de V2+ (possivelmente com assistência de LLM), mas vale documentar como visão.
+- **Ação V1:** Nenhuma. Documentar como item de roadmap.
+
+---
+
+## 6. Tokens — Verificação de Aplicação
+
+| Elemento | Token Esperado | Hex |
+|---|---|---|
+| Background da página | `--sys-bg-primary` | `#FAFBF8` |
+| Label seção "Cardiovascular" | `--mod-longevidade-text` | `#333F73` |
+| Label seção "Metabólico" | `--mod-longevidade-text` | `#333F73` |
+| "Em breve" (texto) | `--sys-text-muted` | `#8B9286` |
+| Cadeado (ícone) | `--mod-longevidade-disabled` | `#B3B9D6` |
+| Cards ativos — fundo | `--mod-longevidade-bg-subtle` | `#F4F5FA` |
+| Cards ativos — borda | `--mod-longevidade-border` | `#B3B9D6` |
+| Cards ativos — sombra | `--shadow-sm` | `0 2px 8px rgba(45,74,58,0.06)` |
+| Cards bloqueados — fundo | `--sys-bg-secondary` | `#F5F3EE` |
+| Cards bloqueados — borda | `--sys-border-light` | `#E8EBE5` |
+| Cards bloqueados — texto | `--sys-text-muted` | `#8B9286` |
+| Nome do biomarcador | `--mod-longevidade-text` | `#333F73` |
+| Valor numérico | `--sys-text-primary` | `#2D4A3A` |
+| Unidade | `--sys-text-muted` | `#8B9286` |
+| Nome paciente (header) | `--sys-text-primary` | `#2D4A3A` |
+| Metadados paciente | `--sys-text-secondary` | `#5F6B5A` |
+| Badge "Ativo" | `--sys-success` | `#4CA785` |
+| Aba ativa — indicador | `--mod-longevidade-base` | `#4A5899` |
+
+---
+
+## 7. Copy Consolidada — Versão Corrigida
+
+### Header do Paciente
+
+| Campo | Copy Atual | Copy Corrigida |
+|---|---|---|
+| Status | Ativo | Ativo ✅ (manter) |
+| Metadados | 37 anos · Masculino · bruno.santos@email.com | 37 anos · Masculino · b****@email.com |
+
+### Labels de Seção
+
+| Campo | Copy Atual | Copy Corrigida |
+|---|---|---|
+| Seção 1 | CARDIOVASCULAR | Cardiovascular (uppercase via CSS) |
+| Seção 2 | METABÓLICO 🔒 Em breve | Metabólico 🔒 Em breve (uppercase via CSS) |
+
+### Cards Ativos (mesma correção do Cockpit)
+
+| Card | Copy Atual | Copy Corrigida |
+|---|---|---|
+| HRV — tendência | ↗ Subindo  Baseline: 38 ms | ↗ +4 ms vs referência 90d |
+| FCR — nome | Freq. Cardíaca de Repouso | Frequência Cardíaca de Repouso |
+| FCR — tendência | ↘ Descendo  Baseline: 62 bpm | ↘ −4 bpm vs referência 90d (cor: positiva) |
+| VO₂ — secundário | Percentil 75 para idade e sexo | P75 · idade/sexo |
+| Recuperação — tendência | ↗ Subindo | ↗ Tendência positiva |
+
+### Cards Bloqueados
+
+| Card | Copy Atual | Copy Corrigida |
+|---|---|---|
+| % Gordura | % Gordura Corporal  V2 | % Gordura corporal |
+| Circunferência | Circunferência Abdominal  V2 | Circunferência abdominal |
+| Peso | Peso (tendência)  V2 | Tendência de peso |
+| Glicemia | Glicemia contínua  V3+ | Glicemia (CGM) |
+| Todos — versão | V2, V3+ | (remover) |
+
+---
+
+## 8. Checklist de Implementação
+
+### 🔴 Crítico
+- [ ] Implementar inversão semântica de tendência para FCR (herdado do Cockpit — mesmo componente)
+
+### 🟠 Alto
+- [ ] Adicionar sparklines de tendência 30d dentro dos cards de biomarcadores cardiovasculares (diferenciação Cockpit vs Cardiometabólico)
+- [ ] Aplicar todos os tokens de cor do módulo Longevidade nos cards ativos (mesma correção do Cockpit — `--mod-longevidade-bg-subtle`, `--mod-longevidade-border`, `--mod-longevidade-text`)
+- [ ] Aplicar indicador visual na aba ativa "Cardiometabólico"
+- [ ] Definir e documentar decisão sobre avatar do paciente (global vs módulo)
+
+### 🟡 Médio
+- [ ] Remover referências de versão (V2, V3+) de todos os cards bloqueados
+- [ ] Diferenciar background dos cards bloqueados com `--sys-bg-secondary`
+- [ ] Corrigir "Freq." → "Frequência Cardíaca de Repouso" ou "FC de Repouso"
+- [ ] Corrigir "Peso (tendência)" → "Tendência de peso"
+- [ ] Corrigir "Glicemia contínua" → "Glicemia (CGM)"
+- [ ] Aplicar uppercase via CSS (não hardcoded) nos labels de seção
+- [ ] Concisão do percentil VO₂: "P75 · idade/sexo"
+- [ ] Avaliar exposição do e-mail no header (privacidade em tela compartilhada)
+- [ ] Reorganizar grid dos cards CV em 2×2 por eixo fisiológico (Autonômico + Aeróbio)
+- [ ] Definir se "Metas" é escopo V1 — se não, remover do mock
+
+### 🔵 Baixo
+- [ ] Adicionar botão/link "Me avise quando disponível" na seção Metabólico
+- [ ] Definir tokens para badge de status do vínculo (Ativo/Pendente/Revogado)
+- [ ] Documentar como visão futura: resumo textual/insight por seção
+
+---
+
+## 9. Decisões de Design Pendentes
+
+Itens que requerem decisão antes da implementação:
+
+| # | Decisão | Opções | Impacto |
+|---|---|---|---|
+| D1 | Avatar do paciente segue módulo ativo ou é sempre global? | A: Global (`--sys-primary`) / B: Módulo (`--mod-longevidade-base`) | Afeta header em todas as abas |
+| D2 | E-mail do paciente visível por padrão? | A: Visível / B: Truncado com reveal | Privacidade em contexto clínico |
+| D3 | "Metas" entra no escopo V1? | A: Sim / B: Remover do mock | Afeta header e funcionalidade |
+| D4 | Cards do Cardiometabólico incluem sparkline na V1? | A: Sim (recomendado) / B: Só na V2 | Diferenciação Cockpit vs aba de análise |
+| D5 | Grid 2×2 por eixo fisiológico na V1? | A: Sim / B: Grid linear 4 colunas | Organização visual da informação |
+
+---
+
+## Changelog
+
+| Versão | Data | Alteração |
+|---|---|---|
+| 1.0 | 2026-03-03 | Análise completa da aba Cardiometabólico. 22 correções + 5 decisões pendentes documentadas |
