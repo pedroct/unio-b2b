@@ -9,10 +9,10 @@ interface AbaCardiometabolicoProps {
 }
 
 const biomarcadoresMetabolicos = [
-  { nome: "% Gordura Corporal", versao: "V2" },
-  { nome: "Circunferência Abdominal", versao: "V2" },
-  { nome: "Peso (tendência)", versao: "V2" },
-  { nome: "Glicemia contínua", versao: "V3+" },
+  { nome: "% Gordura Corporal" },
+  { nome: "Circunferência Abdominal" },
+  { nome: "Peso (tendência)" },
+  { nome: "Glicemia contínua" },
 ];
 
 export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
@@ -43,11 +43,12 @@ export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
               baseline={data.components.hrv.baseline}
             />
             <CardBiomarcador
-              nome="Freq. Cardíaca de Repouso"
+              nome="FC de Repouso"
               valor={data.components.rhr.value}
               unidade={data.components.rhr.unit}
               tendencia={data.components.rhr.trend}
               baseline={data.components.rhr.baseline}
+              invertedSemantics
             />
             <div
               className="rounded-lg p-4"
@@ -71,6 +72,7 @@ export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
               unidade={data.components.recovery.unit}
               tendencia={data.components.recovery.trend}
               baseline={data.components.recovery.baseline}
+              labelSecundario="Média das últimas 5 sessões"
             />
           </div>
         ) : (
@@ -92,15 +94,15 @@ export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
             <div
               key={bm.nome}
               className="rounded-lg p-4 opacity-60"
-              style={{ background: "var(--mod-longevidade-bg-subtle)", border: "1px dashed var(--mod-longevidade-border)" }}
+              style={{ background: "var(--sys-bg-secondary)", border: "1px dashed var(--sys-border-light)" }}
               data-testid={`card-metabolico-${bm.nome.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
             >
               <div className="flex items-center gap-2 mb-2">
-                <Lock className="h-3 w-3" style={{ color: "var(--mod-longevidade-disabled)" }} />
-                <p className="text-sm font-semibold" style={{ color: "var(--mod-longevidade-text)" }}>{bm.nome}</p>
+                <Lock className="h-3 w-3" style={{ color: "var(--sys-text-muted)" }} />
+                <p className="text-sm font-semibold" style={{ color: "var(--sys-text-muted)" }}>{bm.nome}</p>
               </div>
-              <p className="text-2xl font-bold text-muted-foreground">—</p>
-              <p className="text-[10px] text-muted-foreground mt-1">{bm.versao}</p>
+              <p className="text-2xl font-bold" style={{ color: "var(--sys-text-muted)" }}>—</p>
+              <p className="text-[10px]" style={{ color: "var(--sys-text-muted)" }}>Disponível em breve</p>
             </div>
           ))}
         </div>

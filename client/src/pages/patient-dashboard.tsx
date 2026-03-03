@@ -84,7 +84,7 @@ export default function PatientDashboardPage() {
       </div>
 
       <Tabs defaultValue="cockpit" className="w-full">
-        <TabsList className="w-full justify-start flex-wrap h-auto gap-1" data-testid="tabs-longevidade">
+        <TabsList className="tabs-longevidade w-full justify-start flex-wrap h-auto gap-1" data-testid="tabs-longevidade">
           <TabsTrigger value="cockpit" data-testid="tab-trigger-cockpit">
             <HeartPulse className="h-3.5 w-3.5 mr-1.5" />
             Cockpit
@@ -93,20 +93,20 @@ export default function PatientDashboardPage() {
             <Activity className="h-3.5 w-3.5 mr-1.5" />
             Cardiometabólico
           </TabsTrigger>
-          <TabsTrigger value="recuperacao" data-testid="tab-trigger-recuperacao" className="gap-1">
+          <TabsTrigger value="recuperacao" data-testid="tab-trigger-recuperacao" className="tab-bloqueada gap-1">
             <Moon className="h-3.5 w-3.5 mr-1" />
             Recuperação & Sono
-            <Lock className="h-3 w-3 ml-0.5 text-muted-foreground" />
+            <Lock className="h-3 w-3 ml-0.5" />
           </TabsTrigger>
-          <TabsTrigger value="performance" data-testid="tab-trigger-performance" className="gap-1">
+          <TabsTrigger value="performance" data-testid="tab-trigger-performance" className="tab-bloqueada gap-1">
             <Dumbbell className="h-3.5 w-3.5 mr-1" />
             Performance
-            <Lock className="h-3 w-3 ml-0.5 text-muted-foreground" />
+            <Lock className="h-3 w-3 ml-0.5" />
           </TabsTrigger>
-          <TabsTrigger value="nutricao" data-testid="tab-trigger-nutricao" className="gap-1">
+          <TabsTrigger value="nutricao" data-testid="tab-trigger-nutricao" className="tab-bloqueada gap-1">
             <UtensilsCrossed className="h-3.5 w-3.5 mr-1" />
             Nutrição
-            <Lock className="h-3 w-3 ml-0.5 text-muted-foreground" />
+            <Lock className="h-3 w-3 ml-0.5" />
           </TabsTrigger>
         </TabsList>
 

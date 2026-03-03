@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
 import type { TendenciaBiomarcador } from "@shared/schema";
 
 interface CardBiomarcadorProps {
@@ -7,23 +7,61 @@ interface CardBiomarcadorProps {
   unidade: string;
   tendencia: TendenciaBiomarcador;
   baseline?: number;
+  invertedSemantics?: boolean;
+  labelSecundario?: string;
 }
 
 const ICONE_TENDENCIA = {
   up: TrendingUp,
   down: TrendingDown,
-  stable: Minus,
+  stable: ArrowRight,
 };
 
-const LABEL_TENDENCIA: Record<string, string> = {
-  up: "Subindo",
-  down: "Descendo",
-  stable: "Estável",
-};
+function calcularDiff(valor: number | null, baseline: number | undefined): number | null {
+  if (valor === null || baseline === undefined) return null;
+  return Math.round((valor - baseline) * 10) / 10;
+}
 
-export function CardBiomarcador({ nome, valor, unidade, tendencia, baseline }: CardBiomarcadorProps) {
+function corTendencia(tendencia: TendenciaBiomarcador, invertedSemantics: boolean): string {
+  if (!tendencia || tendencia === "stable") return "var(--sys-text-muted)";
+  const positivo = invertedSemantics
+    ? tendencia === "down"
+    : tendencia === "up";
+  return positivo ? "var(--score-excellent-icon)" : "var(--score-attention-icon)";
+}
+
+function copyTendencia(
+  tendencia: TendenciaBiomarcador,
+  diff: number | null,
+  unidade: string,
+  invertedSemantics: boolean,
+): string {
+  if (!tendencia) return "";
+  if (tendencia === "stable") return "Estável";
+  if (diff !== null) {
+    const sinal = diff > 0 ? "+" : "";
+    return `${sinal}${diff} ${unidade} vs referência 90d`;
+  }
+  const positivo = invertedSemantics
+    ? tendencia === "down"
+    : tendencia === "up";
+  return positivo ? "Tendência positiva" : "Tendência negativa";
+}
+
+export function CardBiomarcador({
+  nome,
+  valor,
+  unidade,
+  tendencia,
+  baseline,
+  invertedSemantics = false,
+  labelSecundario,
+}: CardBiomarcadorProps) {
   const insuficiente = valor === null;
   const IconeTendencia = tendencia ? ICONE_TENDENCIA[tendencia] : null;
+  const diff = calcularDiff(valor, baseline);
+  const cor = corTendencia(tendencia, invertedSemantics);
+  const copy = copyTendencia(tendencia, diff, unidade, invertedSemantics);
 
   return (
     <div
@@ -31,6 +69,7 @@ export function CardBiomarcador({ nome, valor, unidade, tendencia, baseline }: C
       style={{
         background: "var(--mod-longevidade-bg-subtle)",
         border: "1px solid var(--mod-longevidade-border)",
+        boxShadow: "var(--sys-shadow-sm)",
       }}
       data-testid={`card-biomarcador-${nome.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
     >
@@ -48,17 +87,15 @@ export function CardBiomarcador({ nome, valor, unidade, tendencia, baseline }: C
       {insuficiente ? (
         <p className="text-xs text-muted-foreground mt-2">Dados insuficientes</p>
       ) : (
-        <div className="flex items-center gap-2 mt-2">
+        <div className="mt-2 space-y-0.5">
           {IconeTendencia && (
-            <span className="flex items-center gap-1 text-xs" style={{ color: "var(--mod-longevidade-icon)" }}>
+            <span className="flex items-center gap-1 text-xs" style={{ color: cor }}>
               <IconeTendencia className="h-3.5 w-3.5" />
-              {LABEL_TENDENCIA[tendencia!]}
+              {copy}
             </span>
           )}
-          {baseline !== undefined && (
-            <span className="text-xs text-muted-foreground">
-              Baseline: {baseline} {unidade}
-            </span>
+          {labelSecundario && (
+            <p className="text-[10px]" style={{ color: "var(--sys-text-muted)" }}>{labelSecundario}</p>
           )}
         </div>
       )}
@@ -77,10 +114,10 @@ interface GradeBiomarcadoresProps {
 
 export function GradeBiomarcadores({ componentes }: GradeBiomarcadoresProps) {
   const items = [
-    { key: "hrv", nome: "HRV (RMSSD)", ...componentes.hrv },
-    { key: "rhr", nome: "Freq. Cardíaca de Repouso", ...componentes.rhr },
-    { key: "vo2", nome: "VO₂ Máximo", ...componentes.vo2 },
-    { key: "recovery", nome: "Recuperação da FC", ...componentes.recovery },
+    { key: "hrv", nome: "HRV (RMSSD)", ...componentes.hrv, invertedSemantics: false },
+    { key: "rhr", nome: "FC de Repouso", ...componentes.rhr, invertedSemantics: true },
+    { key: "vo2", nome: "VO₂ Máximo", ...componentes.vo2, invertedSemantics: false },
+    { key: "recovery", nome: "Recuperação da FC", ...componentes.recovery, invertedSemantics: false, labelSecundario: "Média das últimas 5 sessões" },
   ];
 
   return (
@@ -93,6 +130,8 @@ export function GradeBiomarcadores({ componentes }: GradeBiomarcadoresProps) {
           unidade={item.unit}
           tendencia={item.trend}
           baseline={item.baseline}
+          invertedSemantics={item.invertedSemantics}
+          labelSecundario={item.labelSecundario}
         />
       ))}
     </div>

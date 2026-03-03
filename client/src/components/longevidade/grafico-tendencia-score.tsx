@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { RespostaTendenciaScore } from "@shared/schema";
 
@@ -30,13 +30,21 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
+const PERIODOS = [
+  { value: "30d" as const, label: "30 dias" },
+  { value: "90d" as const, label: "90 dias" },
+  { value: "365d" as const, label: "365 dias" },
+];
+
 export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps) {
-  const [periodo, setPeriodo] = useState<"30d" | "90d">("30d");
+  const [periodo, setPeriodo] = useState<"30d" | "90d" | "365d">("30d");
 
   const { data, isLoading } = useQuery<RespostaTendenciaScore>({
     queryKey: [`/api/profissional/dashboard/pacientes/${pacienteId}/cardiovascular-score/tendencia?periodo=${periodo}`],
     enabled: !!pacienteId,
   });
+
+  const xInterval = periodo === "365d" ? 50 : periodo === "90d" ? 13 : 4;
 
   return (
     <div data-testid="grafico-tendencia-score">
@@ -45,18 +53,18 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
           Tendência do Score
         </h3>
         <div className="flex gap-1">
-          {(["30d", "90d"] as const).map((p) => (
+          {PERIODOS.map((p) => (
             <button
-              key={p}
-              onClick={() => setPeriodo(p)}
+              key={p.value}
+              onClick={() => setPeriodo(p.value)}
               className="px-3 py-1 rounded text-xs font-medium transition-colors"
               style={{
-                background: periodo === p ? "var(--mod-longevidade-base)" : "transparent",
-                color: periodo === p ? "#fff" : "var(--mod-longevidade-text)",
+                background: periodo === p.value ? "var(--mod-longevidade-base)" : "transparent",
+                color: periodo === p.value ? "#fff" : "var(--sys-text-muted)",
               }}
-              data-testid={`button-periodo-${p}`}
+              data-testid={`button-periodo-${p.value}`}
             >
-              {p === "30d" ? "30 dias" : "90 dias"}
+              {p.label}
             </button>
           ))}
         </div>
@@ -80,7 +88,7 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
               tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
               axisLine={{ stroke: "hsl(var(--border))" }}
               tickLine={false}
-              interval={periodo === "90d" ? 13 : 4}
+              interval={xInterval}
             />
             <YAxis
               domain={[0, 100]}
@@ -89,10 +97,14 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
               tickLine={false}
               ticks={[0, 20, 40, 60, 80, 100]}
             />
+            <ReferenceArea y1={80} y2={100} fill="var(--score-excellent-bg)" fillOpacity={0.5} />
+            <ReferenceArea y1={60} y2={80} fill="var(--score-good-bg)" fillOpacity={0.5} />
+            <ReferenceArea y1={40} y2={60} fill="var(--score-attention-bg)" fillOpacity={0.5} />
+            <ReferenceArea y1={0} y2={40} fill="var(--score-risk-bg)" fillOpacity={0.5} />
             <Tooltip content={<CustomTooltip />} />
-            <ReferenceLine y={80} stroke="var(--score-excellent-border)" strokeDasharray="4 4" strokeOpacity={0.5} />
-            <ReferenceLine y={60} stroke="var(--score-good-border)" strokeDasharray="4 4" strokeOpacity={0.5} />
-            <ReferenceLine y={40} stroke="var(--score-attention-border)" strokeDasharray="4 4" strokeOpacity={0.5} />
+            <ReferenceLine y={80} stroke="var(--score-excellent-border)" strokeDasharray="4 4" strokeOpacity={0.3} />
+            <ReferenceLine y={60} stroke="var(--score-good-border)" strokeDasharray="4 4" strokeOpacity={0.3} />
+            <ReferenceLine y={40} stroke="var(--score-attention-border)" strokeDasharray="4 4" strokeOpacity={0.3} />
             <Area
               type="monotone"
               dataKey="score"

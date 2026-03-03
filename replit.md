@@ -20,7 +20,8 @@ Plataforma web para profissionais de saúde (médicos, nutricionistas, personal 
 - Fontes: Playfair Display (display/títulos), Inter (body)
 - Cores por módulo: Nutrição (#5B8C6F), Treino (#D97952), Biometria (#3D7A8C), Hidratação (#6BA3BE), Longevidade (#4A5899)
 - Design Tokens Longevidade: `--mod-longevidade-*` (Deep Indigo), `--score-*` (4 faixas: excellent/good/attention/risk)
-- Dark mode dinâmico via classe CSS (tokens de longevidade têm variantes dark)
+- Design Tokens Globais: `--sys-bg-primary/secondary`, `--sys-border-light`, `--sys-text-primary/secondary/muted`, `--sys-shadow-sm/md`
+- Dark mode dinâmico via classe CSS (tokens longevidade e sys têm variantes dark)
 
 ## Structure
 ```
@@ -69,9 +70,11 @@ shared/
 
 ## Key Concepts
 - **Painel de Longevidade (V1)**: substitui o dashboard antigo de 4 abas comportamentais. Organizado por sistemas fisiológicos com 5 abas: Cockpit, Sistema Cardiometabólico, Recuperação & Sono (🔒), Performance (🔒), Nutrição (🔒).
-- **Score Cardiovascular (V1 ativo)**: score 0–100 com classificação dinâmica (Excelente/Bom/Atenção/Risco Aumentado). Composto por HRV, FCR, VO₂ e Recuperação FC. Score nunca calculado no frontend.
-- **Scores futuros**: Metabólico (V2), Recuperação (V2), Funcional (V3) — visíveis como cards bloqueados no Cockpit.
-- **Design tokens por faixa**: `--score-excellent-*`, `--score-good-*`, `--score-attention-*`, `--score-risk-*` determinados dinamicamente pelo valor.
+- **Score Cardiovascular (V1 ativo)**: score 0–100 com classificação dinâmica (Excelente ≥80 / Bom ≥60 / Atenção ≥40 / Risco Aumentado <40). Composto por HRV, FCR, VO₂ e Recuperação FC. Score nunca calculado no frontend.
+- **Inversão semântica de tendência**: FCR (↓=positivo, ↑=negativo) — prop `invertedSemantics` no CardBiomarcador controla cor da tendência.
+- **Scores futuros**: Metabólico, Recuperação, Funcional — visíveis como cards bloqueados com tokens `--sys-*` (não `--mod-longevidade-*`).
+- **Design tokens por faixa**: `--score-excellent-*`, `--score-good-*`, `--score-attention-*`, `--score-risk-*` determinados dinamicamente pelo valor. Gráfico exibe faixas coloridas de fundo (ReferenceArea).
+- **Decisão de UI**: "Performance" como label da tab; "Performance & Funcionalidade" como título interno da aba.
 - **Múltiplos planos por paciente**: cada cliente pode ter vários planos alimentares. Cada plano tem ID, descrição editável, dias ativos e refeições próprias.
 - **Prescrição Alimentar (Edição)**: página completa no sidebar (restrita a Nutricionista). Permite selecionar plano via dropdown, editar descrição inline, editar refeições e dias ativos.
 
@@ -90,7 +93,7 @@ shared/
 - PUT /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/descricao — Update description
 - POST /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/refeicoes — Create meal
 - GET /api/profissional/dashboard/pacientes/:id/cardiovascular-score — Score cardiovascular (mock)
-- GET /api/profissional/dashboard/pacientes/:id/cardiovascular-score/tendencia?periodo=30d|90d — Tendência do score
+- GET /api/profissional/dashboard/pacientes/:id/cardiovascular-score/tendencia?periodo=30d|90d|365d — Tendência do score
 - GET /api/nutricao/catalogo/alimentos?busca&fontes&limite&offset — Search foods from catalog (proxied to staging, paginated response `{ items, total, limite, offset }`)
 - GET /api/nutricao/catalogo/alimentos/:id — Food detail with nutrients (proxied to staging)
 - GET /api/nutricao/catalogo/alimentos/codigo/:codigo — Search food by code (proxied to staging)

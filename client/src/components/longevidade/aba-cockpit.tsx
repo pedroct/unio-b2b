@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Activity, Moon, Dumbbell, Lock } from "lucide-react";
+import { Activity, Moon, Dumbbell, Lock, Bell } from "lucide-react";
 import { CardScore } from "./card-score";
 import { GradeBiomarcadores } from "./card-biomarcador";
 import { GraficoTendenciaScore } from "./grafico-tendencia-score";
@@ -11,9 +11,9 @@ interface AbaCockpitProps {
 }
 
 const scoresFuturos = [
-  { nome: "Score Metabólico", icone: Activity, versao: "V2" },
-  { nome: "Score Recuperação", icone: Moon, versao: "V2" },
-  { nome: "Score Funcional", icone: Dumbbell, versao: "V3" },
+  { nome: "Score Metabólico", icone: Activity },
+  { nome: "Score Recuperação", icone: Moon },
+  { nome: "Score Funcional", icone: Dumbbell },
 ];
 
 export function AbaCockpit({ pacienteId }: AbaCockpitProps) {
@@ -42,16 +42,25 @@ export function AbaCockpit({ pacienteId }: AbaCockpitProps) {
           <div
             key={sf.nome}
             className="rounded-xl p-5 flex flex-col items-center justify-center text-center"
-            style={{ background: "var(--mod-longevidade-bg-subtle)", border: "1px solid var(--mod-longevidade-border)" }}
+            style={{ background: "var(--sys-bg-secondary)", border: "1px solid var(--sys-border-light)" }}
             data-testid={`card-score-futuro-${sf.nome.toLowerCase().replace(/\s/g, "-")}`}
           >
             <div className="relative mb-3">
-              <sf.icone className="h-6 w-6" style={{ color: "var(--mod-longevidade-disabled)" }} />
-              <Lock className="h-3 w-3 absolute -bottom-0.5 -right-0.5" style={{ color: "var(--mod-longevidade-disabled)" }} />
+              <sf.icone className="h-6 w-6" style={{ color: "var(--sys-text-muted)" }} />
+              <Lock className="h-3 w-3 absolute -bottom-0.5 -right-0.5" style={{ color: "var(--sys-text-muted)" }} />
             </div>
-            <p className="text-xs font-semibold mb-1" style={{ color: "var(--mod-longevidade-text)" }}>{sf.nome}</p>
-            <p className="font-serif text-2xl font-bold text-muted-foreground">—</p>
-            <p className="text-[10px] text-muted-foreground mt-1">Em breve ({sf.versao})</p>
+            <p className="text-xs font-semibold mb-1" style={{ color: "var(--sys-text-muted)" }}>{sf.nome}</p>
+            <p className="font-serif text-2xl font-bold" style={{ color: "var(--sys-text-muted)" }}>—</p>
+            <p className="text-[10px] mt-1" style={{ color: "var(--sys-text-muted)" }}>Disponível em breve</p>
+            <button
+              className="text-[10px] mt-2 flex items-center gap-1 hover:underline"
+              style={{ color: "var(--mod-longevidade-base)" }}
+              onClick={() => {}}
+              data-testid={`button-avisar-${sf.nome.toLowerCase().replace(/\s/g, "-")}`}
+            >
+              <Bell className="h-3 w-3" />
+              Me avise quando disponível
+            </button>
           </div>
         ))}
       </div>

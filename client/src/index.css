@@ -98,6 +98,15 @@
 
   --color-longevity: var(--mod-longevidade-base);
 
+  --sys-bg-primary:    #FAFBF8;
+  --sys-bg-secondary:  #F5F3EE;
+  --sys-border-light:  #E8EBE5;
+  --sys-text-primary:  #2D4A3A;
+  --sys-text-secondary:#5F6B5A;
+  --sys-text-muted:    #8B9286;
+  --sys-shadow-sm:     0 2px 8px rgba(45,74,58,0.06);
+  --sys-shadow-md:     0 4px 20px rgba(45,74,58,0.08);
+
 /* Fallback for older browsers */
   --sidebar-primary-border: hsl(var(--sidebar-primary));
   --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
@@ -215,6 +224,15 @@
   --score-risk-badge:       #3D2220;
 
   --color-longevity: var(--mod-longevidade-base);
+
+  --sys-bg-primary:    #1A1A1A;
+  --sys-bg-secondary:  #252320;
+  --sys-border-light:  #3A3835;
+  --sys-text-primary:  #D4E0D8;
+  --sys-text-secondary:#A0AE98;
+  --sys-text-muted:    #6B7565;
+  --sys-shadow-sm:     0 2px 8px rgba(0,0,0,0.20);
+  --sys-shadow-md:     0 4px 20px rgba(0,0,0,0.25);
 
 /* Fallback for older browsers */
   --sidebar-primary-border: hsl(var(--sidebar-primary));
@@ -389,4 +407,21 @@
 
 .biomarker-card--insufficient .biomarker-card__value {
   color: var(--muted-foreground);
+}
+
+.tabs-longevidade [data-state="active"] {
+  border-bottom: 2px solid var(--mod-longevidade-base);
+  color: var(--mod-longevidade-text);
+}
+
+.tabs-longevidade [data-state="inactive"] {
+  color: var(--sys-text-secondary);
+}
+
+.tabs-longevidade .tab-bloqueada {
+  color: var(--mod-longevidade-disabled) !important;
+}
+
+.tabs-longevidade .tab-bloqueada svg {
+  color: var(--mod-longevidade-disabled);
 }

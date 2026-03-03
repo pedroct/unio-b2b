@@ -13,7 +13,9 @@ interface CardScoreProps {
 
 function formatarData(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  const data = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const hora = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return `${data} às ${hora}`;
 }
 
 export function CardScore({ score, classification, delta_30d, updated_at, isLoading }: CardScoreProps) {
@@ -81,14 +83,14 @@ export function CardScore({ score, classification, delta_30d, updated_at, isLoad
         {delta_30d !== null && (
           <span className="flex items-center gap-1 text-sm" style={{ color: `var(--score-${classification}-icon)` }} data-testid="text-delta">
             <DeltaIcon className="h-3.5 w-3.5" />
-            {delta_30d > 0 ? "+" : ""}{delta_30d} últimos 30 dias
+            {delta_30d > 0 ? "+" : ""}{delta_30d} pts nos últimos 30 dias
           </span>
         )}
       </div>
 
       {updated_at && (
         <p className="text-xs text-muted-foreground mt-3" data-testid="text-atualizado">
-          Atualizado em {formatarData(updated_at)}
+          Atualizado {formatarData(updated_at)}
         </p>
       )}
     </div>
