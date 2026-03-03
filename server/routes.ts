@@ -17,7 +17,7 @@ export async function registerRoutes(
 ): Promise<Server> {
   app.post("/api/auth/pair", async (req, res) => {
     try {
-      const result = await stagingPassthrough("/api/auth/pair", {
+      const result = await stagingPassthrough("/api/nucleo/profissional-auth", {
         method: "POST",
         body: req.body,
       });
