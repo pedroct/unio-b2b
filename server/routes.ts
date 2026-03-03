@@ -1,46 +1,76 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { stagingFetch } from "./staging-proxy";
+import { stagingFetch, stagingPassthrough } from "./staging-proxy";
+
+function extractBearerToken(req: Request): string | undefined {
+  const auth = req.headers.authorization;
+  if (auth?.startsWith("Bearer ")) {
+    return auth.slice(7);
+  }
+  return undefined;
+}
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   app.post("/api/auth/pair", async (req, res) => {
-    const { registrationNumber, uf, password } = req.body;
-
-    if (!registrationNumber || !uf || !password) {
-      return res.status(400).json({ message: "Preencha todos os campos." });
+    try {
+      const result = await stagingPassthrough("/api/auth/pair", {
+        method: "POST",
+        body: req.body,
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[auth/pair] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao conectar com o servidor de autenticação." });
     }
-
-    const result = await storage.authenticate(registrationNumber, uf, password);
-    if (!result) {
-      return res.status(401).json({ message: "Credenciais inválidas." });
-    }
-
-    return res.json(result);
   });
 
   app.post("/api/auth/refresh", async (req, res) => {
-    const { refresh } = req.body;
-    if (!refresh) {
-      return res.status(401).json({ message: "Token de refresh ausente." });
+    try {
+      const result = await stagingPassthrough("/api/auth/refresh", {
+        method: "POST",
+        body: req.body,
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[auth/refresh] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao renovar token." });
     }
-    return res.json({
-      access: `mock-access-token-${Date.now()}`,
-      refresh: `mock-refresh-token-${Date.now()}`,
-    });
   });
 
-  app.get("/api/profissional/clientes", async (_req, res) => {
-    const patients = await storage.getPatients();
-    return res.json(patients);
+  app.get("/api/profissional/clientes", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) {
+      return res.status(401).json({ message: "Token de autenticação ausente." });
+    }
+    try {
+      const result = await stagingPassthrough("/api/profissional/clientes", {
+        bearerToken: token,
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[profissional/clientes] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao buscar lista de clientes." });
+    }
   });
 
-  app.get("/api/profissional/pacientes", async (_req, res) => {
-    const patients = await storage.getPatients();
-    return res.json(patients);
+  app.get("/api/profissional/pacientes", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) {
+      return res.status(401).json({ message: "Token de autenticação ausente." });
+    }
+    try {
+      const result = await stagingPassthrough("/api/profissional/clientes", {
+        bearerToken: token,
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[profissional/pacientes] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao buscar lista de clientes." });
+    }
   });
 
   app.get("/api/profissional/pacientes/:id", async (req, res) => {

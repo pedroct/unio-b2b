@@ -4,6 +4,48 @@ const STAGING_URL = process.env.STAGING_API_URL || "https://staging.unio.tec.br"
 const STAGING_EMAIL = process.env.STAGING_EMAIL || "";
 const STAGING_PASSWORD = process.env.STAGING_PASSWORD || "";
 
+export async function stagingPassthrough(
+  path: string,
+  options: {
+    method?: string;
+    body?: any;
+    params?: Record<string, string>;
+    bearerToken?: string;
+  } = {}
+): Promise<{ ok: boolean; status: number; data: any }> {
+  let url = `${STAGING_URL}${path}`;
+  if (options.params) {
+    const qs = new URLSearchParams(options.params).toString();
+    if (qs) url += `?${qs}`;
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (options.bearerToken) {
+    headers["Authorization"] = `Bearer ${options.bearerToken}`;
+  }
+
+  const fetchOptions: RequestInit = {
+    method: options.method || "GET",
+    headers,
+  };
+
+  if (options.body) {
+    fetchOptions.body = JSON.stringify(options.body);
+  }
+
+  const res = await fetch(url, fetchOptions);
+  let data: any;
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
+  }
+
+  return { ok: res.ok, status: res.status, data };
+}
+
 async function getAccessToken(): Promise<string> {
   if (cachedToken && cachedToken.expiresAt > Date.now()) {
     return cachedToken.access;

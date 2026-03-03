@@ -115,9 +115,15 @@ Backend NÃO fornece séries temporais por métrica. Campo `_sparkline_mock` (pr
 - Gender "N" traduzido para "Não informado" no frontend
 - avatarUrl: se não null, AvatarImage é renderizado; se null, fallback para iniciais do nome
 
+### Rotas proxied ao backend real (staging)
+- POST /api/auth/pair — Login (passthrough ao staging, corpo repassado tal qual)
+- POST /api/auth/refresh — Refresh token (passthrough ao staging)
+- GET /api/profissional/clientes — Listagem de clientes (passthrough, repassa Bearer token do profissional)
+- GET /api/profissional/pacientes — Alias para /clientes (passthrough, mesmo comportamento)
+- `stagingPassthrough()` em `server/staging-proxy.ts`: repassa o token JWT do profissional logado ao backend real (diferente de `stagingFetch()` que usa credenciais de serviço)
+
 ### Outros (mock/legacy)
-- POST /api/auth/pair — Login
-- GET /api/profissional/pacientes/:id — Patient details (sem doc V1 específica, mantido)
+- GET /api/profissional/pacientes/:id — Patient details (sem doc V1 específica, mantido mock)
 - GET/PUT /api/profissional/pacientes/:id/metas — Patient goals
 - GET /api/profissional/dashboard/pacientes/:id/overview — Overview
 - GET /api/profissional/dashboard/pacientes/:id/nutricao — Nutrition
