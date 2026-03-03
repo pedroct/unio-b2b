@@ -8,12 +8,11 @@ import {
   UserPlus,
   X,
   ArrowUpDown,
-  CalendarDays,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -36,14 +35,11 @@ import type { Patient } from "@shared/schema";
 
 type StatusFilter = "ativos" | "todos" | "inativos";
 type SortOption = "nome-asc" | "nome-desc" | "aderencia-asc" | "aderencia-desc" | "atividade";
-type PeriodField = "dataCadastro" | "ultimaConsulta";
 
-function brDateToIso(dateStr: string): string | null {
-  const parts = dateStr.split("/");
-  if (parts.length !== 3) return null;
-  const [day, month, year] = parts.map(Number);
-  if (!day || !month || !year) return null;
-  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+function genderLabel(gender: string): string {
+  if (gender === "F") return "Feminino";
+  if (gender === "M") return "Masculino";
+  return "Não informado";
 }
 
 function AdherenceBadge({ value, label }: { value: number; label: string }) {
@@ -68,12 +64,9 @@ function PatientRowSkeleton() {
     <TableRow>
       <TableCell><div className="flex items-center gap-3"><Skeleton className="h-9 w-9 rounded-full" /><div className="space-y-1.5"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-24" /></div></div></TableCell>
       <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-      <TableCell><Skeleton className="h-5 w-20" /></TableCell>
       <TableCell><Skeleton className="h-5 w-12" /></TableCell>
       <TableCell><Skeleton className="h-5 w-12" /></TableCell>
       <TableCell><Skeleton className="h-3 w-20" /></TableCell>
-      <TableCell className="hidden lg:table-cell"><Skeleton className="h-3 w-20" /></TableCell>
-      <TableCell className="hidden lg:table-cell"><Skeleton className="h-3 w-20" /></TableCell>
       <TableCell><Skeleton className="h-5 w-16" /></TableCell>
       <TableCell><Skeleton className="h-4 w-4" /></TableCell>
     </TableRow>
@@ -104,22 +97,11 @@ export default function PatientsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ativos");
   const [sortBy, setSortBy] = useState<SortOption>("nome-asc");
-  const [tagFilter, setTagFilter] = useState("");
-  const [periodField, setPeriodField] = useState<PeriodField>("dataCadastro");
-  const [periodFrom, setPeriodFrom] = useState("");
-  const [periodTo, setPeriodTo] = useState("");
   const [, navigate] = useLocation();
 
   const { data: patients, isLoading } = useQuery<Patient[]>({
-    queryKey: ["/api/profissional/pacientes"],
+    queryKey: ["/api/profissional/clientes"],
   });
-
-  const allTags = useMemo(() => {
-    if (!patients) return [];
-    const tagSet = new Set<string>();
-    patients.forEach((p) => p.tags?.forEach((t) => tagSet.add(t)));
-    return Array.from(tagSet).sort();
-  }, [patients]);
 
   const activeCount = patients?.filter((p) => p.status === "active").length || 0;
   const inactiveCount = patients?.filter((p) => p.status === "inactive").length || 0;
@@ -134,8 +116,7 @@ export default function PatientsPage() {
       )
     : 0;
 
-  const hasPeriodFilter = periodFrom.length > 0 || periodTo.length > 0;
-  const hasActiveFilters = search.length > 0 || tagFilter.length > 0 || hasPeriodFilter;
+  const hasActiveFilters = search.length > 0;
 
   const filtered = useMemo(() => {
     if (!patients) return [];
@@ -155,22 +136,6 @@ export default function PatientsPage() {
           p.name.toLowerCase().includes(term) ||
           p.email.toLowerCase().includes(term)
       );
-    }
-
-    if (tagFilter) {
-      result = result.filter((p) => p.tags?.includes(tagFilter));
-    }
-
-    if (periodFrom || periodTo) {
-      result = result.filter((p) => {
-        const fieldValue = p[periodField];
-        if (!fieldValue) return true;
-        const iso = brDateToIso(fieldValue);
-        if (!iso) return true;
-        if (periodFrom && iso < periodFrom) return false;
-        if (periodTo && iso > periodTo) return false;
-        return true;
-      });
     }
 
     switch (sortBy) {
@@ -198,7 +163,7 @@ export default function PatientsPage() {
         const activityOrder: Record<string, number> = {};
         result.forEach((p) => {
           const text = p.lastActivity.toLowerCase();
-          if (text.includes("hoje") || text.includes("minuto") || text.includes("hora")) {
+          if (text.includes("recentemente") || text.includes("hoje") || text.includes("minuto") || text.includes("hora")) {
             activityOrder[p.id] = 0;
           } else if (text.includes("ontem")) {
             activityOrder[p.id] = 1;
@@ -217,13 +182,10 @@ export default function PatientsPage() {
     }
 
     return result;
-  }, [patients, statusFilter, search, tagFilter, sortBy, periodFrom, periodTo, periodField]);
+  }, [patients, statusFilter, search, sortBy]);
 
   function clearFilters() {
     setSearch("");
-    setTagFilter("");
-    setPeriodFrom("");
-    setPeriodTo("");
   }
 
   return (
@@ -302,21 +264,6 @@ export default function PatientsPage() {
             </SelectContent>
           </Select>
 
-          {allTags.length > 0 && (
-            <Select value={tagFilter} onValueChange={setTagFilter}>
-              <SelectTrigger className="w-[180px]" data-testid="select-tag">
-                <SelectValue placeholder="Filtrar por tag" />
-              </SelectTrigger>
-              <SelectContent>
-                {allTags.map((tag) => (
-                  <SelectItem key={tag} value={tag} data-testid={`option-tag-${tag.toLowerCase().replace(/\s+/g, "-")}`}>
-                    {tag}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
           {hasActiveFilters && (
             <Button
               variant="ghost"
@@ -331,57 +278,6 @@ export default function PatientsPage() {
         </div>
       </div>
 
-      <div
-        className="flex flex-col gap-3 sm:flex-row sm:items-end rounded-lg border bg-card p-4"
-        data-testid="filter-periodo"
-      >
-        <CalendarDays className="h-4 w-4 text-muted-foreground mt-1 hidden sm:block" />
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-muted-foreground">Período por</label>
-          <Select value={periodField} onValueChange={(v) => setPeriodField(v as PeriodField)}>
-            <SelectTrigger className="w-[180px] h-9" data-testid="select-periodo-campo">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="dataCadastro" data-testid="option-periodo-cadastro">Data de cadastro</SelectItem>
-              <SelectItem value="ultimaConsulta" data-testid="option-periodo-consulta">Última consulta</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-muted-foreground">De</label>
-          <Input
-            type="date"
-            value={periodFrom}
-            onChange={(e) => setPeriodFrom(e.target.value)}
-            className="w-[160px] h-9"
-            data-testid="input-periodo-de"
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-muted-foreground">Até</label>
-          <Input
-            type="date"
-            value={periodTo}
-            onChange={(e) => setPeriodTo(e.target.value)}
-            className="w-[160px] h-9"
-            data-testid="input-periodo-ate"
-          />
-        </div>
-        {hasPeriodFilter && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-9"
-            onClick={() => { setPeriodFrom(""); setPeriodTo(""); }}
-            data-testid="button-limpar-periodo"
-          >
-            <X className="h-3.5 w-3.5 mr-1" />
-            Limpar
-          </Button>
-        )}
-      </div>
-
       {isLoading ? (
         <div className="rounded-md border">
           <Table>
@@ -389,12 +285,9 @@ export default function PatientsPage() {
               <TableRow>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Gênero / Idade</TableHead>
-                <TableHead className="hidden md:table-cell">Tags</TableHead>
                 <TableHead>Dieta</TableHead>
                 <TableHead>Treino</TableHead>
                 <TableHead>Última atividade</TableHead>
-                <TableHead className="hidden lg:table-cell">Desde</TableHead>
-                <TableHead className="hidden lg:table-cell">Última consulta</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
@@ -429,12 +322,9 @@ export default function PatientsPage() {
               <TableRow>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Gênero / Idade</TableHead>
-                <TableHead className="hidden md:table-cell">Tags</TableHead>
                 <TableHead>Dieta</TableHead>
                 <TableHead>Treino</TableHead>
                 <TableHead>Última atividade</TableHead>
-                <TableHead className="hidden lg:table-cell">Desde</TableHead>
-                <TableHead className="hidden lg:table-cell">Última consulta</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
@@ -452,6 +342,9 @@ export default function PatientsPage() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
+                        {patient.avatarUrl ? (
+                          <AvatarImage src={patient.avatarUrl} alt={patient.name} />
+                        ) : null}
                         <AvatarFallback className="bg-muted text-muted-foreground text-xs font-semibold">
                           {patient.name
                             .split(" ")
@@ -476,23 +369,9 @@ export default function PatientsPage() {
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-muted-foreground">
-                      {patient.gender === "F" ? "Feminino" : "Masculino"},{" "}
+                      {genderLabel(patient.gender)},{" "}
                       {patient.age} anos
                     </span>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <div className="flex items-center gap-1 flex-wrap">
-                      {patient.tags?.map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="outline"
-                          className="text-[10px] px-1.5 py-0"
-                          data-testid={`badge-tag-${patient.id}-${tag.toLowerCase().replace(/\s+/g, "-")}`}
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
                   </TableCell>
                   <TableCell>
                     <AdherenceBadge
@@ -512,22 +391,6 @@ export default function PatientsPage() {
                       data-testid={`text-last-activity-${patient.id}`}
                     >
                       {patient.lastActivity}
-                    </span>
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <span
-                      className="text-xs text-muted-foreground"
-                      data-testid={`text-desde-${patient.id}`}
-                    >
-                      {patient.dataCadastro}
-                    </span>
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <span
-                      className="text-xs text-muted-foreground"
-                      data-testid={`text-ultima-consulta-${patient.id}`}
-                    >
-                      {patient.ultimaConsulta}
                     </span>
                   </TableCell>
                   <TableCell>

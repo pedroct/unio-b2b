@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -54,7 +54,6 @@ function RowSkeleton() {
     <TableRow>
       <TableCell><div className="flex items-center gap-3"><Skeleton className="h-9 w-9 rounded-full" /><div className="space-y-1.5"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-24" /></div></div></TableCell>
       <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-      <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
       <TableCell><Skeleton className="h-5 w-12" /></TableCell>
       <TableCell><Skeleton className="h-3 w-20" /></TableCell>
       <TableCell><Skeleton className="h-5 w-16" /></TableCell>
@@ -79,19 +78,11 @@ export default function PrescricaoAlimentarListaPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ativos");
   const [sortBy, setSortBy] = useState<SortOption>("nome-asc");
-  const [tagFilter, setTagFilter] = useState("");
   const [, navigate] = useLocation();
 
   const { data: patients, isLoading } = useQuery<Patient[]>({
-    queryKey: ["/api/profissional/pacientes"],
+    queryKey: ["/api/profissional/clientes"],
   });
-
-  const allTags = useMemo(() => {
-    if (!patients) return [];
-    const tagSet = new Set<string>();
-    patients.forEach((p) => p.tags?.forEach((t) => tagSet.add(t)));
-    return Array.from(tagSet).sort();
-  }, [patients]);
 
   const activeCount = patients?.filter((p) => p.status === "active").length || 0;
   const inactiveCount = patients?.filter((p) => p.status === "inactive").length || 0;
@@ -101,7 +92,7 @@ export default function PrescricaoAlimentarListaPage() {
     ? Math.round(patients.reduce((acc, p) => acc + p.adherenceDiet, 0) / patients.length)
     : 0;
 
-  const hasActiveFilters = search.length > 0 || tagFilter.length > 0;
+  const hasActiveFilters = search.length > 0;
 
   const filtered = useMemo(() => {
     if (!patients) return [];
@@ -123,10 +114,6 @@ export default function PrescricaoAlimentarListaPage() {
       );
     }
 
-    if (tagFilter) {
-      result = result.filter((p) => p.tags?.includes(tagFilter));
-    }
-
     switch (sortBy) {
       case "nome-asc":
         result.sort((a, b) => a.name.localeCompare(b.name));
@@ -143,18 +130,16 @@ export default function PrescricaoAlimentarListaPage() {
     }
 
     return result;
-  }, [patients, statusFilter, search, tagFilter, sortBy]);
+  }, [patients, statusFilter, search, sortBy]);
 
   function clearFilters() {
     setSearch("");
-    setTagFilter("");
   }
 
   const tableHeaders = (
     <TableRow>
       <TableHead>Cliente</TableHead>
       <TableHead>Gênero / Idade</TableHead>
-      <TableHead className="hidden md:table-cell">Tags</TableHead>
       <TableHead>Aderência dieta</TableHead>
       <TableHead>Última atividade</TableHead>
       <TableHead>Status</TableHead>
@@ -236,21 +221,6 @@ export default function PrescricaoAlimentarListaPage() {
             </SelectContent>
           </Select>
 
-          {allTags.length > 0 && (
-            <Select value={tagFilter} onValueChange={setTagFilter}>
-              <SelectTrigger className="w-[180px]" data-testid="select-tag-prescricao">
-                <SelectValue placeholder="Filtrar por tag" />
-              </SelectTrigger>
-              <SelectContent>
-                {allTags.map((tag) => (
-                  <SelectItem key={tag} value={tag} data-testid={`option-prescricao-tag-${tag.toLowerCase().replace(/\s+/g, "-")}`}>
-                    {tag}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
           {hasActiveFilters && (
             <Button
               variant="ghost"
@@ -307,6 +277,7 @@ export default function PrescricaoAlimentarListaPage() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
+                        {patient.avatarUrl && <AvatarImage src={patient.avatarUrl} alt={patient.name} />}
                         <AvatarFallback className="bg-muted text-muted-foreground text-xs font-semibold">
                           {patient.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
                         </AvatarFallback>
@@ -326,23 +297,9 @@ export default function PrescricaoAlimentarListaPage() {
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-muted-foreground">
-                      {patient.gender === "F" ? "Feminino" : "Masculino"},{" "}
+                      {patient.gender === "F" ? "Feminino" : patient.gender === "M" ? "Masculino" : "Não informado"},{" "}
                       {patient.age} anos
                     </span>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <div className="flex items-center gap-1 flex-wrap">
-                      {patient.tags?.map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="outline"
-                          className="text-[10px] px-1.5 py-0"
-                          data-testid={`badge-prescricao-tag-${patient.id}-${tag.toLowerCase().replace(/\s+/g, "-")}`}
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
                   </TableCell>
                   <TableCell>
                     <AdherenceBadge value={patient.adherenceDiet} />

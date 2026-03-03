@@ -108,10 +108,16 @@ Backend NÃO fornece séries temporais por métrica. Campo `_sparkline_mock` (pr
 - 403: componente ErroAcessoPaciente "Você não possui acesso clínico autorizado a este paciente."
 - 404: componente ErroAcessoPaciente "Cliente não encontrado"
 
+### Listagem de Clientes (contrato real — doc integração v1)
+- GET /api/profissional/clientes — Retorna array de `Patient`. Campos: id, name, email, phone, birthDate, gender (F/M/N), age, avatarUrl (string|null), adherenceTraining, adherenceDiet, lastActivity, status
+- Campos ausentes na V1 (removidos do tipo Patient): `tags`, `dataCadastro`, `ultimaConsulta`
+- Filtros (busca, status, ordenação) são client-side — backend não suporta query strings nesta versão
+- Gender "N" traduzido para "Não informado" no frontend
+- avatarUrl: se não null, AvatarImage é renderizado; se null, fallback para iniciais do nome
+
 ### Outros (mock/legacy)
 - POST /api/auth/pair — Login
-- GET /api/profissional/pacientes — List patients
-- GET /api/profissional/pacientes/:id — Patient details
+- GET /api/profissional/pacientes/:id — Patient details (sem doc V1 específica, mantido)
 - GET/PUT /api/profissional/pacientes/:id/metas — Patient goals
 - GET /api/profissional/dashboard/pacientes/:id/overview — Overview
 - GET /api/profissional/dashboard/pacientes/:id/nutricao — Nutrition

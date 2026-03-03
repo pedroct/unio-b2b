@@ -33,6 +33,11 @@ export async function registerRoutes(
     });
   });
 
+  app.get("/api/profissional/clientes", async (_req, res) => {
+    const patients = await storage.getPatients();
+    return res.json(patients);
+  });
+
   app.get("/api/profissional/pacientes", async (_req, res) => {
     const patients = await storage.getPatients();
     return res.json(patients);

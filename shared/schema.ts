@@ -35,14 +35,11 @@ export interface Patient {
   birthDate: string;
   gender: string;
   age: number;
-  avatarUrl?: string;
+  avatarUrl: string | null;
   adherenceTraining: number;
   adherenceDiet: number;
   lastActivity: string;
   status: "active" | "inactive";
-  tags: string[];
-  dataCadastro: string;
-  ultimaConsulta: string;
 }
 
 export interface PatientGoals {
