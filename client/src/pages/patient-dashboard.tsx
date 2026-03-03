@@ -3,13 +3,18 @@ import { useRoute, Link } from "wouter";
 import { ArrowLeft, Settings2, HeartPulse, Activity, Moon, Dumbbell, UtensilsCrossed, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AbaCockpit } from "@/components/longevidade/aba-cockpit";
 import { AbaCardiometabolico } from "@/components/longevidade/aba-cardiometabolico";
 import { AbaTrancada } from "@/components/longevidade/aba-trancada";
 import type { Patient } from "@shared/schema";
+
+function truncarEmail(email: string): string {
+  const [local, domain] = email.split("@");
+  if (!domain) return email;
+  return `${local[0]}****@${domain}`;
+}
 
 function PatientHeaderSkeleton() {
   return (
@@ -57,18 +62,26 @@ export default function PatientDashboardPage() {
               </Avatar>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl font-semibold tracking-tight" data-testid="text-patient-name">
+                  <h1
+                    className="text-xl font-semibold tracking-tight"
+                    style={{ color: "var(--sys-text-primary)" }}
+                    data-testid="text-patient-name"
+                  >
                     {patient.name}
                   </h1>
-                  <Badge
-                    variant={patient.status === "active" ? "default" : "secondary"}
-                    className="text-xs"
+                  <span
+                    className="badge-status-ativo text-[11px] font-medium px-2 py-0.5 rounded-full"
+                    data-testid="badge-status"
                   >
                     {patient.status === "active" ? "Ativo" : "Inativo"}
-                  </Badge>
+                  </span>
                 </div>
-                <p className="text-sm text-muted-foreground" data-testid="text-patient-info">
-                  {patient.age} anos · {patient.gender === "M" ? "Masculino" : "Feminino"} · {patient.email}
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--sys-text-secondary)" }}
+                  data-testid="text-patient-info"
+                >
+                  {patient.age} anos · {patient.gender === "M" ? "Masculino" : "Feminino"} · {truncarEmail(patient.email)}
                 </p>
               </div>
             </div>

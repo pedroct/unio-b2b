@@ -283,6 +283,7 @@ export interface ComponenteBiomarcador {
   unit: string;
   trend: TendenciaBiomarcador;
   baseline?: number;
+  sparkline?: number[];
 }
 
 export interface ScoreCardiovascular {

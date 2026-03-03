@@ -106,6 +106,7 @@
   --sys-text-muted:    #8B9286;
   --sys-shadow-sm:     0 2px 8px rgba(45,74,58,0.06);
   --sys-shadow-md:     0 4px 20px rgba(45,74,58,0.08);
+  --sys-success:       #4CA785;
 
 /* Fallback for older browsers */
   --sidebar-primary-border: hsl(var(--sidebar-primary));
@@ -233,6 +234,7 @@
   --sys-text-muted:    #6B7565;
   --sys-shadow-sm:     0 2px 8px rgba(0,0,0,0.20);
   --sys-shadow-md:     0 4px 20px rgba(0,0,0,0.25);
+  --sys-success:       #5BBF99;
 
 /* Fallback for older browsers */
   --sidebar-primary-border: hsl(var(--sidebar-primary));
@@ -424,4 +426,27 @@
 
 .tabs-longevidade .tab-bloqueada svg {
   color: var(--mod-longevidade-disabled);
+}
+
+.section-label-longevidade {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--mod-longevidade-text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.axis-sublabel {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--sys-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-status-ativo {
+  background: color-mix(in srgb, var(--sys-success) 15%, transparent);
+  color: var(--sys-success);
 }

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Lock } from "lucide-react";
+import { Lock, Bell } from "lucide-react";
 import { CardBiomarcador } from "./card-biomarcador";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ScoreCardiovascular } from "@shared/schema";
@@ -9,10 +9,10 @@ interface AbaCardiometabolicoProps {
 }
 
 const biomarcadoresMetabolicos = [
-  { nome: "% Gordura Corporal" },
-  { nome: "Circunferência Abdominal" },
-  { nome: "Peso (tendência)" },
-  { nome: "Glicemia contínua" },
+  { nome: "% Gordura corporal" },
+  { nome: "Circunferência abdominal" },
+  { nome: "Tendência de peso" },
+  { nome: "Glicemia (CGM)" },
 ];
 
 export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
@@ -23,57 +23,71 @@ export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
   return (
     <div className="space-y-8" data-testid="aba-cardiometabolico">
       <section>
-        <h3 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: "var(--mod-longevidade-text)" }}>
+        <h3 className="section-label-longevidade mb-4" data-testid="label-cardiovascular">
           Cardiovascular
         </h3>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-28 rounded-lg" />
-            ))}
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <Skeleton key={i} className="h-44 rounded-lg" />
+              ))}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <Skeleton key={i} className="h-44 rounded-lg" />
+              ))}
+            </div>
           </div>
         ) : data?.components ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <CardBiomarcador
-              nome="HRV (RMSSD)"
-              valor={data.components.hrv.value}
-              unidade={data.components.hrv.unit}
-              tendencia={data.components.hrv.trend}
-              baseline={data.components.hrv.baseline}
-            />
-            <CardBiomarcador
-              nome="FC de Repouso"
-              valor={data.components.rhr.value}
-              unidade={data.components.rhr.unit}
-              tendencia={data.components.rhr.trend}
-              baseline={data.components.rhr.baseline}
-              invertedSemantics
-            />
-            <div
-              className="rounded-lg p-4"
-              style={{ background: "var(--mod-longevidade-bg-subtle)", border: "1px solid var(--mod-longevidade-border)" }}
-              data-testid="card-biomarcador-vo2-detalhado"
-            >
-              <p className="text-sm font-semibold mb-2" style={{ color: "var(--mod-longevidade-text)" }}>
-                VO₂ Máximo
-              </p>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-bold">{data.components.vo2.value ?? "—"}</span>
-                <span className="text-xs text-muted-foreground">{data.components.vo2.unit}</span>
+          <div className="space-y-6">
+            <div>
+              <p className="axis-sublabel mb-3" data-testid="label-eixo-autonomico">Controle autonômico</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <CardBiomarcador
+                  nome="HRV (RMSSD)"
+                  valor={data.components.hrv.value}
+                  unidade={data.components.hrv.unit}
+                  tendencia={data.components.hrv.trend}
+                  baseline={data.components.hrv.baseline}
+                  sparklineData={data.components.hrv.sparkline}
+                />
+                <CardBiomarcador
+                  nome="FC de Repouso"
+                  valor={data.components.rhr.value}
+                  unidade={data.components.rhr.unit}
+                  tendencia={data.components.rhr.trend}
+                  baseline={data.components.rhr.baseline}
+                  invertedSemantics
+                  sparklineData={data.components.rhr.sparkline}
+                />
               </div>
-              <p className="text-xs mt-2" style={{ color: "var(--mod-longevidade-icon)" }}>
-                Percentil 75 para idade e sexo
-              </p>
             </div>
-            <CardBiomarcador
-              nome="Recuperação da FC"
-              valor={data.components.recovery.value}
-              unidade={data.components.recovery.unit}
-              tendencia={data.components.recovery.trend}
-              baseline={data.components.recovery.baseline}
-              labelSecundario="Média das últimas 5 sessões"
-            />
+
+            <div>
+              <p className="axis-sublabel mb-3" data-testid="label-eixo-aerobio">Capacidade aeróbia</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <CardBiomarcador
+                  nome="VO₂ Máximo"
+                  valor={data.components.vo2.value}
+                  unidade={data.components.vo2.unit}
+                  tendencia={data.components.vo2.trend}
+                  baseline={data.components.vo2.baseline}
+                  labelSecundario="P75 · idade/sexo"
+                  sparklineData={data.components.vo2.sparkline}
+                />
+                <CardBiomarcador
+                  nome="Recuperação da FC"
+                  valor={data.components.recovery.value}
+                  unidade={data.components.recovery.unit}
+                  tendencia={data.components.recovery.trend}
+                  baseline={data.components.recovery.baseline}
+                  labelSecundario="Média das últimas 5 sessões"
+                  sparklineData={data.components.recovery.sparkline}
+                />
+              </div>
+            </div>
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">Dados cardiovasculares não disponíveis.</p>
@@ -82,11 +96,11 @@ export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
 
       <section>
         <div className="flex items-center gap-2 mb-4">
-          <h3 className="text-sm font-semibold uppercase tracking-wider" style={{ color: "var(--mod-longevidade-text)" }}>
+          <h3 className="section-label-longevidade" data-testid="label-metabolico">
             Metabólico
           </h3>
           <Lock className="h-3.5 w-3.5" style={{ color: "var(--mod-longevidade-disabled)" }} />
-          <span className="text-[10px] font-medium text-muted-foreground">Em breve</span>
+          <span className="text-[10px] font-medium" style={{ color: "var(--sys-text-muted)" }}>Em breve</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -106,6 +120,15 @@ export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
             </div>
           ))}
         </div>
+
+        <button
+          className="flex items-center gap-1.5 mt-4 text-xs font-medium hover:underline cursor-pointer"
+          style={{ color: "var(--mod-longevidade-base)" }}
+          data-testid="button-avise-metabolico"
+        >
+          <Bell className="h-3.5 w-3.5" />
+          Me avise quando disponível
+        </button>
       </section>
     </div>
   );

@@ -1,4 +1,5 @@
 import { TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
+import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import type { TendenciaBiomarcador } from "@shared/schema";
 
 interface CardBiomarcadorProps {
@@ -9,6 +10,7 @@ interface CardBiomarcadorProps {
   baseline?: number;
   invertedSemantics?: boolean;
   labelSecundario?: string;
+  sparklineData?: number[];
 }
 
 const ICONE_TENDENCIA = {
@@ -48,6 +50,41 @@ function copyTendencia(
   return positivo ? "Tendência positiva" : "Tendência negativa";
 }
 
+function corSparkline(tendencia: TendenciaBiomarcador, invertedSemantics: boolean): string {
+  if (!tendencia || tendencia === "stable") return "#8B9286";
+  const positivo = invertedSemantics
+    ? tendencia === "down"
+    : tendencia === "up";
+  return positivo ? "#4CA785" : "#D4A843";
+}
+
+function SparklineMini({ data, cor }: { data: number[]; cor: string }) {
+  const pontos = data.map((v, i) => ({ i, v }));
+  return (
+    <div className="mt-2" style={{ height: 36 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={pontos} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
+          <defs>
+            <linearGradient id={`spark-${cor.replace("#", "")}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={cor} stopOpacity={0.3} />
+              <stop offset="100%" stopColor={cor} stopOpacity={0.05} />
+            </linearGradient>
+          </defs>
+          <Area
+            type="monotone"
+            dataKey="v"
+            stroke={cor}
+            strokeWidth={1.5}
+            fill={`url(#spark-${cor.replace("#", "")})`}
+            dot={false}
+            isAnimationActive={false}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 export function CardBiomarcador({
   nome,
   valor,
@@ -56,6 +93,7 @@ export function CardBiomarcador({
   baseline,
   invertedSemantics = false,
   labelSecundario,
+  sparklineData,
 }: CardBiomarcadorProps) {
   const insuficiente = valor === null;
   const IconeTendencia = tendencia ? ICONE_TENDENCIA[tendencia] : null;
@@ -99,6 +137,10 @@ export function CardBiomarcador({
           )}
         </div>
       )}
+
+      {sparklineData && sparklineData.length > 0 && !insuficiente && (
+        <SparklineMini data={sparklineData} cor={corSparkline(tendencia, invertedSemantics)} />
+      )}
     </div>
   );
 }
@@ -114,10 +156,10 @@ interface GradeBiomarcadoresProps {
 
 export function GradeBiomarcadores({ componentes }: GradeBiomarcadoresProps) {
   const items = [
-    { key: "hrv", nome: "HRV (RMSSD)", ...componentes.hrv, invertedSemantics: false },
-    { key: "rhr", nome: "FC de Repouso", ...componentes.rhr, invertedSemantics: true },
-    { key: "vo2", nome: "VO₂ Máximo", ...componentes.vo2, invertedSemantics: false },
-    { key: "recovery", nome: "Recuperação da FC", ...componentes.recovery, invertedSemantics: false, labelSecundario: "Média das últimas 5 sessões" },
+    { key: "hrv", nome: "HRV (RMSSD)", value: componentes.hrv.value, unit: componentes.hrv.unit, trend: componentes.hrv.trend, baseline: componentes.hrv.baseline, invertedSemantics: false },
+    { key: "rhr", nome: "FC de Repouso", value: componentes.rhr.value, unit: componentes.rhr.unit, trend: componentes.rhr.trend, baseline: componentes.rhr.baseline, invertedSemantics: true },
+    { key: "vo2", nome: "VO₂ Máximo", value: componentes.vo2.value, unit: componentes.vo2.unit, trend: componentes.vo2.trend, baseline: componentes.vo2.baseline, invertedSemantics: false },
+    { key: "recovery", nome: "Recuperação da FC", value: componentes.recovery.value, unit: componentes.recovery.unit, trend: componentes.recovery.trend, baseline: componentes.recovery.baseline, invertedSemantics: false, labelSecundario: "Média das últimas 5 sessões" },
   ];
 
   return (

@@ -139,16 +139,28 @@ export async function registerRoutes(
   });
 
   app.get("/api/profissional/dashboard/pacientes/:id/cardiovascular-score", async (req, res) => {
+    function gerarSparkline(base: number, amplitude: number, trend: "up" | "down" | "stable", pontos = 30): number[] {
+      const dados: number[] = [];
+      let v = base - (trend === "up" ? amplitude * 0.3 : trend === "down" ? -amplitude * 0.3 : 0);
+      for (let i = 0; i < pontos; i++) {
+        v += (Math.random() - 0.48) * amplitude * 0.4;
+        if (trend === "up") v += amplitude * 0.02;
+        if (trend === "down") v -= amplitude * 0.02;
+        dados.push(Math.round(v * 10) / 10);
+      }
+      return dados;
+    }
+
     return res.json({
       score: 84,
       classification: "excellent",
       delta_30d: -3,
       updated_at: new Date().toISOString(),
       components: {
-        hrv: { value: 42, unit: "ms", trend: "up", baseline: 38 },
-        rhr: { value: 58, unit: "bpm", trend: "down", baseline: 62 },
-        vo2: { value: 46, unit: "ml/kg/min", trend: "stable" },
-        recovery: { value: 24, unit: "bpm", trend: "up", baseline: 20 },
+        hrv: { value: 42, unit: "ms", trend: "up", baseline: 38, sparkline: gerarSparkline(40, 8, "up") },
+        rhr: { value: 58, unit: "bpm", trend: "down", baseline: 62, sparkline: gerarSparkline(60, 6, "down") },
+        vo2: { value: 46, unit: "ml/kg/min", trend: "stable", sparkline: gerarSparkline(46, 3, "stable") },
+        recovery: { value: 24, unit: "bpm", trend: "up", baseline: 20, sparkline: gerarSparkline(22, 5, "up") },
       },
     });
   });

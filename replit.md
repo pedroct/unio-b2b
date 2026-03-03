@@ -20,7 +20,8 @@ Plataforma web para profissionais de saúde (médicos, nutricionistas, personal 
 - Fontes: Playfair Display (display/títulos), Inter (body)
 - Cores por módulo: Nutrição (#5B8C6F), Treino (#D97952), Biometria (#3D7A8C), Hidratação (#6BA3BE), Longevidade (#4A5899)
 - Design Tokens Longevidade: `--mod-longevidade-*` (Deep Indigo), `--score-*` (4 faixas: excellent/good/attention/risk)
-- Design Tokens Globais: `--sys-bg-primary/secondary`, `--sys-border-light`, `--sys-text-primary/secondary/muted`, `--sys-shadow-sm/md`
+- Design Tokens Globais: `--sys-bg-primary/secondary`, `--sys-border-light`, `--sys-text-primary/secondary/muted`, `--sys-shadow-sm/md`, `--sys-success`
+- CSS Classes: `.section-label-longevidade` (uppercase via CSS), `.axis-sublabel` (eixo fisiológico), `.badge-status-ativo` (verde semântico)
 - Dark mode dinâmico via classe CSS (tokens longevidade e sys têm variantes dark)
 
 ## Structure
@@ -75,6 +76,9 @@ shared/
 - **Scores futuros**: Metabólico, Recuperação, Funcional — visíveis como cards bloqueados com tokens `--sys-*` (não `--mod-longevidade-*`).
 - **Design tokens por faixa**: `--score-excellent-*`, `--score-good-*`, `--score-attention-*`, `--score-risk-*` determinados dinamicamente pelo valor. Gráfico exibe faixas coloridas de fundo (ReferenceArea).
 - **Decisão de UI**: "Performance" como label da tab; "Performance & Funcionalidade" como título interno da aba.
+- **Aba Cardiometabólico (análise)**: diferenciada do Cockpit (resumo) com sparklines de 30 dias em cada card de biomarcador, grid 2×2 por eixo fisiológico (Controle Autonômico: HRV + FCR; Capacidade Aeróbia: VO₂ + Recuperação), e copy expandida (P75 · idade/sexo no VO₂).
+- **Decisões de design**: Avatar = global (--sys-primary, não muda por módulo); Email truncado por padrão (privacidade clínica); Badge "Ativo" usa --sys-success (#4CA785); "Metas" mantido (liga a /configuracoes).
+- **Cards bloqueados Metabólico**: % Gordura corporal, Circunferência abdominal, Tendência de peso, Glicemia (CGM). Botão "Me avise quando disponível" por seção.
 - **Múltiplos planos por paciente**: cada cliente pode ter vários planos alimentares. Cada plano tem ID, descrição editável, dias ativos e refeições próprias.
 - **Prescrição Alimentar (Edição)**: página completa no sidebar (restrita a Nutricionista). Permite selecionar plano via dropdown, editar descrição inline, editar refeições e dias ativos.
 
@@ -92,7 +96,7 @@ shared/
 - PUT /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/dias — Update active days
 - PUT /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/descricao — Update description
 - POST /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/refeicoes — Create meal
-- GET /api/profissional/dashboard/pacientes/:id/cardiovascular-score — Score cardiovascular (mock)
+- GET /api/profissional/dashboard/pacientes/:id/cardiovascular-score — Score cardiovascular (mock, inclui sparkline[] por biomarcador)
 - GET /api/profissional/dashboard/pacientes/:id/cardiovascular-score/tendencia?periodo=30d|90d|365d — Tendência do score
 - GET /api/nutricao/catalogo/alimentos?busca&fontes&limite&offset — Search foods from catalog (proxied to staging, paginated response `{ items, total, limite, offset }`)
 - GET /api/nutricao/catalogo/alimentos/:id — Food detail with nutrients (proxied to staging)
