@@ -16,11 +16,25 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   app.post("/api/auth/pair", async (req, res) => {
+    const { registrationNumber, uf, password } = req.body;
+    if (!registrationNumber || !uf || !password) {
+      return res.status(400).json({ message: "Preencha todos os campos." });
+    }
     try {
       const result = await stagingPassthrough("/api/nucleo/profissional-auth", {
         method: "POST",
-        body: req.body,
+        body: {
+          registro_profissional: registrationNumber,
+          uf_registro: uf,
+          cpf: password,
+        },
       });
+
+      if (!result.ok) {
+        const msg = result.data?.mensagem || result.data?.detail || "Credenciais inválidas.";
+        return res.status(result.status).json({ message: msg });
+      }
+
       return res.status(result.status).json(result.data);
     } catch (err: any) {
       console.error("[auth/pair] proxy error:", err.message);
