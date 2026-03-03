@@ -116,10 +116,14 @@ Backend NÃO fornece séries temporais por métrica. Campo `_sparkline_mock` (pr
 - avatarUrl: se não null, AvatarImage é renderizado; se null, fallback para iniciais do nome
 
 ### Rotas proxied ao backend real (staging)
-- POST /api/auth/pair — Login (passthrough ao staging, corpo repassado tal qual)
-- POST /api/auth/refresh — Refresh token (passthrough ao staging)
-- GET /api/profissional/clientes — Listagem de clientes (passthrough, repassa Bearer token do profissional)
-- GET /api/profissional/pacientes — Alias para /clientes (passthrough, mesmo comportamento)
+- POST /api/auth/pair → proxy para `/api/nucleo/profissional-auth` no staging
+  - Frontend envia: `{ registrationNumber, uf, password }` (password = CPF formatado ex: 794.959.973-13)
+  - Proxy mapeia para: `{ registro_profissional, uf_registro, cpf }`
+  - Backend retorna: `{ access, refresh }` → proxy transforma em `{ tokens: { access, refresh }, professional: { id, name, ... } }`
+  - O CPF deve ser enviado COM formatação (pontos e traço)
+- POST /api/auth/refresh → proxy para `/api/auth/refresh` no staging
+- GET /api/profissional/clientes → proxy passthrough (repassa Bearer token do profissional)
+- GET /api/profissional/pacientes → alias para /clientes (passthrough, mesmo comportamento)
 - `stagingPassthrough()` em `server/staging-proxy.ts`: repassa o token JWT do profissional logado ao backend real (diferente de `stagingFetch()` que usa credenciais de serviço)
 
 ### Outros (mock/legacy)

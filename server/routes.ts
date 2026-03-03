@@ -38,7 +38,8 @@ export async function registerRoutes(
       const { access, refresh } = result.data;
       let userId = "";
       try {
-        const payload = JSON.parse(Buffer.from(access.split(".")[1], "base64").toString());
+        const b64 = access.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+        const payload = JSON.parse(Buffer.from(b64, "base64").toString());
         userId = String(payload.user_id || "");
       } catch {}
 

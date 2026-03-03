@@ -62,8 +62,8 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginCredentials) => {
     setIsSubmitting(true);
     try {
-      const rawCpf = data.password.replace(/\D/g, "");
-      await login(data.registrationNumber, data.uf, rawCpf);
+      const rawRegistration = data.registrationNumber.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+      await login(rawRegistration, data.uf, data.password);
       navigate("/pacientes");
     } catch (error: any) {
       toast({
