@@ -1,0 +1,132 @@
+# Documentação de Integração - Módulo Painel de Longevidade (Frontend WEB)
+
+Esta documentação define o contrato dos endpoints responsáveis por fornecer os dados e cálculos analíticos consolidados no Back-End para a interface profissional do Painel de Longevidade do UNIO (Dashboard).
+
+---
+
+## 1. Visão Geral (Cockpit)
+
+O endpoint de Cockpit fornece a nota resumida (Score Global) e o estado físico contendo os bloqueios (quando os dados daquele cliente estão insuficientes para geração do painel).
+O objetivo desta rota é pintar o "Cabeçalho Global" de saúde e ditar quais "Cards" (Cardiovascular, Funcional, etc) a tela WEB tem permissão/dados para abrir.
+
+- **Método:** `GET`
+- **Acesso:** Protegido (Requer token JWT Bearer do Profissional)
+- **URL Base:** `/api/painel-longevidade/clientes/{cliente_id}/cockpit`
+
+### 1.1 Parâmetros de Rota (Path)
+
+| Parâmetro    | Tipo  | Obrigatório | Descrição                          |
+| :----------- | :---- | :---------- | :--------------------------------- |
+| `cliente_id` | [int] | **Sim**     | O ID único do Paciente no sistema. |
+
+### 1.2 Exemplo de Resposta de Sucesso (200 OK)
+
+```json
+{
+  "cliente_id": 4,
+  "scores": [
+    {
+      "tipo": "cardiovascular",
+      "ativo": true,
+      "score": 85.0,
+      "classificacao": "Bom",
+      "is_partial": false,
+      "mensagem_bloqueio": null,
+      "tendencia": "up"
+    },
+    {
+      "tipo": "metabolic",
+      "ativo": false,
+      "score": null,
+      "classificacao": null,
+      "is_partial": false,
+      "mensagem_bloqueio": "Score Metabólico estará disponível em breve.",
+      "tendencia": null
+    }
+  ],
+  "data_atualizacao": "2026-03-03T21:25:57.950615+00:00"
+}
+```
+
+### 1.3 Entendendo o Comportamento da Resposta:
+
+> [!NOTE]
+>
+> - **[ativo]**: Flag principal da Tela. Se `true`, a caixa do pilar está verdinha e clicável para ver os gráficos. Se `false`, pinte a UI de cinza (inativo) e mostre a `mensagem_bloqueio`.
+> - **`mensagem_bloqueio`**: Sempre que os biomarcadores não forem suficientes para calcular a nota deste módulo (ou for nulo), mostramos este texto cru instruindo o médico/paciente do motivo.
+> - **`is_partial`**: Se `true`, significa que o backend até liberou a tela, mas ele está exibindo um aviso de "Score Precário/Incompleto" por falta de alguns dos biomarcadores secundários.
+
+---
+
+## 2. Detalhamento Setorial (Gráficos Cardiometabólicos)
+
+Quando o card correspondente ao `tipo` for `"cardiovascular"` e estiver `ativo: true` no endpoint do Cockpit, o clique em "Ver Relatório" pelo usuário no Dashboard executará **esta requisição** para carregar os gráficos de barras espaciais, VFC e FCR.
+
+- **Método:** `GET`
+- **Acesso:** Protegido (Requer token JWT Bearer do Profissional)
+- **URL Base:** `/api/painel-longevidade/clientes/{cliente_id}/cardiometabolico`
+
+### 2.1 Exemplo de Resposta de Sucesso (200 OK)
+
+```json
+{
+  "cliente_id": 4,
+  "metricas_cardio": [
+    {
+      "metric_type": "vo2_max",
+      "valor_atual": 45.2,
+      "unidade": "mL/kg/min",
+      "media_30d": 44.8,
+      "tendencia": "up",
+      "data_ultima_leitura": "2026-03-03T18:00:00+00:00"
+    },
+    {
+      "metric_type": "hrv_rmssd",
+      "valor_atual": 65.0,
+      "unidade": "ms",
+      "media_30d": 62.1,
+      "tendencia": "up",
+      "data_ultima_leitura": "2026-03-02T19:22:00+00:00"
+    },
+    {
+      "metric_type": "resting_hr",
+      "valor_atual": 58.0,
+      "unidade": "bpm",
+      "media_30d": 61.0,
+      "tendencia": "down",
+      "data_ultima_leitura": "2026-03-03T18:00:00+00:00"
+    },
+    {
+      "metric_type": "hr_recovery_1min",
+      "valor_atual": null,
+      "unidade": "bpm",
+      "media_30d": null,
+      "tendencia": null,
+      "data_ultima_leitura": null
+    }
+  ],
+  "secao_metabolica_bloqueada": true,
+  "mensagem_bloqueio": "Coleta de exames de sangue pendente."
+}
+```
+
+### 2.2 Entendendo o Comportamento da Resposta:
+
+> [!TIP]
+> **Como criar a interface baseada nisso:**
+>
+> - O campo principal de exibição é o `valor_atual` vs `media_30d`. A interface Frontend WEB deve construir os gráficos plotando esses componentes para explicar o comportamento sistêmico do paciente.
+> - A propriedade **[tendencia]** deve ser renderizada visualmente (uma seta ⇧ para [up](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/integracoes/provedores/apple_health.py#34-38), ⇨ para `stable` e ⇩ para `down`).
+> - As variáveis podem e **vão vir como [null]** (exemplo do _HR Recovery_ acima). O Fron-End deve tratar os Nulos não como zero gráfico, mas como "Traço Ausente/Aguardando Leitura" no Grid UI.
+
+---
+
+## 3. Segurança e Tratamento de Erros Comuns
+
+O Front-End precisará lidar com os bloqueios de segurança do UNIO RBAC, afinal, o profissional de saúde não tem direito universal ao painel de toda a base.
+
+| HTTP Status            | Causa Comum                                                                                                                                                                                                                     | O que o Web Frontend deve fazer?                                                                         |
+| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------- |
+| **`401 Unauthorized`** | Token JWT Expirado enviado pelo Bearer (`token_not_valid`).                                                                                                                                                                     | Redirecionar usuário para Login ou invocar rotina silenciosa na API JWT Refresher (`/api/auth/refresh`). |
+| **`403 Forbidden`**    | O Profissional Logado não concluiu o processo de Invite (Falta Relação [RelacaoClienteProfissional](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nucleo/models.py#281-304) ativa com esse `cliente_id`). | Exibir uma Empty State limpa: _"Você não possui acesso clínico autorizado a este paciente."_             |
+| **`404 Not Found`**    | ID do cliente não existe no Banco.                                                                                                                                                                                              | Redirecionar o navegador para uma Rota segura (404 Page) ou Voltar pra Listagem Geral.                   |
