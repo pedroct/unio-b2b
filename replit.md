@@ -77,7 +77,8 @@ shared/
 - **Design tokens por faixa**: `--score-excellent-*`, `--score-good-*`, `--score-attention-*`, `--score-risk-*` determinados dinamicamente pelo valor. Gráfico exibe faixas coloridas de fundo (ReferenceArea).
 - **Decisão de UI**: "Performance" como label da tab; "Performance & Funcionalidade" como título interno da aba.
 - **Aba Cardiometabólico (análise)**: diferenciada do Cockpit (resumo) com sparklines de 30 dias em cada card de biomarcador, grid 2×2 por eixo fisiológico (Controle Autonômico: HRV + FCR; Capacidade Aeróbia: VO₂ + Recuperação), e copy expandida (P75 · idade/sexo no VO₂).
-- **Decisões de design**: Avatar = global (--sys-primary, não muda por módulo); Email truncado por padrão (privacidade clínica); Badge "Ativo" usa --sys-success (#4CA785); "Metas" mantido (liga a /configuracoes).
+- **Decisões de design**: Avatar = global (--sys-primary, não muda por módulo); Email truncado por padrão (privacidade clínica); Badge "Ativo" usa --sys-success (#4CA785); "Metas" removido da V1 (planejado para V2); Títulos de empty states usam --font-sans (Inter) weight 600 (Playfair reservado para scores numéricos).
+- **Regra de tokens no Longevidade**: Elementos de identidade do módulo (score, ícones, nomes de biomarcadores, linhas de gráfico, sparklines, bordas de cards ativos) usam exclusivamente `--mod-longevidade-*` (Deep Indigo #4A5899). Verde do sistema (`--sys-primary`) reservado para navegação, avatar e chrome global.
 - **Cards bloqueados Metabólico**: % Gordura corporal, Circunferência abdominal, Tendência de peso, Glicemia (CGM). Botão "Me avise quando disponível" por seção.
 - **Múltiplos planos por paciente**: cada cliente pode ter vários planos alimentares. Cada plano tem ID, descrição editável, dias ativos e refeições próprias.
 - **Prescrição Alimentar (Edição)**: página completa no sidebar (restrita a Nutricionista). Permite selecionar plano via dropdown, editar descrição inline, editar refeições e dias ativos.

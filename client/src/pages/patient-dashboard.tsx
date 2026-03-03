@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
-import { ArrowLeft, Settings2, HeartPulse, Activity, Moon, Dumbbell, UtensilsCrossed, Lock } from "lucide-react";
+import { ArrowLeft, HeartPulse, Activity, Moon, Dumbbell, UtensilsCrossed, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -86,12 +86,6 @@ export default function PatientDashboardPage() {
               </div>
             </div>
 
-            <Link href={`/pacientes/${patientId}/configuracoes`}>
-              <Button variant="outline" size="sm" data-testid="button-patient-settings">
-                <Settings2 className="h-4 w-4 mr-2" />
-                Metas
-              </Button>
-            </Link>
           </div>
         ) : null}
       </div>

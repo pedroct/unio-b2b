@@ -1,0 +1,230 @@
+# Revisão Final — Todas as Abas (V2 dos Mocks)
+
+> **Versão:** 1.0
+> **Data:** 2026-03-03
+> **Autor:** Pedro Teixeira (UI Writer / UX Review)
+> **Referências:** [[Correções UI Cockpit V1]], [[Correções UI Cardiometabólico V1]], [[Correções UI Recuperação Sono V1]], [[Correções UI Performance Nutrição V1]]
+> **Escopo:** Revisão comparativa V1 → V2 de todas as 5 abas
+> **Formato:** ✅ Corrigido | ⚠️ Parcialmente corrigido | ❌ Não corrigido | 🆕 Novo problema
+
+---
+
+## 1. Aba Cockpit — Revisão V2
+
+### Correções Aplicadas ✅
+
+| # | Item Original | Status |
+|---|---|---|
+| 2.1 | Badge "Bom" → "Excelente" para score 84 | ✅ Corrigido — badge agora exibe "Excelente" |
+| 2.6 | Copy tendência "↘ -3 últimos 30 dias" → com unidade | ✅ Corrigido — agora exibe "−3 pts nos últimos 30 dias" |
+| 2.7 | Timestamp "em" → "às" | ✅ Corrigido — "Atualizado 03/03/2026 às 13:21" |
+| 3.1 | "Em breve (V2/V3)" → sem versão | ✅ Corrigido — "Disponível em breve" |
+| 3.3 | Botão "Me avise quando disponível" ausente | ✅ Corrigido — botão presente nos 3 cards bloqueados |
+| 4.5 | "Freq. Cardíaca de Repouso" → abreviação correta | ✅ Corrigido — agora "FC de Repouso" |
+| 4.6 | Redundância seta + palavra | ✅ Corrigido — agora "+4 ms vs referência 90d" |
+| 4.7 | VO₂ travessão ambíguo "— Estável" | ✅ Corrigido — agora "→ Estável" |
+| 4.8 | Recuperação FC sem dado secundário | ✅ Corrigido — "Média das últimas 5 sessões" presente |
+| 4.9 | "Baseline" → "referência 90d" | ✅ Corrigido — todas as ocorrências usam "vs referência 90d" |
+| 5.3 | Ausência do período 365 dias | ✅ Corrigido — seletor agora mostra "30 dias | 90 dias | 365 dias" |
+
+### Correções Parciais ⚠️
+
+| # | Item Original | Status | O que falta |
+|---|---|---|---|
+| 2.2 | Background do card principal sem identidade do módulo | ⚠️ Card principal parece ter um fundo levemente diferenciado, mas difícil confirmar se é `--mod-longevidade-bg` (`#EDEEF5`) ou apenas um cinza claro genérico | Verificar no código se o token correto está aplicado |
+| 4.1 | Background dos mini-cards | ⚠️ Mini-cards parecem ter um fundo sutil (possivelmente esverdeado em vez de indigo sutil) | Verificar se está usando `--mod-longevidade-bg-subtle` (`#F4F5FA`) e não um tom verde |
+| 5.1 | Cor da linha do gráfico | ⚠️ A linha parece mais escura que na V1, possivelmente corrigida, mas ainda parece ter tom esverdeado em vez de Deep Indigo (`#4A5899`) | Verificar hex no código |
+| 5.4 | Faixas de classificação no gráfico | ⚠️ Há faixas horizontais coloridas no gráfico (excelente/bom/atenção/risco), o que é ótimo. Porém, verificar se usam os tokens `--score-{faixa}-bg` com 50% opacidade conforme especificado | Validar tokens e opacidade |
+
+### Não Corrigidos ❌
+
+| # | Item Original | Status | Ação |
+|---|---|---|---|
+| 2.4 | Cor do valor "84" — deve ser `--mod-longevidade-text` (`#333F73`) | ❌ Ainda parece usar verde escuro do sistema (`--sys-text-primary`) | Trocar para `--mod-longevidade-text` |
+| 2.5 | Ícone coração/pulso em verde do sistema | ❌ Ícone ainda em verde institucional | Trocar para `--mod-longevidade-icon` (`#4A5899`) |
+| 3.2 | Background dos cards bloqueados sem diferenciação | ❌ Cards bloqueados ainda parecem ter o mesmo fundo dos cards ativos (branco) | Aplicar `--sys-bg-secondary` (`#F5F3EE`) + `--sys-border-light` (`#E8EBE5`) |
+| 4.2 | Nomes dos biomarcadores em cor do sistema | ❌ "HRV (RMSSD)", "FC de Repouso" etc. ainda parecem em verde escuro | Trocar para `--mod-longevidade-text` (`#333F73`) |
+| 5.5 | Marcadores de mudança de faixa no gráfico | ❌ Não implementado | 🔵 Baixa prioridade |
+
+### Novo Problema 🆕
+
+| # | Descrição | Prioridade |
+|---|---|---|
+| 🆕 1.1 | A tendência da FCR agora mostra "↘ −4 bpm vs referência 90d" — a copy está correta, mas **a cor da seta/texto ainda parece ser a mesma cor neutra dos outros biomarcadores**. Para FCR, descendo é positivo — a cor deveria ser verde/positiva (conforme tabela de inversão semântica do handoff Cockpit item 4.4) | 🔴 Crítico — semântica clínica |
+| 🆕 1.2 | O label "SCORE CARDIOVASCULAR" no card principal está em uppercase. Verificar se é via CSS (`text-transform: uppercase`) ou hardcoded. Se hardcoded, leitores de tela podem soletrar letra por letra | 🟡 Médio — acessibilidade |
+
+---
+
+## 2. Aba Cardiometabólico — Revisão V2
+
+### Correções Aplicadas ✅
+
+| # | Item Original | Status |
+|---|---|---|
+| 3.1 | Cards idênticos ao Cockpit sem diferenciação | ✅ Corrigido — cards agora incluem sparklines de tendência 30d. Decisão D4 resolvida: sparklines na V1 |
+| 5.2 | Grid linear sem agrupamento fisiológico | ✅ Corrigido — grid 2×2 com sub-labels "Controle Autonômico" (HRV + FCR) e "Capacidade Aeróbia" (VO₂ + Recuperação FC). Decisão D5 resolvida |
+| 3.4 | VO₂ percentil — copy longa | ✅ Corrigido — agora "P75 · idade/sexo" |
+| 4.1 | Referências de versão V2/V3+ | ✅ Corrigido — cards bloqueados mostram "Disponível em breve" |
+| 4.4 | "Peso (tendência)" → nome correto | ✅ Corrigido — agora "Tendência de peso" |
+| 4.5 | "Glicemia contínua" → nomenclatura precisa | ✅ Corrigido — agora "Glicemia (CGM)" |
+| 4.6 | Botão "Me avise" ausente nos bloqueados | ✅ Corrigido — "Me avise quando disponível" presente na seção Metabólico |
+| Todas | Correções de copy herdadas do Cockpit | ✅ "+4 ms vs referência 90d", "FC de Repouso", "→ Estável", "Média das últimas 5 sessões" |
+
+### Correções Parciais ⚠️
+
+| # | Item Original | Status | O que falta |
+|---|---|---|---|
+| 3.2 | Tokens de cor do módulo nos cards ativos | ⚠️ Background dos cards parece ter fundo sutil, mas a borda e os nomes dos biomarcadores parecem usar tons verdes em vez de Deep Indigo | Verificar no código: `--mod-longevidade-bg-subtle`, `--mod-longevidade-border`, `--mod-longevidade-text` |
+| 3.3 | Labels de seção uppercase via CSS | ⚠️ "CARDIOVASCULAR", "CONTROLE AUTONÔMICO", "CAPACIDADE AERÓBIA", "METABÓLICO" estão em uppercase — verificar se é via CSS ou hardcoded | Garantir `text-transform: uppercase` no CSS |
+| 4.3 | Cards bloqueados sem diferenciação visual | ⚠️ Cards bloqueados do Metabólico parecem ter fundo levemente diferente, mas verificar se é `--sys-bg-secondary` (`#F5F3EE`) | Validar token no código |
+
+### Não Corrigidos ❌
+
+| # | Item Original | Status | Ação |
+|---|---|---|---|
+| 1.1 | Decisão D1 — Avatar global vs módulo | ❌ Pendente — avatar ainda em verde institucional. Funcional, mas precisa ser decisão documentada | Documentar como decisão: avatar = global (`--sys-primary`) |
+| 1.4 | Decisão D3 — "Metas" no escopo V1 | ❌ Pendente — botão "Metas" ainda presente sem especificação no PRD | Decidir e documentar |
+
+### Novos Positivos 🆕✅
+
+| # | Descrição |
+|---|---|
+| 🆕 2.1 | Sparklines de tendência 30d dentro dos cards — excelente adição. Diferencia claramente o Cardiometabólico do Cockpit. A aba agora justifica sua existência como camada de análise |
+| 🆕 2.2 | Sub-labels "Controle Autonômico" e "Capacidade Aeróbia" — organizam a informação por eixo fisiológico conforme sugerido. Melhora significativa na legibilidade clínica |
+| 🆕 2.3 | Sparklines parecem usar cor verde — verificar se está usando `--mod-longevidade-base` (`#4A5899`). Se estiver em verde, mesma correção de token do gráfico principal |
+
+### Novo Problema 🆕
+
+| # | Descrição | Prioridade |
+|---|---|---|
+| 🆕 2.4 | A cor das sparklines nos cards parece ser verde em vez de Deep Indigo. Mesmo problema do gráfico principal no Cockpit — a linha deveria ser `--mod-longevidade-base` (`#4A5899`) | 🟠 Alto — identidade do módulo |
+| 🆕 2.5 | A tendência da FCR "↘ −4 bpm vs referência 90d" — mesma questão do Cockpit: **a cor da seta precisa refletir semântica positiva** (descendo = bom para FCR) | 🔴 Crítico — herdado |
+
+---
+
+## 3. Abas Bloqueadas (Recuperação & Sono, Performance, Nutrição) — Revisão V2
+
+### Correções Aplicadas ✅
+
+| # | Item Original | Status |
+|---|---|---|
+| Todas | Copy absorvida do template | ✅ Recuperação & Sono usa copy corrigida do handoff |
+| Todas | Performance usa copy aprovada | ✅ Sem alterações necessárias |
+| Nutrição | "driver" → "motor", segundo "versus" → "e" | ✅ Corrigido — "motor de saúde", "carga glicêmica e variabilidade da glicose" |
+| Todas | E-mail truncado | ✅ `b****@email.com` em todas as abas |
+
+### Correções Parciais ⚠️
+
+| # | Item Original | Status | O que falta |
+|---|---|---|---|
+| Todas | Ícone de cadeado em lilás | ⚠️ Ícone parece mais cinza/neutro agora (possivelmente corrigido), mas difícil confirmar se é `--mod-longevidade-disabled` (`#B3B9D6`) ou um cinza genérico | Verificar token no código |
+| Todas | Tab selecionada-bloqueada vs ativa | ⚠️ Abas bloqueadas selecionadas ainda parecem ter estilo similar a abas ativas. O sistema de 4 estados da tab bar pode não estar implementado | Verificar diferenciação visual no código |
+
+### Não Corrigidos ❌
+
+| # | Item Original | Status | Ação |
+|---|---|---|---|
+| Todas | Estado pós-clique do botão "Me avise" | ❌ Não visível nos mocks (pode existir no código mas não testado) | Implementar: "Notificação ativada ✓" |
+| Todas | Font dos títulos — display vs body | ❌ Decisão D6 pendente. Títulos parecem usar font serifada (Playfair Display) | Padronizar: recomendação é `--font-body` weight 600 |
+
+---
+
+## 4. Consolidação — Status das Correções
+
+### Por prioridade
+
+| Prioridade | Total Original | Corrigidas | Parciais | Pendentes |
+|---|---|---|---|---|
+| 🔴 Crítico | 3 | 1 | 0 | 2 |
+| 🟠 Alto | 18 | 10 | 5 | 3 |
+| 🟡 Médio | 25 | 17 | 3 | 5 |
+| 🔵 Baixo | 9 | 2 | 1 | 6 |
+| **Total** | **55** | **30 (55%)** | **9 (16%)** | **16 (29%)** |
+
+### Itens Críticos Remanescentes
+
+| # | Descrição | Abas afetadas | Ação |
+|---|---|---|---|
+| 🔴 C1 | Inversão semântica da FCR — seta descendo deve ter cor positiva | Cockpit, Cardiometabólico | Implementar lógica de cor por `metric_type`: FCR descendo = verde |
+| 🔴 C2 | Verificar se a classificação é dinâmica (binding por valor) — score 84 agora mostra "Excelente", mas confirmar que score 75 mostraria "Bom" automaticamente | Cockpit | Testar com valores diferentes |
+
+### Itens Altos Remanescentes — Todos Relacionados a Tokens de Cor
+
+| # | Descrição | Token correto | Abas |
+|---|---|---|---|
+| 🟠 A1 | Valor numérico do score "84" em verde do sistema | `--mod-longevidade-text` (`#333F73`) | Cockpit |
+| 🟠 A2 | Ícone coração/pulso em verde institucional | `--mod-longevidade-icon` (`#4A5899`) | Cockpit |
+| 🟠 A3 | Nomes dos biomarcadores em cor do sistema | `--mod-longevidade-text` (`#333F73`) | Cockpit, Cardiometabólico |
+| 🟠 A4 | Sparklines e linha do gráfico em verde | `--mod-longevidade-base` (`#4A5899`) | Cockpit, Cardiometabólico |
+| 🟠 A5 | Background dos cards bloqueados sem diferenciação | `--sys-bg-secondary` (`#F5F3EE`) | Cockpit, Cardiometabólico |
+
+> **Observação:** Todos os itens 🟠 remanescentes são o **mesmo problema raiz** — a LLM do frontend está usando a paleta verde do sistema (`--sys-*`) onde deveria usar a paleta Deep Indigo do módulo (`--mod-longevidade-*`). Uma diretriz clara no prompt da LLM resolveria todos simultaneamente: "No contexto do Painel de Longevidade, NUNCA use `--sys-primary` ou cores verdes para elementos de identidade. Use exclusivamente `--mod-longevidade-*` (Deep Indigo `#4A5899` e derivados)."
+
+---
+
+## 5. Decisões Pendentes — Status Atualizado
+
+| # | Decisão | Status | Recomendação |
+|---|---|---|---|
+| D1 | Avatar global vs módulo | ❌ Pendente | **Recomendo global** (`--sys-primary`). Avatar é identidade do usuário, não do módulo. Documentar e encerrar |
+| D2 | E-mail visível por padrão | ✅ Resolvido | Truncado (`b****@email.com`) |
+| D3 | "Metas" no escopo V1 | ❌ Pendente | **Recomendo remover da V1.** Não está no PRD, adiciona complexidade. Documentar como V2 |
+| D4 | Sparklines no Cardiometabólico V1 | ✅ Resolvido | Implementado. Sparklines presentes nos cards |
+| D5 | Grid 2×2 por eixo fisiológico | ✅ Resolvido | Implementado. "Controle Autonômico" + "Capacidade Aeróbia" |
+| D6 | Font títulos em empty states | ❌ Pendente | **Recomendo `--font-body`** weight 600. Playfair Display é para valores numéricos de destaque |
+
+---
+
+## 6. Próximos Passos Recomendados
+
+### Prioridade 1 — Resolver problema raiz de tokens
+
+Criar uma diretriz explícita para a LLM do frontend:
+
+```
+REGRA: No Painel de Longevidade, elementos de identidade do módulo 
+(valor do score, ícones do card, nomes de biomarcadores, linhas de 
+gráfico, sparklines, bordas de cards ativos) NUNCA usam verde do 
+sistema. Usam exclusivamente tokens --mod-longevidade-* baseados 
+em Deep Indigo (#4A5899).
+
+Verde do sistema (--sys-primary, #3B5F4A) é reservado para:
+- Navegação principal da aplicação
+- Avatar do usuário
+- Headers/footers globais
+```
+
+Isso resolve os itens A1–A5 de uma vez.
+
+### Prioridade 2 — Implementar inversão semântica da FCR
+
+Criar lógica no componente `<BiomarkerCard />`:
+
+```typescript
+const INVERTED_METRICS = ['resting_hr']; // FCR: descendo = positivo
+
+function getTrendColor(metric_type: string, direction: 'up' | 'down' | 'stable') {
+  const isInverted = INVERTED_METRICS.includes(metric_type);
+  if (direction === 'stable') return '--sys-text-muted';
+  const isPositive = isInverted ? direction === 'down' : direction === 'up';
+  return isPositive ? '--sys-success' : '--sys-warning';
+}
+```
+
+### Prioridade 3 — Fechar decisões D1, D3, D6
+
+Documentar no PRD como decisões tomadas. Sugestão de redação:
+
+> **D1:** Avatar do paciente usa `--sys-primary` (verde institucional) em todas as abas. Avatar é identidade do usuário, não do módulo ativo.
+>
+> **D3:** Botão "Metas" removido da V1. Funcionalidade planejada para V2.
+>
+> **D6:** Títulos de empty states usam `--font-body` (Inter) weight 600. `--font-display` (Playfair Display) é reservado para valores numéricos de destaque (scores).
+
+---
+
+## Changelog
+
+| Versão | Data | Alteração |
+|---|---|---|
+| 1.0 | 2026-03-03 | Revisão final comparativa V1 → V2 de todas as 5 abas. 30 de 55 correções aplicadas (55%). Problema raiz identificado: contaminação de paleta verde nos tokens do módulo. 3 decisões pendentes com recomendação de resolução |

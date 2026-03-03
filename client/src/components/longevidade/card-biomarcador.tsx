@@ -51,11 +51,11 @@ function copyTendencia(
 }
 
 function corSparkline(tendencia: TendenciaBiomarcador, invertedSemantics: boolean): string {
-  if (!tendencia || tendencia === "stable") return "#8B9286";
+  if (!tendencia || tendencia === "stable") return "#4A5899";
   const positivo = invertedSemantics
     ? tendencia === "down"
     : tendencia === "up";
-  return positivo ? "#4CA785" : "#D4A843";
+  return positivo ? "#4A5899" : "#D4A843";
 }
 
 function SparklineMini({ data, cor }: { data: number[]; cor: string }) {
