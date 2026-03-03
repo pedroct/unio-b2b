@@ -1,7 +1,7 @@
 # UNIO Performance OS — Painel Web B2B
 
 ## Overview
-Plataforma web para profissionais de saúde (médicos, nutricionistas, personal trainers) acompanharem seus clientes. Centraliza dados de Nutrição, Treino, Biometria e Hidratação em um único dashboard.
+Plataforma web para profissionais de saúde (médicos, nutricionistas, personal trainers) acompanharem seus clientes. Centraliza o Painel de Longevidade (scores fisiológicos e biomarcadores) e ferramentas de Nutrição (prescrição alimentar, catálogo de alimentos).
 
 ## Terminologia
 - **Frontend (textos visíveis):** usa "Cliente(s)" em telas estruturais (listagem, sidebar, filtros, botões, empty states)
@@ -18,8 +18,9 @@ Plataforma web para profissionais de saúde (médicos, nutricionistas, personal 
 ## Design System
 - Paleta verde/terra baseada nos Design Tokens UNIO v2.0
 - Fontes: Playfair Display (display/títulos), Inter (body)
-- Cores por módulo: Nutrição (#5B8C6F), Treino (#D97952), Biometria (#3D7A8C), Hidratação (#6BA3BE)
-- Dark mode dinâmico via classe CSS
+- Cores por módulo: Nutrição (#5B8C6F), Treino (#D97952), Biometria (#3D7A8C), Hidratação (#6BA3BE), Longevidade (#4A5899)
+- Design Tokens Longevidade: `--mod-longevidade-*` (Deep Indigo), `--score-*` (4 faixas: excellent/good/attention/risk)
+- Dark mode dinâmico via classe CSS (tokens de longevidade têm variantes dark)
 
 ## Structure
 ```
@@ -32,11 +33,19 @@ client/src/
     app-sidebar.tsx      - Main navigation sidebar (Clientes, Dashboard, Prescrição Alimentar, Configurações)
     theme-toggle.tsx     - Dark mode toggle
     empty-state.tsx      - Reusable empty state component
+    longevidade/
+      aba-cockpit.tsx              - Cockpit: Score Cardiovascular + 3 scores futuros + biomarcadores + tendência
+      aba-cardiometabolico.tsx     - Sistema Cardiometabólico: 4 biomarcadores CV + seção metabólica (bloqueada)
+      card-score.tsx               - Card principal do score (0–100, badge classificação, delta, atualização)
+      card-biomarcador.tsx         - Mini-card biomarcador + GradeBiomarcadores (grid 4col responsivo)
+      grafico-tendencia-score.tsx  - Gráfico AreaChart (Recharts) tendência 30d/90d
+      aba-trancada.tsx             - Estado bloqueado para abas futuras (cadeado + mensagem contextual)
+      estado-dia-zero.tsx          - Onboarding dia zero (checklist + progresso)
     dashboard/
-      overview-tab.tsx          - Patient overview with insights & charts
-      nutrition-tab.tsx         - Nutrition data, macros, food diary + CTA para ver plano alimentar
-      biometry-tab.tsx          - Body composition evolution charts
-      training-tab.tsx          - Training sessions, volume, RPE
+      overview-tab.tsx          - (legado) Patient overview
+      nutrition-tab.tsx         - (legado) Nutrition data
+      biometry-tab.tsx          - (legado) Body composition
+      training-tab.tsx          - (legado) Training sessions
       sheet-plano-alimentar.tsx - Sheet lateral read-only do plano alimentar (via CTA Nutrição)
       aba-plano-alimentar.tsx   - Prescrição: edição de plano alimentar com refeições e nutrientes
       modal-dias-semana.tsx     - Modal para editar dias ativos do plano alimentar
@@ -45,7 +54,7 @@ client/src/
   pages/
     login.tsx                  - Login page (Registro + UF / CPF)
     patients.tsx               - Lista de clientes com tabs (Ativos/Todos/Inativos), filtros, ordenação, tags, período
-    patient-dashboard.tsx      - Dashboard individual com 4 tabs (Visão Geral, Nutrição, Biometria, Treinamento)
+    patient-dashboard.tsx      - Painel de Longevidade: 5 abas (Cockpit, Cardiometabólico, Recuperação & Sono 🔒, Performance 🔒, Nutrição 🔒)
     patient-settings.tsx       - Configuração de metas individuais
     prescricao-alimentar.tsx        - Prescrição Alimentar page (edição para paciente específico)
     prescricao-alimentar-lista.tsx  - Lista de clientes para selecionar e prescrever plano alimentar
@@ -59,10 +68,12 @@ shared/
 ```
 
 ## Key Concepts
-- **Múltiplos planos por paciente**: cada cliente pode ter vários planos alimentares (ex: um para dias de semana, outro para fim de semana). Cada plano tem ID, descrição editável, dias ativos e refeições próprias.
-- **Plano Alimentar (Visualização)**: read-only Sheet lateral acessada via CTA "Ver Plano Alimentar" na aba Nutrição. Mostra todos os planos ativos em tabs separadas.
+- **Painel de Longevidade (V1)**: substitui o dashboard antigo de 4 abas comportamentais. Organizado por sistemas fisiológicos com 5 abas: Cockpit, Sistema Cardiometabólico, Recuperação & Sono (🔒), Performance (🔒), Nutrição (🔒).
+- **Score Cardiovascular (V1 ativo)**: score 0–100 com classificação dinâmica (Excelente/Bom/Atenção/Risco Aumentado). Composto por HRV, FCR, VO₂ e Recuperação FC. Score nunca calculado no frontend.
+- **Scores futuros**: Metabólico (V2), Recuperação (V2), Funcional (V3) — visíveis como cards bloqueados no Cockpit.
+- **Design tokens por faixa**: `--score-excellent-*`, `--score-good-*`, `--score-attention-*`, `--score-risk-*` determinados dinamicamente pelo valor.
+- **Múltiplos planos por paciente**: cada cliente pode ter vários planos alimentares. Cada plano tem ID, descrição editável, dias ativos e refeições próprias.
 - **Prescrição Alimentar (Edição)**: página completa no sidebar (restrita a Nutricionista). Permite selecionar plano via dropdown, editar descrição inline, editar refeições e dias ativos.
-- O dashboard individual tem 4 abas: Visão Geral, Nutrição, Biometria, Treinamento.
 
 ## API Endpoints (Mock)
 - POST /api/auth/pair — Login
@@ -78,6 +89,8 @@ shared/
 - PUT /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/dias — Update active days
 - PUT /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/descricao — Update description
 - POST /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/refeicoes — Create meal
+- GET /api/profissional/dashboard/pacientes/:id/cardiovascular-score — Score cardiovascular (mock)
+- GET /api/profissional/dashboard/pacientes/:id/cardiovascular-score/tendencia?periodo=30d|90d — Tendência do score
 - GET /api/nutricao/catalogo/alimentos?busca&fontes&limite&offset — Search foods from catalog (proxied to staging, paginated response `{ items, total, limite, offset }`)
 - GET /api/nutricao/catalogo/alimentos/:id — Food detail with nutrients (proxied to staging)
 - GET /api/nutricao/catalogo/alimentos/codigo/:codigo — Search food by code (proxied to staging)

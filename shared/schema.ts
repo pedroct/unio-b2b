@@ -274,6 +274,54 @@ export interface ResumoPlanoAlimentar {
   calorias: number;
 }
 
+export type ClassificacaoScore = "excellent" | "good" | "attention" | "risk";
+
+export type TendenciaBiomarcador = "up" | "down" | "stable" | null;
+
+export interface ComponenteBiomarcador {
+  value: number | null;
+  unit: string;
+  trend: TendenciaBiomarcador;
+  baseline?: number;
+}
+
+export interface ScoreCardiovascular {
+  score: number;
+  classification: ClassificacaoScore;
+  delta_30d: number;
+  updated_at: string;
+  components: {
+    hrv: ComponenteBiomarcador;
+    rhr: ComponenteBiomarcador;
+    vo2: ComponenteBiomarcador;
+    recovery: ComponenteBiomarcador;
+  };
+}
+
+export interface PontoTendenciaScore {
+  date: string;
+  score: number;
+}
+
+export interface RespostaTendenciaScore {
+  range: string;
+  data: PontoTendenciaScore[];
+}
+
+export const LABELS_CLASSIFICACAO: Record<ClassificacaoScore, string> = {
+  excellent: "Excelente",
+  good: "Bom",
+  attention: "Atenção",
+  risk: "Risco Aumentado",
+};
+
+export const LABELS_BIOMARCADOR: Record<string, string> = {
+  hrv: "HRV (RMSSD)",
+  rhr: "Freq. Cardíaca de Repouso",
+  vo2: "VO₂ Máximo",
+  recovery: "Recuperação da FC",
+};
+
 export const BRAZILIAN_STATES = [
   "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO",
   "MA", "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR",

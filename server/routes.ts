@@ -138,6 +138,39 @@ export async function registerRoutes(
     return res.status(201).json(refeicao);
   });
 
+  app.get("/api/profissional/dashboard/pacientes/:id/cardiovascular-score", async (req, res) => {
+    return res.json({
+      score: 84,
+      classification: "good",
+      delta_30d: -3,
+      updated_at: new Date().toISOString(),
+      components: {
+        hrv: { value: 42, unit: "ms", trend: "up", baseline: 38 },
+        rhr: { value: 58, unit: "bpm", trend: "down", baseline: 62 },
+        vo2: { value: 46, unit: "ml/kg/min", trend: "stable" },
+        recovery: { value: 24, unit: "bpm", trend: "up" },
+      },
+    });
+  });
+
+  app.get("/api/profissional/dashboard/pacientes/:id/cardiovascular-score/tendencia", async (req, res) => {
+    const periodo = (req.query.periodo as string) || "30d";
+    const dias = periodo === "90d" ? 90 : 30;
+    const hoje = new Date();
+    const dados = [];
+    let score = 78;
+    for (let i = dias - 1; i >= 0; i--) {
+      const data = new Date(hoje);
+      data.setDate(data.getDate() - i);
+      score = Math.max(40, Math.min(100, score + (Math.random() - 0.45) * 3));
+      dados.push({
+        date: data.toISOString().split("T")[0],
+        score: Math.round(score * 10) / 10,
+      });
+    }
+    return res.json({ range: periodo, data: dados });
+  });
+
   app.get("/api/nutricao/catalogo/fontes", async (req, res) => {
     try {
       const result = await stagingFetch("/api/nutricao/catalogo/fontes");

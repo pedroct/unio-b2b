@@ -1,16 +1,14 @@
-import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
-import { ArrowLeft, Settings2, LayoutDashboard, Apple, Activity, Dumbbell } from "lucide-react";
+import { ArrowLeft, Settings2, HeartPulse, Activity, Moon, Dumbbell, UtensilsCrossed, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { OverviewTab } from "@/components/dashboard/overview-tab";
-import { NutritionTab } from "@/components/dashboard/nutrition-tab";
-import { BiometryTab } from "@/components/dashboard/biometry-tab";
-import { TrainingTab } from "@/components/dashboard/training-tab";
+import { AbaCockpit } from "@/components/longevidade/aba-cockpit";
+import { AbaCardiometabolico } from "@/components/longevidade/aba-cardiometabolico";
+import { AbaTrancada } from "@/components/longevidade/aba-trancada";
 import type { Patient } from "@shared/schema";
 
 function PatientHeaderSkeleton() {
@@ -40,7 +38,7 @@ export default function PatientDashboardPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6" data-testid="page-patient-dashboard">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <Link href="/pacientes">
           <Button variant="ghost" size="icon" data-testid="button-back">
             <ArrowLeft className="h-4 w-4" />
@@ -50,8 +48,8 @@ export default function PatientDashboardPage() {
         {isLoading ? (
           <PatientHeaderSkeleton />
         ) : patient ? (
-          <div className="flex items-center justify-between flex-1 gap-4">
-            <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between flex-1 gap-4 flex-wrap min-w-0">
+            <div className="flex items-center gap-4 min-w-0">
               <Avatar className="h-12 w-12">
                 <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
                   {initials}
@@ -85,38 +83,57 @@ export default function PatientDashboardPage() {
         ) : null}
       </div>
 
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="w-full justify-start" data-testid="tabs-dashboard">
-          <TabsTrigger value="overview" data-testid="tab-trigger-overview">
-            <LayoutDashboard className="h-3.5 w-3.5 mr-1.5" />
-            Visão Geral
+      <Tabs defaultValue="cockpit" className="w-full">
+        <TabsList className="w-full justify-start flex-wrap h-auto gap-1" data-testid="tabs-longevidade">
+          <TabsTrigger value="cockpit" data-testid="tab-trigger-cockpit">
+            <HeartPulse className="h-3.5 w-3.5 mr-1.5" />
+            Cockpit
           </TabsTrigger>
-          <TabsTrigger value="nutrition" data-testid="tab-trigger-nutrition">
-            <Apple className="h-3.5 w-3.5 mr-1.5" />
-            Nutrição
-          </TabsTrigger>
-          <TabsTrigger value="biometry" data-testid="tab-trigger-biometry">
+          <TabsTrigger value="cardiometabolico" data-testid="tab-trigger-cardiometabolico">
             <Activity className="h-3.5 w-3.5 mr-1.5" />
-            Biometria
+            Cardiometabólico
           </TabsTrigger>
-          <TabsTrigger value="training" data-testid="tab-trigger-training">
-            <Dumbbell className="h-3.5 w-3.5 mr-1.5" />
-            Treinamento
+          <TabsTrigger value="recuperacao" data-testid="tab-trigger-recuperacao" className="gap-1">
+            <Moon className="h-3.5 w-3.5 mr-1" />
+            Recuperação & Sono
+            <Lock className="h-3 w-3 ml-0.5 text-muted-foreground" />
+          </TabsTrigger>
+          <TabsTrigger value="performance" data-testid="tab-trigger-performance" className="gap-1">
+            <Dumbbell className="h-3.5 w-3.5 mr-1" />
+            Performance
+            <Lock className="h-3 w-3 ml-0.5 text-muted-foreground" />
+          </TabsTrigger>
+          <TabsTrigger value="nutricao" data-testid="tab-trigger-nutricao" className="gap-1">
+            <UtensilsCrossed className="h-3.5 w-3.5 mr-1" />
+            Nutrição
+            <Lock className="h-3 w-3 ml-0.5 text-muted-foreground" />
           </TabsTrigger>
         </TabsList>
 
         <div className="mt-6">
-          <TabsContent value="overview">
-            <OverviewTab patientId={patientId} />
+          <TabsContent value="cockpit">
+            <AbaCockpit pacienteId={patientId} />
           </TabsContent>
-          <TabsContent value="nutrition">
-            <NutritionTab patientId={patientId} patientName={patient?.name} />
+          <TabsContent value="cardiometabolico">
+            <AbaCardiometabolico pacienteId={patientId} />
           </TabsContent>
-          <TabsContent value="biometry">
-            <BiometryTab patientId={patientId} />
+          <TabsContent value="recuperacao">
+            <AbaTrancada
+              titulo="Recuperação & Sono"
+              mensagem="Recuperação & Sono estará disponível em breve. Aqui você acompanhará tempo de sono, estágios REM e profundo, HRV noturna e equilíbrio entre carga de treino e recuperação."
+            />
           </TabsContent>
-          <TabsContent value="training">
-            <TrainingTab patientId={patientId} />
+          <TabsContent value="performance">
+            <AbaTrancada
+              titulo="Performance & Funcionalidade"
+              mensagem="Performance & Funcionalidade estará disponível em breve. Aqui você acompanhará volume semanal de treino, zonas de frequência cardíaca, velocidade de caminhada e indicadores de força."
+            />
+          </TabsContent>
+          <TabsContent value="nutricao">
+            <AbaTrancada
+              titulo="Nutrição"
+              mensagem="Nutrição como driver biológico estará disponível em breve. Aqui você verá correlações entre proteína relativa e massa magra, calorias vs gasto energético, e impacto da alimentação nos biomarcadores."
+            />
           </TabsContent>
         </div>
       </Tabs>
