@@ -1,0 +1,482 @@
+/* ============================================
+   UNIO — Design Tokens: Módulo Longevidade
+   Versão: 1.0 | Data: 2026-03-03
+   
+   Conteúdo:
+   1. Tokens do módulo Longevidade (--mod-longevidade-*)
+   2. Tokens de classificação de scores (--score-*)
+   3. Alias legado
+   4. Mapeamento de elementos do Cockpit V1
+   5. Componentes de referência
+   6. Guia de uso para LLMs
+   
+   INTEGRAÇÃO:
+   Copiar seções 1, 2 e 3 para dentro do :root {}
+   do design-tokens.css principal, após Estoque.
+   ============================================ */
+
+
+:root {
+
+  /* ═══════════════════════════════════════════
+     1. MÓDULO LONGEVIDADE — Deep Indigo
+     
+     Contexto: Painel de Longevidade, scores
+     cardiovasculares, biomarcadores estruturais,
+     tendências de saúde, análise longitudinal.
+     Ícone: coração-pulso / gráfico-tendência
+     
+     Cor base: #4A5899
+     Justificativa: Profundidade analítica, 
+     confiança clínica, inteligência.
+     ═══════════════════════════════════════════ */
+
+  --mod-longevidade-base:       #4A5899;
+  --mod-longevidade-dark:       #3B4A85;
+  --mod-longevidade-bg:         #EDEEF5;
+  --mod-longevidade-bg-subtle:  #F4F5FA;
+  --mod-longevidade-text:       #333F73;
+  --mod-longevidade-border:     #B3B9D6;
+  --mod-longevidade-hover:      #3B4A85;
+  --mod-longevidade-active:     #333F73;
+  --mod-longevidade-disabled:   #B3B9D6;
+  --mod-longevidade-icon:       #4A5899;
+  --mod-longevidade-badge-bg:   #E0E3F0;
+  --mod-longevidade-badge-text: #333F73;
+  --mod-longevidade-ring:       rgba(74, 88, 153, 0.35);
+
+
+  /* ═══════════════════════════════════════════
+     2. CLASSIFICAÇÃO DE SCORES
+     
+     Faixas clínicas aplicáveis a QUALQUER score
+     (Cardiovascular, Metabólico, Recuperação,
+     Funcional). Reutilizável entre pilares.
+     Cores determinadas DINAMICAMENTE pelo valor.
+     
+     Excelente       80–100
+     Bom             60–79
+     Atenção         40–59
+     Risco Aumentado  0–39
+     ═══════════════════════════════════════════ */
+
+  /* ── Excelente (80–100) ────────────────── */
+  --score-excellent-bg:     #E6F5EE;
+  --score-excellent-text:   #2B7A4B;
+  --score-excellent-border: #A3D9B8;
+  --score-excellent-icon:   #4CA785;  /* = --sys-success */
+  --score-excellent-badge:  #D4EDDF;
+
+  /* ── Bom (60–79) ───────────────────────── */
+  --score-good-bg:          #EBF0F7;
+  --score-good-text:        #3A5088;
+  --score-good-border:      #A8B8D6;
+  --score-good-icon:        #4A5899;  /* = --mod-longevidade-base */
+  --score-good-badge:       #DDE3F0;
+
+  /* ── Atenção (40–59) ───────────────────── */
+  --score-attention-bg:     #FDF5E6;
+  --score-attention-text:   #8A6D1B;
+  --score-attention-border: #E0C87A;
+  --score-attention-icon:   #D9A441;  /* = --sys-warning */
+  --score-attention-badge:  #F5EBCD;
+
+  /* ── Risco Aumentado (0–39) ────────────── */
+  --score-risk-bg:          #FDECEA;
+  --score-risk-text:        #9E3830;
+  --score-risk-border:      #E8A8A3;
+  --score-risk-icon:        #D9635C;  /* = --sys-error */
+  --score-risk-badge:       #F5D5D2;
+
+
+  /* ═══════════════════════════════════════════
+     3. ALIAS LEGADO
+     ⚠️  DEPRECADO — migrar para --mod-*
+     ═══════════════════════════════════════════ */
+
+  --color-longevity: var(--mod-longevidade-base);
+}
+
+
+/* ═══════════════════════════════════════════
+   4. MAPEAMENTO DE ELEMENTOS — COCKPIT V1
+
+   ESTRUTURA DA PÁGINA
+   ├── Background página ........... --sys-bg-primary
+   ├── Header da aba ............... --sys-text-primary
+   └── Separadores ................. --sys-border-light
+
+   CARD PRINCIPAL — SCORE CARDIOVASCULAR
+   ├── Background .................. --mod-longevidade-bg
+   ├── Borda ....................... --mod-longevidade-border
+   ├── Sombra ...................... --shadow-md
+   ├── Label ....................... --sys-text-secondary
+   ├── Valor numérico (0–100) ..... --mod-longevidade-text
+   ├── Ícone ....................... --mod-longevidade-icon
+   ├── Badge classificação (fundo)  --score-{faixa}-badge
+   ├── Badge classificação (texto)  --score-{faixa}-text
+   ├── Tendência (↑↓→) ............ --score-{faixa}-icon
+   └── Data atualização ........... --sys-text-muted
+
+   MINI-CARDS — COMPONENTES DO SCORE
+   ├── Background .................. --mod-longevidade-bg-subtle
+   ├── Borda ....................... --mod-longevidade-border
+   ├── Sombra ...................... --shadow-sm
+   ├── Nome biomarcador ........... --mod-longevidade-text
+   ├── Valor numérico ............. --sys-text-primary
+   ├── Unidade .................... --sys-text-muted
+   ├── Tendência individual ....... --score-{faixa}-icon
+   ├── Info secundária ............ --sys-text-secondary
+   ├── Estado insuficiente (--) ... --sys-text-muted
+   └── Tooltip progresso .......... --mod-longevidade-bg / text
+
+   GRÁFICO DE TENDÊNCIA
+   ├── Linha do score ............. --mod-longevidade-base
+   ├── Área sob curva ............. --mod-longevidade-ring
+   ├── Eixos e gridlines .......... --sys-border-light
+   ├── Labels eixos ............... --sys-text-muted
+   ├── Seletor período (ativo) .... --mod-longevidade-base
+   ├── Seletor período (inativo) .. --sys-text-muted
+   ├── Marcador mudança faixa ..... --score-{faixa}-icon
+   └── Faixas background .......... --score-{faixa}-bg @ 50%
+
+   LISTA DE PACIENTES
+   ├── Background lista ........... --sys-bg-primary
+   ├── Card paciente .............. --sys-bg-primary / --sys-border
+   ├── Card paciente hover ........ --mod-longevidade-bg-subtle
+   ├── Nome paciente .............. --sys-text-primary
+   ├── Score inline ............... --mod-longevidade-text
+   ├── Badge classificação ........ --score-{faixa}-badge / text
+   ├── Filtros ativos ............. --mod-longevidade-badge-bg / text
+   ├── Filtros inativos ........... --sys-bg-secondary / --sys-text-muted
+   └── Breadcrumb ................. --sys-text-muted / --mod-longevidade-text
+
+   ONBOARDING — DIA ZERO
+   ├── Background ................. --sys-bg-primary
+   ├── Título ..................... --mod-longevidade-text
+   ├── Ícone principal ............ --mod-longevidade-icon
+   ├── Checklist completo ......... --sys-success / --sys-text-primary
+   ├── Checklist pendente ......... --sys-text-muted / --sys-text-secondary
+   ├── Barra progresso (cheia) .... --mod-longevidade-base
+   ├── Barra progresso (vazia) .... --sys-border-light
+   └── Mensagem estimativa ........ --sys-text-secondary
+
+   ESTADOS INTERATIVOS
+   ├── Focus ring ................. --mod-longevidade-ring
+   ├── Hover botões ............... --mod-longevidade-hover
+   ├── Active/pressed ............. --mod-longevidade-active
+   └── Disabled ................... --mod-longevidade-disabled
+   ═══════════════════════════════════════════ */
+
+
+/* ═══════════════════════════════════════════
+   5. COMPONENTES DE REFERÊNCIA
+   ═══════════════════════════════════════════ */
+
+/* ── Card Principal do Score ─────────────── */
+
+.score-card {
+  background: var(--mod-longevidade-bg);
+  border: 1px solid var(--mod-longevidade-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-md);
+}
+
+.score-card__label {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sys-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.score-card__value {
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--mod-longevidade-text);
+  line-height: 1;
+}
+
+.score-card__icon {
+  color: var(--mod-longevidade-icon);
+}
+
+.score-card__updated {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--sys-text-muted);
+}
+
+.score-card__trend {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  /* cor determinada dinamicamente pela classificação */
+}
+
+
+/* ── Badges de Classificação ─────────────── */
+
+[class*="score-badge--"] {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.score-badge--excellent {
+  background: var(--score-excellent-badge);
+  color: var(--score-excellent-text);
+}
+
+.score-badge--good {
+  background: var(--score-good-badge);
+  color: var(--score-good-text);
+}
+
+.score-badge--attention {
+  background: var(--score-attention-badge);
+  color: var(--score-attention-text);
+}
+
+.score-badge--risk {
+  background: var(--score-risk-badge);
+  color: var(--score-risk-text);
+}
+
+
+/* ── Mini-Card de Biomarcador ────────────── */
+
+.biomarker-card {
+  background: var(--mod-longevidade-bg-subtle);
+  border: 1px solid var(--mod-longevidade-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.biomarker-card__name {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mod-longevidade-text);
+}
+
+.biomarker-card__value {
+  font-family: var(--font-body);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--sys-text-primary);
+}
+
+.biomarker-card__unit {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--sys-text-muted);
+}
+
+.biomarker-card__secondary {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--sys-text-secondary);
+}
+
+.biomarker-card--insufficient .biomarker-card__value {
+  color: var(--sys-text-muted);
+}
+
+
+/* ── Lista de Pacientes ──────────────────── */
+
+.patient-list {
+  background: var(--sys-bg-primary);
+}
+
+.patient-card {
+  background: var(--sys-bg-primary);
+  border: 1px solid var(--sys-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  transition: background 150ms ease;
+}
+
+.patient-card:hover {
+  background: var(--mod-longevidade-bg-subtle);
+}
+
+.patient-card__name {
+  font-family: var(--font-body);
+  font-weight: 600;
+  color: var(--sys-text-primary);
+}
+
+.patient-card__score {
+  font-family: var(--font-body);
+  font-weight: 700;
+  color: var(--mod-longevidade-text);
+}
+
+.filter-chip--active {
+  background: var(--mod-longevidade-badge-bg);
+  color: var(--mod-longevidade-badge-text);
+  border: 1px solid var(--mod-longevidade-border);
+}
+
+.filter-chip--inactive {
+  background: var(--sys-bg-secondary);
+  color: var(--sys-text-muted);
+  border: 1px solid var(--sys-border-light);
+}
+
+.breadcrumb__separator,
+.breadcrumb__path {
+  color: var(--sys-text-muted);
+}
+
+.breadcrumb__current {
+  color: var(--mod-longevidade-text);
+  font-weight: 600;
+}
+
+
+/* ── Onboarding (Dia Zero) ───────────────── */
+
+.onboarding__title {
+  font-family: var(--font-display);
+  color: var(--mod-longevidade-text);
+}
+
+.onboarding__icon {
+  color: var(--mod-longevidade-icon);
+}
+
+.onboarding__message {
+  font-family: var(--font-body);
+  color: var(--sys-text-secondary);
+}
+
+.checklist-item--complete .checklist-item__icon {
+  color: var(--sys-success);
+}
+
+.checklist-item--complete .checklist-item__text {
+  color: var(--sys-text-primary);
+}
+
+.checklist-item--pending .checklist-item__icon {
+  color: var(--sys-text-muted);
+}
+
+.checklist-item--pending .checklist-item__text {
+  color: var(--sys-text-secondary);
+}
+
+.progress-bar {
+  background: var(--sys-border-light);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.progress-bar__fill {
+  background: var(--mod-longevidade-base);
+  transition: width 300ms ease;
+}
+
+
+/* ── Estados Interativos ─────────────────── */
+
+.longevidade-btn {
+  background: var(--mod-longevidade-base);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.longevidade-btn:hover {
+  background: var(--mod-longevidade-hover);
+}
+
+.longevidade-btn:active {
+  background: var(--mod-longevidade-active);
+}
+
+.longevidade-btn:disabled {
+  background: var(--mod-longevidade-disabled);
+  cursor: not-allowed;
+}
+
+.longevidade-btn:focus-visible {
+  outline: 2px solid var(--mod-longevidade-ring);
+  outline-offset: 2px;
+}
+
+
+/* ═══════════════════════════════════════════
+   6. GUIA DE USO PARA LLMs
+   
+   REGRA PRINCIPAL:
+   Ao construir UI para o Painel de Longevidade,
+   use SOMENTE --mod-longevidade-* para elementos
+   de identidade do módulo. NUNCA misture tokens
+   de outros módulos dentro deste contexto.
+   
+   REGRAS:
+   
+   1. ESCOPO: Telas do Longevidade usam
+      exclusivamente --mod-longevidade-*.
+   
+   2. CLASSIFICAÇÃO DINÂMICA: --score-* são
+      determinadas pelo VALOR, nunca fixas.
+   
+   3. TEXTO BODY GLOBAL: Parágrafos usam
+      --sys-text-primary ou --sys-text-secondary.
+      --mod-longevidade-text é para labels apenas.
+   
+   4. SOMBRAS:
+      Card principal  → --shadow-md
+      Mini-cards      → --shadow-sm
+      Modais          → --shadow-lg
+   
+   5. ESPAÇAMENTO (base 4px):
+      Padding cards   → --space-4 a --space-6
+      Gap cards       → --space-4
+      Margem seções   → --space-8
+   
+   6. TIPOGRAFIA:
+      Score (0–100)       → --font-display, 700, 48px
+      Nome biomarcador    → --font-body, 600, 14px
+      Valor biomarcador   → --font-body, 700, 24px
+      Labels/unidades     → --font-body, 400, 12px
+      Badge classificação → --font-body, 600, 12px
+   
+   MAPEAMENTO ATUALIZADO:
+   Nutrição            → --mod-nutricao-*
+   Treino              → --mod-treino-*
+   Composição Corporal → --mod-corpo-*
+   Hidratação          → --mod-hidratacao-*
+   Suplementos         → --mod-suplementos-*
+   Estoque             → --mod-estoque-*
+   Longevidade         → --mod-longevidade-*
+   
+   CONTRASTE WCAG AA (mín 4.5:1 normal, 3:1 grande):
+   #333F73 sobre #EDEEF5 → labels no card
+   #2B7A4B sobre #D4EDDF → badge excellent
+   #3A5088 sobre #DDE3F0 → badge good
+   #8A6D1B sobre #F5EBCD → badge attention
+   #9E3830 sobre #F5D5D2 → badge risk
+   #2D4A3A sobre #F4F5FA → mini-cards
+   ═══════════════════════════════════════════ */
