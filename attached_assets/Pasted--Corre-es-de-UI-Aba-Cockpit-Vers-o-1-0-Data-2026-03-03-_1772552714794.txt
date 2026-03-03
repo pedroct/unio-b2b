@@ -1,0 +1,386 @@
+# Correções de UI — Aba Cockpit
+
+> **Versão:** 1.0
+> **Data:** 2026-03-03
+> **Autor:** Pedro Teixeira (UI Writer / UX Review)
+> **Referências:** [[PRD Painel de Longevidade v3]], [[UNIO Design Tokens Longevidade V1]], [[UNIO Design Tokens v3]]
+> **Escopo:** Aba 1 — Cockpit do Painel de Longevidade
+> **Prioridades:** 🔴 Crítico | 🟠 Alto | 🟡 Médio | 🔵 Baixo
+
+---
+
+## Como usar este documento
+
+Cada correção está organizada por componente. Para cada item:
+- **O que está** → descreve o estado atual no mock
+- **O que deveria ser** → descreve o comportamento/visual correto
+- **Token/Referência** → token CSS ou regra do PRD aplicável
+- **Prioridade** → impacto no produto
+
+---
+
+## 1. Navegação (Tab Bar)
+
+### 1.1 🟠 Aba ativa sem indicador visual forte
+
+- **O que está:** Aba "Cockpit" selecionada, mas sem underline ou background de destaque. Peso visual semelhante às demais.
+- **O que deveria ser:** Aba ativa com underline de 2px ou background sutil em Deep Indigo.
+- **Token:** Underline ou indicator: `--mod-longevidade-base` (`#4A5899`). Texto ativo: `--mod-longevidade-text` (`#333F73`).
+
+### 1.2 🟡 Abas bloqueadas com diferenciação fraca
+
+- **O que está:** Abas bloqueadas (Recuperação & Sono, Performance, Nutrição) com ícone de cadeado mas opacidade insuficiente para diferenciar de abas ativas.
+- **O que deveria ser:** Texto e ícone das abas bloqueadas em cor desabilitada, criando contraste claro com abas ativas/disponíveis.
+- **Token:** Texto e ícone bloqueados: `--mod-longevidade-disabled` (`#B3B9D6`). Texto ativo: `--mod-longevidade-text` (`#333F73`). Texto disponível não-ativo: `--sys-text-secondary` (`#5F6B5A`).
+
+### 1.3 🟡 Nome da aba "Performance" truncado
+
+- **O que está:** "Performance" (sem "& Funcionalidade").
+- **O que deveria ser:** Definir **"Performance"** como label oficial da aba na navegação. O nome completo "Performance & Funcionalidade" aparece apenas no título interno da aba e na documentação.
+- **Ação:** Documentar como decisão de UI — não é erro, mas precisa ser intencional.
+
+---
+
+## 2. Card Principal — Score Cardiovascular
+
+### 2.1 🔴 Classificação incorreta para o valor do score
+
+- **O que está:** Score 84 com badge "Bom" (verde).
+- **O que deveria ser:** Score 84 está na faixa **Excelente** (80–100). Badge deve exibir "Excelente".
+- **Regra PRD (seção 7.3):**
+
+| Faixa | Range |
+|---|---|
+| Excelente | 80–100 |
+| Bom | 60–79 |
+| Atenção | 40–59 |
+| Risco Aumentado | 0–39 |
+
+- **Tokens do badge para score 84:**
+  - Fundo: `--score-excellent-badge` (`#D4EDDF`)
+  - Texto: `--score-excellent-text` (`#2B7A4B`)
+- **Ação:** Revisar lógica de classificação no componente. Verificar se os breakpoints estão implementados como `>=80`, `>=60`, `>=40`, `<40`.
+
+### 2.2 🟠 Background do card sem identidade do módulo
+
+- **O que está:** Fundo branco puro, indistinguível do background da página.
+- **O que deveria ser:** Background com identidade Deep Indigo sutil.
+- **Token:** `--mod-longevidade-bg` (`#EDEEF5`)
+- **CSS:**
+```css
+.score-card {
+  background: var(--mod-longevidade-bg);
+}
+```
+
+### 2.3 🟠 Borda do card ausente ou invisível
+
+- **O que está:** Sem borda visível.
+- **O que deveria ser:** Borda sutil de 1px.
+- **Token:** `--mod-longevidade-border` (`#B3B9D6`)
+- **CSS:**
+```css
+.score-card {
+  border: 1px solid var(--mod-longevidade-border);
+}
+```
+
+### 2.4 🟠 Cor do valor numérico "84" incorreta
+
+- **O que está:** Valor "84" em verde escuro do sistema (parece `--sys-text-primary` `#2D4A3A`).
+- **O que deveria ser:** Valor do score é identidade do módulo — deve ser Deep Indigo.
+- **Token:** `--mod-longevidade-text` (`#333F73`)
+- **CSS:**
+```css
+.score-card__value {
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--mod-longevidade-text);
+}
+```
+
+### 2.5 🟠 Ícone coração/pulso em cor do sistema
+
+- **O que está:** Ícone no canto superior esquerdo em verde institucional.
+- **O que deveria ser:** Ícone na cor do módulo Longevidade.
+- **Token:** `--mod-longevidade-icon` (`#4A5899`)
+
+### 2.6 🟡 Copy da tendência ambígua
+
+- **O que está:** `↘ -3 últimos 30 dias`
+- **O que deveria ser:** `↘ −3 pts nos últimos 30 dias`
+- **Justificativa:** Sem unidade, o profissional precisa inferir se são pontos, percentual ou variação absoluta. "pts" é conciso e desambigua. Meta do PRD: compreensão em < 30 segundos.
+- **Alternativa aceita:** `↘ Caiu 3 pontos em 30 dias` (mais acessível para paciente).
+
+### 2.7 🔵 Formato da data de atualização
+
+- **O que está:** `Atualizado em 03/03/2026, 12:36`
+- **O que deveria ser:** `Atualizado 03/03/2026 às 12:36`
+- **Justificativa:** "em" é dispensável. "às" antes da hora é o padrão pt-BR formal para timestamp.
+
+---
+
+## 3. Cards de Score Bloqueados (Metabólico, Recuperação, Funcional)
+
+### 3.1 🟡 Referência de versão visível para o usuário
+
+- **O que está:** "Em breve (V2)" e "Em breve (V3)"
+- **O que deveria ser:** **"Disponível em breve"** — sem referência de versão.
+- **Justificativa:** "V2" e "V3" são metadados internos do roadmap. O profissional e o paciente não sabem o que significam. Expõe informação de produto sem valor para o usuário.
+
+### 3.2 🟡 Background dos cards bloqueados sem diferenciação
+
+- **O que está:** Cards bloqueados com visual similar aos cards ativos (fundo branco).
+- **O que deveria ser:** Background e borda em tokens globais (não do módulo) para diferenciar estado bloqueado de ativo.
+- **Tokens:**
+  - Fundo: `--sys-bg-secondary` (`#F5F3EE`)
+  - Borda: `--sys-border-light` (`#E8EBE5`)
+  - Texto/ícone: `--sys-text-muted` (`#8B9286`)
+  - Valor "—": `--sys-text-muted` (`#8B9286`)
+
+### 3.3 🔵 Ausência do botão "Me avise quando disponível"
+
+- **O que está:** Cards bloqueados sem ação interativa.
+- **O que deveria ser:** Link ou botão discreto "Me avise quando disponível" em cada card bloqueado.
+- **Justificativa PRD (seção 6.3):** Serve como métrica de priorização — permite ao time medir interesse nas funcionalidades futuras.
+- **Token do link:** `--mod-longevidade-base` (`#4A5899`) com hover em `--mod-longevidade-hover` (`#3B4A85`).
+
+---
+
+## 4. Seção "Componentes do Score" — Mini-Cards
+
+### 4.1 🟠 Background dos mini-cards incorreto
+
+- **O que está:** Fundo branco.
+- **O que deveria ser:** Background sutil que cria hierarquia com o card principal.
+- **Token:** `--mod-longevidade-bg-subtle` (`#F4F5FA`)
+- **Regra:** Card principal usa `--mod-longevidade-bg`. Mini-cards usam `--mod-longevidade-bg-subtle`. A diferença de intensidade cria hierarquia visual.
+
+### 4.2 🟠 Nome dos biomarcadores em cor do sistema
+
+- **O que está:** Nomes como "HRV (RMSSD)" em verde escuro do sistema.
+- **O que deveria ser:** Nomes em cor do módulo Longevidade.
+- **Token:** `--mod-longevidade-text` (`#333F73`)
+
+### 4.3 🟠 Borda dos mini-cards
+
+- **O que está:** Borda em tom neutro/genérico.
+- **O que deveria ser:** `--mod-longevidade-border` (`#B3B9D6`)
+
+### 4.4 🔴 Tendência da FCR com semântica invertida
+
+- **O que está:** FCR "↘ Descendo" com tratamento visual neutro. FCR = 58 bpm, Baseline = 62 bpm.
+- **O que deveria ser:** Para FCR, **descendo é positivo** (frequência cardíaca mais baixa = melhor eficiência). A seta e a cor devem refletir a semântica clínica, não apenas a direção numérica.
+- **Implementação:**
+  - Seta `↘` permanece (indica direção do valor)
+  - Cor da tendência: deve usar cor positiva (equivalente a "melhorando")
+  - Copy sugerida: `↘ −4 bpm vs referência` ou `↘ Melhorando`
+- **Regra geral de semântica de tendência:**
+
+| Biomarcador | Subindo = | Descendo = |
+|---|---|---|
+| HRV (RMSSD) | ✅ Positivo | ⚠️ Negativo |
+| FCR | ⚠️ Negativo | ✅ Positivo |
+| VO₂ Máximo | ✅ Positivo | ⚠️ Negativo |
+| Recuperação FC | ✅ Positivo | ⚠️ Negativo |
+
+- **Ação:** Implementar lógica de inversão semântica por `metric_type`. A cor da tendência é determinada pela **direção clínica**, não pela direção numérica.
+
+### 4.5 🟡 Abreviação inconsistente "Freq."
+
+- **O que está:** "Freq. Cardíaca de Repouso"
+- **O que deveria ser (opções por ordem de preferência):**
+  1. `Frequência Cardíaca de Repouso` — se couber no card
+  2. `FC de Repouso` — abreviação padrão clínica
+  3. `FCR` — sigla, mas pode exigir tooltip para público leigo
+- **Evitar:** "Freq." — abreviação informal que não combina com tom "especialista mas acessível".
+
+### 4.6 🟡 Redundância seta + palavra de direção
+
+- **O que está:** `↗ Subindo`, `↘ Descendo`, `— Estável`
+- **O que deveria ser:** A seta já comunica direção. A palavra deveria agregar informação quantitativa.
+- **Copy sugerida:**
+
+| Biomarcador | Atual | Sugerido |
+|---|---|---|
+| HRV | `↗ Subindo  Baseline: 38 ms` | `↗ +4 ms vs referência 90d` |
+| FCR | `↘ Descendo  Baseline: 62 bpm` | `↘ −4 bpm vs referência 90d` (cor positiva) |
+| VO₂ | `— Estável` | `→ Estável` (usar seta horizontal em vez de travessão) |
+| Recuperação | `↗ Subindo` | `↗ Tendência positiva` ou `↗ +X bpm vs média` |
+
+### 4.7 🟡 VO₂ com travessão ambíguo
+
+- **O que está:** `— Estável` — o travessão antes de "Estável" pode ser lido como "não disponível".
+- **O que deveria ser:** `→ Estável` usando seta horizontal, mantendo consistência com o padrão ↗↘→ das demais tendências.
+
+### 4.8 🟡 Recuperação FC sem dado de referência
+
+- **O que está:** `24 bpm` com tendência `↗ Subindo` mas sem baseline ou referência.
+- **O que deveria ser:** Incluir dado secundário para consistência com os demais cards.
+- **Sugestões:** `Média últimas 5 sessões` ou `Referência: X bpm`.
+
+### 4.9 🟡 Uso do termo "Baseline"
+
+- **O que está:** "Baseline: 38 ms" / "Baseline: 62 bpm"
+- **O que deveria ser:** O público profissional entende "baseline", mas o paciente (persona secundária) pode não entender.
+- **Sugestão:** `Referência 90d: 38 ms` — mantém precisão clínica, explicita a janela temporal, e é compreensível por leigos.
+
+---
+
+## 5. Gráfico de Tendência
+
+### 5.1 🟠 Cor da linha do gráfico genérica
+
+- **O que está:** Linha em azul/cinza genérico.
+- **O que deveria ser:** Linha na cor do módulo Longevidade.
+- **Token:** `--mod-longevidade-base` (`#4A5899`)
+
+### 5.2 🟠 Fill da área sob a curva genérica
+
+- **O que está:** Preenchimento em azul claro genérico.
+- **O que deveria ser:** Preenchimento com opacidade do ring do módulo.
+- **Token:** `--mod-longevidade-ring` (`rgba(74, 88, 153, 0.35)`)
+
+### 5.3 🟡 Ausência do período 365 dias
+
+- **O que está:** Seletor com "30 dias" e "90 dias" apenas.
+- **O que deveria ser:** 3 opções — **30 dias | 90 dias | 365 dias**
+- **Referência:** RF3 do PRD — "Usuário deve visualizar tendência por período selecionável (30/90/365 dias)."
+- **Tokens do seletor:**
+  - Ativo: `--mod-longevidade-base` (`#4A5899`) fundo, `#FFFFFF` texto
+  - Inativo: transparente, `--sys-text-muted` (`#8B9286`) texto
+
+### 5.4 🔵 Ausência de faixas de classificação no gráfico
+
+- **O que está:** Gráfico com fundo branco liso.
+- **O que deveria ser (opcional, mas recomendado):** Faixas horizontais coloridas indicando as zonas de classificação.
+- **Implementação:**
+
+| Zona | Range Y | Background |
+|---|---|---|
+| Excelente | 80–100 | `--score-excellent-bg` (`#E6F5EE`) com 50% opacidade |
+| Bom | 60–79 | `--score-good-bg` (`#EBF0F7`) com 50% opacidade |
+| Atenção | 40–59 | `--score-attention-bg` (`#FDF5E6`) com 50% opacidade |
+| Risco | 0–39 | `--score-risk-bg` (`#FDECEA`) com 50% opacidade |
+
+- **Benefício:** O profissional vê imediatamente em qual zona o paciente está operando sem precisar consultar a legenda.
+
+### 5.5 🔵 Ausência de marcadores de mudança de faixa
+
+- **O que está:** Linha contínua sem marcadores.
+- **O que deveria ser:** Pontos ou marcadores visuais nos momentos em que o score cruza uma fronteira de classificação (ex: de "Bom" para "Excelente").
+- **Token do marcador:** `--score-{faixa}-icon` da faixa de destino.
+
+---
+
+## 6. Tokens Globais — Verificação de Aplicação
+
+Tabela de referência rápida para o desenvolvedor validar cada elemento:
+
+| Elemento | Token Esperado | Hex |
+|---|---|---|
+| Background da página | `--sys-bg-primary` | `#FAFBF8` |
+| Card principal — fundo | `--mod-longevidade-bg` | `#EDEEF5` |
+| Card principal — borda | `--mod-longevidade-border` | `#B3B9D6` |
+| Card principal — sombra | `--shadow-md` | `0 4px 20px rgba(45,74,58,0.08)` |
+| Score valor (84) | `--mod-longevidade-text` | `#333F73` |
+| Score ícone | `--mod-longevidade-icon` | `#4A5899` |
+| Badge "Excelente" — fundo | `--score-excellent-badge` | `#D4EDDF` |
+| Badge "Excelente" — texto | `--score-excellent-text` | `#2B7A4B` |
+| Label "Score Cardiovascular" | `--sys-text-secondary` | `#5F6B5A` |
+| Data atualização | `--sys-text-muted` | `#8B9286` |
+| Mini-cards — fundo | `--mod-longevidade-bg-subtle` | `#F4F5FA` |
+| Mini-cards — borda | `--mod-longevidade-border` | `#B3B9D6` |
+| Mini-cards — sombra | `--shadow-sm` | `0 2px 8px rgba(45,74,58,0.06)` |
+| Nome biomarcador | `--mod-longevidade-text` | `#333F73` |
+| Valor biomarcador | `--sys-text-primary` | `#2D4A3A` |
+| Unidade (ms, bpm) | `--sys-text-muted` | `#8B9286` |
+| Gráfico — linha | `--mod-longevidade-base` | `#4A5899` |
+| Gráfico — fill | `--mod-longevidade-ring` | `rgba(74,88,153,0.35)` |
+| Gráfico — eixos | `--sys-border-light` | `#E8EBE5` |
+| Gráfico — labels | `--sys-text-muted` | `#8B9286` |
+| Cards bloqueados — fundo | `--sys-bg-secondary` | `#F5F3EE` |
+| Cards bloqueados — borda | `--sys-border-light` | `#E8EBE5` |
+| Cards bloqueados — texto | `--sys-text-muted` | `#8B9286` |
+| Tab ativa — indicador | `--mod-longevidade-base` | `#4A5899` |
+| Tabs bloqueadas — texto | `--mod-longevidade-disabled` | `#B3B9D6` |
+
+---
+
+## 7. Copy Consolidada — Versão Corrigida
+
+### Card Principal
+
+| Campo | Copy Atual | Copy Corrigida |
+|---|---|---|
+| Label | SCORE CARDIOVASCULAR | Score Cardiovascular |
+| Badge | Bom | Excelente |
+| Tendência | ↘ -3 últimos 30 dias | ↘ −3 pts nos últimos 30 dias |
+| Timestamp | Atualizado em 03/03/2026, 12:36 | Atualizado 03/03/2026 às 12:36 |
+
+> **Nota:** Label em UPPERCASE no mock. A decisão de capitalização deve ser CSS (`text-transform: uppercase; letter-spacing: 0.05em`) — não hardcoded no texto. O valor no código deve ser sentence case: "Score Cardiovascular".
+
+### Cards Bloqueados
+
+| Campo | Copy Atual | Copy Corrigida |
+|---|---|---|
+| Estado | Em breve (V2) | Disponível em breve |
+| Ação | (ausente) | Me avise quando disponível |
+
+### Mini-Cards
+
+| Card | Copy Atual | Copy Corrigida |
+|---|---|---|
+| HRV — nome | HRV (RMSSD) | HRV (RMSSD) ✅ |
+| HRV — tendência | ↗ Subindo  Baseline: 38 ms | ↗ +4 ms vs referência 90d |
+| FCR — nome | Freq. Cardíaca de Repouso | Frequência Cardíaca de Repouso |
+| FCR — tendência | ↘ Descendo  Baseline: 62 bpm | ↘ −4 bpm vs referência 90d (cor: positiva) |
+| VO₂ — tendência | — Estável | → Estável |
+| Recuperação — tendência | ↗ Subindo | ↗ Tendência positiva |
+| Recuperação — secundário | (ausente) | Média das últimas 5 sessões |
+
+---
+
+## 8. Checklist de Implementação
+
+### 🔴 Crítico
+- [ ] Corrigir lógica de classificação: score ≥ 80 = Excelente (não Bom)
+- [ ] Implementar inversão semântica de tendência para FCR (descendo = positivo)
+
+### 🟠 Alto
+- [ ] Trocar background do card principal para `--mod-longevidade-bg`
+- [ ] Adicionar borda `--mod-longevidade-border` no card principal
+- [ ] Trocar cor do valor "84" para `--mod-longevidade-text`
+- [ ] Trocar cor do ícone coração para `--mod-longevidade-icon`
+- [ ] Trocar background mini-cards para `--mod-longevidade-bg-subtle`
+- [ ] Trocar cor dos nomes dos biomarcadores para `--mod-longevidade-text`
+- [ ] Trocar borda mini-cards para `--mod-longevidade-border`
+- [ ] Trocar cor da linha do gráfico para `--mod-longevidade-base`
+- [ ] Trocar fill do gráfico para `--mod-longevidade-ring`
+- [ ] Adicionar indicador visual na aba ativa (underline `--mod-longevidade-base`)
+
+### 🟡 Médio
+- [ ] Remover "(V2)" e "(V3)" dos cards bloqueados → "Disponível em breve"
+- [ ] Diferenciar background dos cards bloqueados (`--sys-bg-secondary`)
+- [ ] Corrigir copy da tendência: adicionar unidade "pts"
+- [ ] Corrigir "Freq." → "Frequência Cardíaca de Repouso" ou "FC de Repouso"
+- [ ] Trocar `— Estável` por `→ Estável` no VO₂
+- [ ] Adicionar dado secundário ao card Recuperação FC
+- [ ] Trocar "Baseline" por "Referência 90d"
+- [ ] Adicionar período "365 dias" ao seletor do gráfico
+- [ ] Ajustar opacidade das abas bloqueadas na navegação
+
+### 🔵 Baixo
+- [ ] Adicionar faixas de classificação no background do gráfico
+- [ ] Adicionar marcadores de mudança de faixa no gráfico
+- [ ] Adicionar botão "Me avise quando disponível" nos cards bloqueados
+- [ ] Ajustar timestamp para "Atualizado 03/03/2026 às 12:36"
+
+---
+
+## Changelog
+
+| Versão | Data | Alteração |
+|---|---|---|
+| 1.0 | 2026-03-03 | Análise completa da aba Cockpit. 25 correções documentadas em 4 níveis de prioridade |
