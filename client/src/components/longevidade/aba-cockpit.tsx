@@ -5,7 +5,7 @@ import { GradeBiomarcadores } from "./card-biomarcador";
 import { GraficoTendenciaScore } from "./grafico-tendencia-score";
 import { EstadoDiaZero } from "./estado-dia-zero";
 import type { RespostaCockpit, RespostaCardiometabolico, ScorePilar } from "@shared/schema";
-import { CLASSIFICACAO_FROM_LABEL } from "@shared/schema";
+import { CLASSIFICACAO_FROM_LABEL, TENDENCIA_FROM_API } from "@shared/schema";
 
 interface AbaCockpitProps {
   pacienteId: string;
@@ -41,24 +41,30 @@ export function AbaCockpit({ pacienteId }: AbaCockpitProps) {
 
   const scoreCV = cockpit?.scores?.find(s => s.tipo === "cardiovascular");
   const classificacaoEN = scoreCV?.classificacao ? CLASSIFICACAO_FROM_LABEL[scoreCV.classificacao] ?? null : null;
+  const tendenciaCV = scoreCV?.tendencia ? (TENDENCIA_FROM_API[scoreCV.tendencia] ?? null) : null;
   const scoresFuturos = cockpit?.scores?.filter(s => s.tipo !== "cardiovascular") ?? [];
+
+  function normTrend(t: string | null | undefined) {
+    if (!t) return null;
+    return TENDENCIA_FROM_API[t] ?? null;
+  }
 
   const componentesParaGrade = cardio ? {
     hrv: (() => {
       const m = cardio.metricas_cardio.find(mc => mc.metric_type === "hrv_rmssd");
-      return { value: m?.valor_atual ?? null, unit: m?.unidade ?? "ms", trend: m?.tendencia ?? null, baseline: m?.media_30d ?? undefined };
+      return { value: m?.valor_atual ?? null, unit: m?.unidade ?? "ms", trend: normTrend(m?.tendencia), baseline: m?.media_30d ?? undefined };
     })(),
     rhr: (() => {
       const m = cardio.metricas_cardio.find(mc => mc.metric_type === "resting_hr");
-      return { value: m?.valor_atual ?? null, unit: m?.unidade ?? "bpm", trend: m?.tendencia ?? null, baseline: m?.media_30d ?? undefined };
+      return { value: m?.valor_atual ?? null, unit: m?.unidade ?? "bpm", trend: normTrend(m?.tendencia), baseline: m?.media_30d ?? undefined };
     })(),
     vo2: (() => {
       const m = cardio.metricas_cardio.find(mc => mc.metric_type === "vo2_max");
-      return { value: m?.valor_atual ?? null, unit: m?.unidade ?? "mL/kg/min", trend: m?.tendencia ?? null, baseline: m?.media_30d ?? undefined };
+      return { value: m?.valor_atual ?? null, unit: m?.unidade ?? "mL/kg/min", trend: normTrend(m?.tendencia), baseline: m?.media_30d ?? undefined };
     })(),
     recovery: (() => {
       const m = cardio.metricas_cardio.find(mc => mc.metric_type === "hr_recovery_1min");
-      return { value: m?.valor_atual ?? null, unit: m?.unidade ?? "bpm", trend: m?.tendencia ?? null, baseline: m?.media_30d ?? undefined };
+      return { value: m?.valor_atual ?? null, unit: m?.unidade ?? "bpm", trend: normTrend(m?.tendencia), baseline: m?.media_30d ?? undefined };
     })(),
   } : null;
 
@@ -69,7 +75,7 @@ export function AbaCockpit({ pacienteId }: AbaCockpitProps) {
           <CardScore
             score={scoreCV?.score ?? null}
             classification={classificacaoEN}
-            tendencia={scoreCV?.tendencia ?? null}
+            tendencia={tendenciaCV}
             is_partial={scoreCV?.is_partial ?? false}
             updated_at={cockpit?.data_atualizacao ?? null}
             isLoading={isLoading}

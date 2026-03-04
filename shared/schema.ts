@@ -282,7 +282,7 @@ export interface ScorePilar {
   classificacao: string | null;
   is_partial: boolean;
   mensagem_bloqueio: string | null;
-  tendencia: TendenciaBiomarcador;
+  tendencia: string | null;
 }
 
 export interface RespostaCockpit {
@@ -296,7 +296,7 @@ export interface MetricaCardio {
   valor_atual: number | null;
   unidade: string;
   media_30d: number | null;
-  tendencia: TendenciaBiomarcador;
+  tendencia: string | null;
   data_ultima_leitura: string | null;
   _sparkline_mock?: number[];
 }
@@ -330,6 +330,20 @@ export const CLASSIFICACAO_FROM_LABEL: Record<string, ClassificacaoScore> = {
   "Bom": "good",
   "Atenção": "attention",
   "Risco Aumentado": "risk",
+  "excellent": "excellent",
+  "good": "good",
+  "attention": "attention",
+  "risk": "risk",
+};
+
+export const TENDENCIA_FROM_API: Record<string, TendenciaBiomarcador> = {
+  "up": "up",
+  "down": "down",
+  "stable": "stable",
+  "subindo": "up",
+  "descendo": "down",
+  "estavel": "stable",
+  "estável": "stable",
 };
 
 export const LABELS_BIOMARCADOR: Record<string, string> = {

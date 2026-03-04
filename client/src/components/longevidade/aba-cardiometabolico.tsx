@@ -3,7 +3,7 @@ import { Lock, Bell } from "lucide-react";
 import { CardBiomarcador } from "./card-biomarcador";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { RespostaCardiometabolico, MetricaCardio } from "@shared/schema";
-import { LABELS_BIOMARCADOR } from "@shared/schema";
+import { LABELS_BIOMARCADOR, TENDENCIA_FROM_API } from "@shared/schema";
 
 interface AbaCardiometabolicoProps {
   pacienteId: string;
@@ -33,7 +33,7 @@ function renderMetrica(m: MetricaCardio) {
       nome={nome}
       valor={m.valor_atual}
       unidade={m.unidade}
-      tendencia={m.tendencia}
+      tendencia={m.tendencia ? (TENDENCIA_FROM_API[m.tendencia] ?? null) : null}
       baseline={m.media_30d ?? undefined}
       invertedSemantics={config.invertedSemantics}
       labelSecundario={config.labelSecundario}
