@@ -1,0 +1,682 @@
+{
+"event_id": "fae84123b346433ebe830b87e8204f5b",
+"project": 4510905751699536,
+"release": null,
+"dist": null,
+"platform": "python",
+"message": "",
+"datetime": "2026-03-04T13:47:04.245000+00:00",
+"tags": [
+[
+"environment",
+"staging"
+],
+[
+"handled",
+"no"
+],
+[
+"level",
+"error"
+],
+[
+"mechanism",
+"excepthook"
+],
+[
+"runtime",
+"CPython 3.12.13"
+],
+[
+"runtime.name",
+"CPython"
+],
+[
+"server_name",
+"4a8ff25d9bf7"
+]
+],
+"_dsc": {
+"environment": "staging",
+"public_key": "bc97fad2a96e10c3ef5f5c5a4afb4e8a",
+"release": null,
+"replay_id": null,
+"sample_rate": "0.1",
+"trace_id": "36194c7d5dfd480bb28cf1648184e421",
+"transaction": null
+},
+"_meta": {
+"exception": {
+"values": {
+"0": {
+"stacktrace": {
+"frames": {
+"0": {
+"vars": {
+"": {
+"len": 12
+}
+}
+},
+"4": {
+"vars": {
+"cmd_options": {
+"": {
+"len": 14
+}
+}
+}
+},
+"5": {
+"vars": {
+"options": {
+"": {
+"len": 14
+}
+}
+}
+},
+"6": {
+"vars": {
+"options": {
+"": {
+"len": 14
+}
+}
+}
+}
+}
+}
+}
+}
+}
+},
+"_metrics": {
+"bytes.ingested.event": 15248,
+"bytes.stored.event": 19441
+},
+"contexts": {
+"runtime": {
+"runtime": "CPython 3.12.13",
+"name": "CPython",
+"version": "3.12.13",
+"build": "3.12.13 (main, Mar  3 2026, 20:23:13) [GCC 14.2.0]",
+"type": "runtime"
+},
+"trace": {
+"trace_id": "36194c7d5dfd480bb28cf1648184e421",
+"span_id": "9ec4f34f0476e1ce",
+"status": "unknown",
+"client_sample_rate": 0.1,
+"type": "trace"
+}
+},
+"culprit": "__main__ in main",
+"environment": "staging",
+"exception": {
+"values": [
+{
+"type": "PermissionError",
+"value": "[Errno 13] Permission denied: '/app/staticfiles/admin/css/dashboard.css'",
+"stacktrace": {
+"frames": [
+{
+"function": "<module>",
+"module": "__main__",
+"filename": "manage.py",
+"abs_path": "/app/manage.py",
+"lineno": 22,
+"pre_context": [
+"        ) from exc",
+"    execute_from_command_line(sys.argv)",
+"",
+"",
+"if __name__ == \"__main__\":"
+],
+"context_line": "    main()",
+"in_app": true,
+"vars": {
+"__annotations__": {},
+"__builtins__": "<module 'builtins' (built-in)>",
+"__cached__": "None",
+"__doc__": "\"Django's command-line utility for administrative tasks.\"",
+"__file__": "'/app/manage.py'",
+"__loader__": "<_frozen_importlib_external.SourceFileLoader object at 0x744c17b6ef30>",
+"__name__": "'__main__'",
+"__package__": "None",
+"__spec__": "None",
+"os": "<module 'os' (frozen)>"
+},
+"data": {
+"client_in_app": true
+}
+},
+{
+"function": "main",
+"module": "__main__",
+"filename": "manage.py",
+"abs_path": "/app/manage.py",
+"lineno": 18,
+"pre_context": [
+"        raise ImportError(",
+"            \"Couldn't import Django. Are you sure it's installed and \"",
+"            \"available on your PYTHONPATH environment variable? Did you \"",
+"            \"forget to activate a virtual environment?\"",
+"        ) from exc"
+],
+"context_line": "    execute_from_command_line(sys.argv)",
+"post_context": [
+"",
+"",
+"if __name__ == \"__main__\":",
+"    main()"
+],
+"in_app": true,
+"vars": {
+"execute_from_command_line": "<function execute_from_command_line at 0x744c16ba0360>"
+},
+"data": {
+"client_in_app": true
+}
+},
+{
+"function": "execute_from_command_line",
+"module": "django.core.management",
+"filename": "django/core/management/__init__.py",
+"abs_path": "/usr/local/lib/python3.12/site-packages/django/core/management/__init__.py",
+"lineno": 443,
+"pre_context": [
+"",
+"",
+"def execute_from_command_line(argv=None):",
+"    \"\"\"Run a ManagementUtility.\"\"\"",
+"    utility = ManagementUtility(argv)"
+],
+"context_line": "    utility.execute()",
+"in_app": false,
+"vars": {
+"argv": [
+"'manage.py'",
+"'collectstatic'",
+"'--noinput'"
+],
+"utility": "<django.core.management.ManagementUtility object at 0x744c17b6ffb0>"
+},
+"data": {
+"client_in_app": false
+}
+},
+{
+"function": "execute",
+"module": "django.core.management",
+"filename": "django/core/management/__init__.py",
+"abs_path": "/usr/local/lib/python3.12/site-packages/django/core/management/__init__.py",
+"lineno": 437,
+"pre_context": [
+"        elif subcommand == \"version\" or self.argv[1:] == [\"--version\"]:",
+"            sys.stdout.write(django.get_version() + \"\\n\")",
+"        elif self.argv[1:] in ([\"--help\"], [\"-h\"]):",
+"            sys.stdout.write(self.main_help_text() + \"\\n\")",
+"        else:"
+],
+"context_line": "            self.fetch_command(subcommand).run_from_argv(self.argv)",
+"post_context": [
+"",
+"",
+"def execute_from_command_line(argv=None):",
+"    \"\"\"Run a ManagementUtility.\"\"\"",
+"    utility = ManagementUtility(argv)"
+],
+"in_app": false,
+"vars": {
+"args": [
+"'--noinput'"
+],
+"options": "Namespace(settings=None, pythonpath=None, args=[])",
+"parser": "CommandParser(prog='manage.py', usage='%(prog)s subcommand [options] [args]', description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=False)",
+"self": "<django.core.management.ManagementUtility object at 0x744c17b6ffb0>",
+"subcommand": "'collectstatic'"
+},
+"data": {
+"client_in_app": false
+}
+},
+{
+"function": "run_from_argv",
+"module": "django.core.management.base",
+"filename": "django/core/management/base.py",
+"abs_path": "/usr/local/lib/python3.12/site-packages/django/core/management/base.py",
+"lineno": 420,
+"pre_context": [
+"        cmd_options = vars(options)",
+"        # Move positional args out of options to mimic legacy optparse",
+"        args = cmd_options.pop(\"args\", ())",
+"        handle_default_options(options)",
+"        try:"
+],
+"context_line": "            self.execute(*args, **cmd_options)",
+"post_context": [
+"        except CommandError as e:",
+"            if options.traceback:",
+"                raise",
+"",
+"            # SystemCheckError takes care of its own formatting."
+],
+"in_app": false,
+"vars": {
+"args": [],
+"argv": [
+"'manage.py'",
+"'collectstatic'",
+"'--noinput'"
+],
+"cmd_options": {
+"force_color": "False",
+"ignore_patterns": [
+"'CVS'",
+"'.*'",
+"'*~'"
+],
+"interactive": "False",
+"no_color": "False",
+"post_process": "True",
+"pythonpath": "None",
+"settings": "None",
+"skip_checks": "False",
+"traceback": "False",
+"verbosity": "1"
+},
+"options": "Namespace(verbosity=1, settings=None, pythonpath=None, traceback=False, no_color=False, force_color=False, skip_checks=False, interactive=False, post_process=True, ignore_patterns=['CVS', '.*', '*~'], dry_run=False, clear=False, link=False, use_default_ignore_patterns=True)",
+"parser": "CommandParser(prog='manage.py collectstatic', usage=None, description='Collect static files in a single location.', formatter_class=<class 'django.core.management.base.DjangoHelpFormatter'>, conflict_handler='error', add_help=True)",
+"self": "<django.contrib.staticfiles.management.commands.collectstatic.Command object at 0x744c11d70620>"
+},
+"data": {
+"client_in_app": false
+}
+},
+{
+"function": "execute",
+"module": "django.core.management.base",
+"filename": "django/core/management/base.py",
+"abs_path": "/usr/local/lib/python3.12/site-packages/django/core/management/base.py",
+"lineno": 464,
+"pre_context": [
+"        if self.requires_system_checks and not options[\"skip_checks\"]:",
+"            check_kwargs = self.get_check_kwargs(options)",
+"            self.check(**check_kwargs)",
+"        if self.requires_migrations_checks:",
+"            self.check_migrations()"
+],
+"context_line": "        output = self.handle(*args, **options)",
+"post_context": [
+"        if output:",
+"            if self.output_transaction:",
+"                connection = connections[options.get(\"database\", DEFAULT_DB_ALIAS)]",
+"                output = \"%s\\n%s\\n%s\" % (",
+"                    self.style.SQL_KEYWORD(connection.ops.start_transaction_sql()),"
+],
+"in_app": false,
+"vars": {
+"args": [],
+"check_kwargs": {
+"tags": [
+"'staticfiles'"
+]
+},
+"options": {
+"force_color": "False",
+"ignore_patterns": [
+"'CVS'",
+"'.*'",
+"'*~'"
+],
+"interactive": "False",
+"no_color": "False",
+"post_process": "True",
+"pythonpath": "None",
+"settings": "None",
+"skip_checks": "False",
+"traceback": "False",
+"verbosity": "1"
+},
+"self": "<django.contrib.staticfiles.management.commands.collectstatic.Command object at 0x744c11d70620>"
+},
+"data": {
+"client_in_app": false
+}
+},
+{
+"function": "handle",
+"module": "django.contrib.staticfiles.management.commands.collectstatic",
+"filename": "django/contrib/staticfiles/management/commands/collectstatic.py",
+"abs_path": "/usr/local/lib/python3.12/site-packages/django/contrib/staticfiles/management/commands/collectstatic.py",
+"lineno": 214,
+"pre_context": [
+"                \"Type 'yes' to continue, or 'no' to cancel: \"",
+"            )",
+"            if input(\"\".join(message)) != \"yes\":",
+"                raise CommandError(\"Collecting static files cancelled.\")",
+""
+],
+"context_line": "        collected = self.collect()",
+"post_context": [
+"",
+"        if self.verbosity >= 1:",
+"            deleted_count = len(collected[\"deleted\"])",
+"            modified_count = len(collected[\"modified\"])",
+"            unmodified_count = len(collected[\"unmodified\"])"
+],
+"in_app": false,
+"vars": {
+"destination_path": "'/app/staticfiles'",
+"message": [
+"'\\n'",
+"'You have requested to collect static files at the destination\\nlocation as specified in your settings'",
+"':\\n\\n    /app/staticfiles\\n\\n'"
+],
+"options": {
+"force_color": "False",
+"ignore_patterns": [
+"'CVS'",
+"'.*'",
+"'*~'"
+],
+"interactive": "False",
+"no_color": "False",
+"post_process": "True",
+"pythonpath": "None",
+"settings": "None",
+"skip_checks": "False",
+"traceback": "False",
+"verbosity": "1"
+},
+"self": "<django.contrib.staticfiles.management.commands.collectstatic.Command object at 0x744c11d70620>",
+"should_warn_user": "True"
+},
+"data": {
+"client_in_app": false
+}
+},
+{
+"function": "collect",
+"module": "django.contrib.staticfiles.management.commands.collectstatic",
+"filename": "django/contrib/staticfiles/management/commands/collectstatic.py",
+"abs_path": "/usr/local/lib/python3.12/site-packages/django/contrib/staticfiles/management/commands/collectstatic.py",
+"lineno": 137,
+"pre_context": [
+"                else:",
+"                    prefixed_path = path",
+"",
+"                if prefixed_path not in found_files:",
+"                    found_files[prefixed_path] = (storage, path)"
+],
+"context_line": "                    handler(path, prefixed_path, storage)",
+"post_context": [
+"                else:",
+"                    self.skipped_files.append(prefixed_path)",
+"                    self.log(",
+"                        \"Found another file with the destination path '%s'. It \"",
+"                        \"will be ignored since only the first encountered file \""
+],
+"in_app": false,
+"vars": {
+"finder": "<django.contrib.staticfiles.finders.AppDirectoriesFinder object at 0x744c11d73500>",
+"found_files": {
+"admin/css/dashboard.css": [
+"<django.core.files.storage.filesystem.FileSystemStorage object at 0x744c11d735f0>",
+"'admin/css/dashboard.css'"
+]
+},
+"handler": "<bound method Command.copy_file of <django.contrib.staticfiles.management.commands.collectstatic.Command object at 0x744c11d70620>>",
+"path": "'admin/css/dashboard.css'",
+"prefixed_path": "'admin/css/dashboard.css'",
+"self": "<django.contrib.staticfiles.management.commands.collectstatic.Command object at 0x744c11d70620>",
+"storage": "<django.core.files.storage.filesystem.FileSystemStorage object at 0x744c11d735f0>"
+},
+"data": {
+"client_in_app": false
+}
+},
+{
+"function": "copy_file",
+"module": "django.contrib.staticfiles.management.commands.collectstatic",
+"filename": "django/contrib/staticfiles/management/commands/collectstatic.py",
+"abs_path": "/usr/local/lib/python3.12/site-packages/django/contrib/staticfiles/management/commands/collectstatic.py",
+"lineno": 388,
+"pre_context": [
+"        \"\"\"",
+"        # Skip this file if it was already copied earlier",
+"        if prefixed_path in self.copied_files:",
+"            return self.log(\"Skipping '%s' (already copied earlier)\" % path)",
+"        # Delete the target file if needed or break"
+],
+"context_line": "        if not self.delete_file(path, prefixed_path, source_storage):",
+"post_context": [
+"            return",
+"        # The full path of the source file",
+"        source_path = source_storage.path(path)",
+"        # Finally start copying",
+"        if self.dry_run:"
+],
+"in_app": false,
+"vars": {
+"path": "'admin/css/dashboard.css'",
+"prefixed_path": "'admin/css/dashboard.css'",
+"self": "<django.contrib.staticfiles.management.commands.collectstatic.Command object at 0x744c11d70620>",
+"source_storage": "<django.core.files.storage.filesystem.FileSystemStorage object at 0x744c11d735f0>"
+},
+"data": {
+"client_in_app": false
+}
+},
+{
+"function": "delete_file",
+"module": "django.contrib.staticfiles.management.commands.collectstatic",
+"filename": "django/contrib/staticfiles/management/commands/collectstatic.py",
+"abs_path": "/usr/local/lib/python3.12/site-packages/django/contrib/staticfiles/management/commands/collectstatic.py",
+"lineno": 342,
+"pre_context": [
+"            # Then delete the existing file if really needed",
+"            if self.dry_run:",
+"                self.log(\"Pretending to delete '%s'\" % path)",
+"            else:",
+"                self.log(\"Deleting '%s'\" % path)"
+],
+"context_line": "                self.storage.delete(prefixed_path)",
+"post_context": [
+"        return True",
+"",
+"    def link_file(self, path, prefixed_path, source_storage):",
+"        \"\"\"",
+"        Attempt to link ``path``"
+],
+"in_app": false,
+"vars": {
+"can_skip_unmodified_files": "True",
+"file_is_unmodified": "False",
+"full_path": "'/app/staticfiles/admin/css/dashboard.css'",
+"path": "'admin/css/dashboard.css'",
+"prefixed_path": "'admin/css/dashboard.css'",
+"self": "<django.contrib.staticfiles.management.commands.collectstatic.Command object at 0x744c11d70620>",
+"source_last_modified": "datetime.datetime(2026, 3, 4, 13, 45, 51, tzinfo=datetime.timezone.utc)",
+"source_storage": "<django.core.files.storage.filesystem.FileSystemStorage object at 0x744c11d735f0>",
+"target_last_modified": "datetime.datetime(2026, 2, 17, 17, 12, 7, tzinfo=datetime.timezone.utc)"
+},
+"data": {
+"client_in_app": false
+}
+},
+{
+"function": "delete",
+"module": "django.core.files.storage.filesystem",
+"filename": "django/core/files/storage/filesystem.py",
+"abs_path": "/usr/local/lib/python3.12/site-packages/django/core/files/storage/filesystem.py",
+"lineno": 165,
+"pre_context": [
+"        # If the file or directory exists, delete it from the filesystem.",
+"        try:",
+"            if os.path.isdir(name):",
+"                os.rmdir(name)",
+"            else:"
+],
+"context_line": "                os.remove(name)",
+"post_context": [
+"        except FileNotFoundError:",
+"            # FileNotFoundError is raised if the file or directory was removed",
+"            # concurrently.",
+"            pass",
+""
+],
+"in_app": false,
+"vars": {
+"name": "'/app/staticfiles/admin/css/dashboard.css'",
+"self": "<django.contrib.staticfiles.storage.StaticFilesStorage object at 0x744c11d73680>"
+},
+"data": {
+"client_in_app": false
+}
+}
+]
+},
+"mechanism": {
+"type": "excepthook",
+"handled": false,
+"meta": {
+"errno": {
+"number": 13
+}
+}
+}
+}
+]
+},
+"extra": {
+"sys.argv": [
+"manage.py",
+"collectstatic",
+"--noinput"
+]
+},
+"fingerprint": [
+"{{ default }}"
+],
+"grouping_config": {
+"enhancements": "KLUv_SAd6QAAkwORuGFsbC1wbGF0Zm9ybXM6MjAyNi0wMS0yMJA#KLUv_SAd6QAAkwORuGFsbC1wbGF0Zm9ybXM6MjAyNi0wMS0yMJA#KLUv_SAd6QAAkwORuGFsbC1wbGF0Zm9ybXM6MjAyNi0wMS0yMJA",
+"id": "newstyle:2026-01-20"
+},
+"hashes": [
+"d623bc1a1af87c3d6649199bab581cef",
+"6c7cf18f1270a0740c425d1956710872"
+],
+"ingest_path": [
+{
+"version": "26.2.1",
+"public_key": "7pLPdtCQBMLtodCJ3yOtI9MDBUWfX0k5eDa4ZP4CX6A"
+}
+],
+"key_id": "794183",
+"level": "error",
+"location": "manage.py",
+"logger": "",
+"metadata": {
+"filename": "manage.py",
+"function": "main",
+"in_app_frame_mix": "mixed",
+"type": "PermissionError",
+"value": "[Errno 13] Permission denied: '/app/staticfiles/admin/css/dashboard.css'"
+},
+"modules": {
+"amqp": "5.3.1",
+"annotated-types": "0.7.0",
+"asgiref": "3.11.1",
+"billiard": "4.2.4",
+"boto3": "1.34.51",
+"botocore": "1.34.162",
+"brotli": "1.2.0",
+"celery": "5.6.2",
+"certifi": "2026.2.25",
+"cffi": "2.0.0",
+"click": "8.3.1",
+"click-didyoumean": "0.3.1",
+"click-plugins": "1.1.1.2",
+"click-repl": "0.3.0",
+"contextlib2": "21.6.0",
+"cryptography": "46.0.5",
+"django": "6.0.3",
+"django-cors-headers": "4.9.0",
+"django-ninja": "1.5.3",
+"django-ninja-extra": "0.31.0",
+"django-ninja-jwt": "5.4.4",
+"django-redis": "5.4.0",
+"django_csp": "3.8",
+"gunicorn": "22.0.0",
+"injector": "0.24.0",
+"jmespath": "1.1.0",
+"kombu": "5.6.2",
+"packaging": "26.0",
+"pillow": "10.2.0",
+"pip": "25.0.1",
+"prompt_toolkit": "3.0.52",
+"psycopg2-binary": "2.9.11",
+"pycparser": "3.0",
+"pydantic": "2.12.5",
+"pydantic-settings": "2.13.1",
+"pydantic_core": "2.41.5",
+"pyjwt": "2.11.0",
+"python-dateutil": "2.9.0.post0",
+"python-dotenv": "1.2.2",
+"pyyaml": "6.0.3",
+"redis": "5.3.1",
+"s3transfer": "0.10.4",
+"sentry-sdk": "1.45.1",
+"six": "1.17.0",
+"sqlparse": "0.5.5",
+"typing-inspection": "0.4.2",
+"typing_extensions": "4.15.0",
+"tzdata": "2025.3",
+"tzlocal": "5.3.1",
+"urllib3": "2.6.3",
+"vine": "5.1.0",
+"wcwidth": "0.6.0",
+"whitenoise": "6.12.0"
+},
+"nodestore_insert": 1772632027.0651,
+"received": 1772632024.453958,
+"sdk": {
+"name": "sentry.python.django",
+"version": "1.45.1",
+"integrations": [
+"argv",
+"atexit",
+"boto3",
+"celery",
+"dedupe",
+"django",
+"excepthook",
+"logging",
+"modules",
+"redis",
+"stdlib",
+"threading"
+],
+"packages": [
+{
+"name": "pypi:sentry-sdk",
+"version": "1.45.1"
+}
+]
+},
+"timestamp": 1772632024.245752,
+"title": "PermissionError: [Errno 13] Permission denied: '/app/staticfiles/admin/css/dashboard.css'",
+"transaction_info": {},
+"type": "error",
+"user": {
+"geo": {
+"country_code": "BR",
+"city": "São Paulo",
+"subdivision": "São Paulo",
+"region": "Brazil"
+}
+},
+"version": "7"
+}
