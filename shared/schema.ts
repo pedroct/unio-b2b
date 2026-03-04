@@ -305,17 +305,21 @@ export interface RespostaCardiometabolico {
   cliente_id: number | string;
   metricas_cardio: MetricaCardio[];
   secao_metabolica_bloqueada: boolean;
-  mensagem_bloqueio: string | null;
+  mensagem_bloqueio?: string | null;
+  mensagem_bloqueio_metabolico?: string | null;
 }
 
-export interface PontoTendenciaScore {
-  date: string;
-  score: number;
+export interface PontoHistoricoScore {
+  data: string;
+  cardiovascular: number | null;
+  metabolico: number | null;
+  recuperacao: number | null;
+  funcional: number | null;
 }
 
-export interface RespostaTendenciaScore {
-  range: string;
-  data: PontoTendenciaScore[];
+export interface RespostaHistoricoScores {
+  cliente_id: number | string;
+  historico: PontoHistoricoScore[];
 }
 
 export const LABELS_CLASSIFICACAO: Record<ClassificacaoScore, string> = {

@@ -2,20 +2,22 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { RespostaTendenciaScore } from "@shared/schema";
+import type { RespostaHistoricoScores } from "@shared/schema";
 
 interface GraficoTendenciaScoreProps {
   pacienteId: string;
 }
 
 function formatarDataCurta(dateStr: string): string {
-  const [, mes, dia] = dateStr.split("-");
-  return `${dia}/${mes}`;
+  const parts = dateStr.split("-");
+  if (parts.length < 3) return dateStr;
+  return `${parts[2]}/${parts[1]}`;
 }
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   const valor = payload[0].value;
+  if (valor == null) return null;
   let classificacao = "Risco Aumentado";
   if (valor >= 80) classificacao = "Excelente";
   else if (valor >= 60) classificacao = "Bom";
@@ -31,20 +33,24 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 const PERIODOS = [
-  { value: "30d" as const, label: "30 dias" },
-  { value: "90d" as const, label: "90 dias" },
-  { value: "365d" as const, label: "365 dias" },
+  { dias: 30, label: "30 dias" },
+  { dias: 90, label: "90 dias" },
+  { dias: 365, label: "365 dias" },
 ];
 
 export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps) {
-  const [periodo, setPeriodo] = useState<"30d" | "90d" | "365d">("30d");
+  const [dias, setDias] = useState(30);
 
-  const { data, isLoading } = useQuery<RespostaTendenciaScore>({
-    queryKey: [`/api/painel-longevidade/clientes/${pacienteId}/tendencia-score?periodo=${periodo}`],
+  const { data: resposta, isLoading } = useQuery<RespostaHistoricoScores>({
+    queryKey: [`/api/painel-longevidade/clientes/${pacienteId}/historico-scores?dias=${dias}`],
     enabled: !!pacienteId,
   });
 
-  const xInterval = periodo === "365d" ? 50 : periodo === "90d" ? 13 : 4;
+  const chartData = resposta?.historico
+    ?.filter((p) => p.cardiovascular != null)
+    .map((p) => ({ data: p.data, score: p.cardiovascular })) ?? [];
+
+  const xInterval = dias >= 365 ? 50 : dias >= 90 ? 13 : 4;
 
   return (
     <div data-testid="grafico-tendencia-score">
@@ -55,14 +61,14 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
         <div className="flex gap-1">
           {PERIODOS.map((p) => (
             <button
-              key={p.value}
-              onClick={() => setPeriodo(p.value)}
+              key={p.dias}
+              onClick={() => setDias(p.dias)}
               className="px-3 py-1 rounded text-xs font-medium transition-colors"
               style={{
-                background: periodo === p.value ? "var(--mod-longevidade-base)" : "transparent",
-                color: periodo === p.value ? "#fff" : "var(--sys-text-muted)",
+                background: dias === p.dias ? "var(--mod-longevidade-base)" : "transparent",
+                color: dias === p.dias ? "#fff" : "var(--sys-text-muted)",
               }}
-              data-testid={`button-periodo-${p.value}`}
+              data-testid={`button-periodo-${p.dias}d`}
             >
               {p.label}
             </button>
@@ -72,9 +78,9 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
 
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-lg" />
-      ) : data?.data?.length ? (
+      ) : chartData.length ? (
         <ResponsiveContainer width="100%" height={260}>
-          <AreaChart data={data.data} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+          <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
             <defs>
               <linearGradient id="gradienteScore" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="var(--mod-longevidade-base)" stopOpacity={0.3} />
@@ -83,7 +89,7 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis
-              dataKey="date"
+              dataKey="data"
               tickFormatter={formatarDataCurta}
               tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
               axisLine={{ stroke: "hsl(var(--border))" }}
@@ -113,6 +119,7 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
               fill="url(#gradienteScore)"
               dot={false}
               activeDot={{ r: 4, fill: "var(--mod-longevidade-base)", stroke: "#fff", strokeWidth: 2 }}
+              connectNulls
             />
           </AreaChart>
         </ResponsiveContainer>

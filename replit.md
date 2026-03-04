@@ -42,3 +42,26 @@ Eu prefiro que a terminologia do frontend utilize "Cliente(s)" para telas estrut
 - **Catálogo de Alimentos:** Integrado via proxy com o backend real para busca e detalhes de alimentos, cálculo de nutrientes.
 - **Fontes de Dados de Alimentos:** TBCA, TACO, IBGE, USDA (com planos para Suplementos e "Meus alimentos").
 - **Auth:** JWT Bearer para autenticação e refresh de tokens.
+
+## API Endpoints (contrato real — doc integração v1)
+
+### Painel de Longevidade
+- `GET /api/painel-longevidade/clientes/:id/cockpit` → `RespostaCockpit` { cliente_id, scores: ScorePilar[], data_atualizacao }. classificacao: EN ("good") ou PT-BR ("Bom"), tendencia: EN ("up"/"down"/"stable") ou PT-BR ("subindo"/"descendo"/"estavel"). Normalizado via `CLASSIFICACAO_FROM_LABEL` e `TENDENCIA_FROM_API`.
+- `GET /api/painel-longevidade/clientes/:id/cardiometabolico` → `RespostaCardiometabolico` { metricas_cardio, secao_metabolica_bloqueada, mensagem_bloqueio ou mensagem_bloqueio_metabolico }. Frontend lê `mensagem_bloqueio_metabolico ?? mensagem_bloqueio ?? "Em breve"`.
+- `GET /api/painel-longevidade/clientes/:id/historico-scores?dias=30|90|365` → `RespostaHistoricoScores` { cliente_id, historico: [{ data, cardiovascular, metabolico, recuperacao, funcional }] }. Valores null = dia sem cálculo. Frontend filtra nulls e plota apenas cardiovascular (V1).
+
+### Listagem de Clientes
+- `GET /api/profissional/clientes` → array de Patient. Campos: id, name, email, phone, birthDate, gender (F/M/N), age, avatarUrl (string|null), adherenceTraining, adherenceDiet, lastActivity, status. Filtros client-side (busca, status, ordenação).
+- `GET /api/profissional/pacientes` → alias para /clientes
+- `GET /api/profissional/pacientes/:id` → busca da lista /clientes e filtra por ID
+
+### Auth
+- `POST /api/auth/pair` → proxy para `/api/nucleo/profissional-auth` { registro_profissional, uf_registro, cpf (com formatação) }
+- `POST /api/auth/refresh` → proxy para `/api/auth/refresh`
+- `stagingPassthrough()` repassa Bearer token do profissional; `stagingFetch()` usa credenciais de serviço
+
+### Nutrição (proxy staging)
+- `GET /api/nutricao/catalogo/alimentos?busca&fontes&limite&offset` — Busca alimentos
+- `GET /api/nutricao/catalogo/alimentos/:id` — Detalhe do alimento
+- `POST /api/nutricao/catalogo/calcular` — Cálculo de nutrientes
+- `GET /api/nutricao/catalogo/fontes|grupos|tipos|nutrientes` — Metadados do catálogo

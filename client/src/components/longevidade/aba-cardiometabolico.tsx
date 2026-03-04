@@ -99,7 +99,7 @@ export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
           </h3>
           <Lock className="h-3.5 w-3.5" style={{ color: "var(--mod-longevidade-disabled)" }} />
           <span className="text-[10px] font-medium" style={{ color: "var(--sys-text-muted)" }}>
-            {data?.secao_metabolica_bloqueada ? (data.mensagem_bloqueio ?? "Em breve") : "Em breve"}
+            {data?.secao_metabolica_bloqueada ? (data.mensagem_bloqueio_metabolico ?? data.mensagem_bloqueio ?? "Em breve") : "Em breve"}
           </span>
         </div>
 

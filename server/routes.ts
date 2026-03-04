@@ -265,22 +265,21 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/painel-longevidade/clientes/:id/tendencia-score", async (req, res) => {
+  app.get("/api/painel-longevidade/clientes/:id/historico-scores", async (req, res) => {
     const token = extractBearerToken(req);
     if (!token) {
       return res.status(401).json({ message: "Token de autenticação ausente." });
     }
     try {
-      const params: Record<string, string> = {};
-      if (req.query.periodo) params.periodo = req.query.periodo as string;
-      const result = await stagingPassthrough(`/api/painel-longevidade/clientes/${req.params.id}/tendencia-score`, {
+      const diasParam = String(req.query.dias || "30");
+      const dias = ["30", "90", "365"].includes(diasParam) ? diasParam : "30";
+      const result = await stagingPassthrough(`/api/painel-longevidade/clientes/${req.params.id}/historico-scores?dias=${dias}`, {
         bearerToken: token,
-        params,
       });
       return res.status(result.status).json(result.data);
     } catch (err: any) {
-      console.error("[longevidade/tendencia-score] proxy error:", err.message);
-      return res.status(502).json({ message: "Erro ao buscar tendência de score." });
+      console.error("[longevidade/historico-scores] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao buscar histórico de scores." });
     }
   });
 
