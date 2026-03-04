@@ -124,10 +124,13 @@ Backend NÃO fornece séries temporais por métrica. Campo `_sparkline_mock` (pr
 - POST /api/auth/refresh → proxy para `/api/auth/refresh` no staging
 - GET /api/profissional/clientes → proxy passthrough (repassa Bearer token do profissional)
 - GET /api/profissional/pacientes → alias para /clientes (passthrough, mesmo comportamento)
+- GET /api/profissional/pacientes/:id → busca da lista /clientes e filtra por ID (passthrough)
+- GET /api/painel-longevidade/clientes/:id/cockpit → proxy passthrough (dados reais do paciente)
+- GET /api/painel-longevidade/clientes/:id/cardiometabolico → proxy passthrough
+- GET /api/painel-longevidade/clientes/:id/tendencia-score?periodo=30d|90d|365d → proxy passthrough
 - `stagingPassthrough()` em `server/staging-proxy.ts`: repassa o token JWT do profissional logado ao backend real (diferente de `stagingFetch()` que usa credenciais de serviço)
 
 ### Outros (mock/legacy)
-- GET /api/profissional/pacientes/:id — Patient details (sem doc V1 específica, mantido mock)
 - GET/PUT /api/profissional/pacientes/:id/metas — Patient goals
 - GET /api/profissional/dashboard/pacientes/:id/overview — Overview
 - GET /api/profissional/dashboard/pacientes/:id/nutricao — Nutrition

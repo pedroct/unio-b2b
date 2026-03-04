@@ -233,126 +233,55 @@ export async function registerRoutes(
     return res.status(201).json(refeicao);
   });
 
-  function gerarSparkline(base: number, amplitude: number, trend: "up" | "down" | "stable", pontos = 30): number[] {
-    const dados: number[] = [];
-    let v = base - (trend === "up" ? amplitude * 0.3 : trend === "down" ? -amplitude * 0.3 : 0);
-    for (let i = 0; i < pontos; i++) {
-      v += (Math.random() - 0.48) * amplitude * 0.4;
-      if (trend === "up") v += amplitude * 0.02;
-      if (trend === "down") v -= amplitude * 0.02;
-      dados.push(Math.round(v * 10) / 10);
-    }
-    return dados;
-  }
-
   app.get("/api/painel-longevidade/clientes/:id/cockpit", async (req, res) => {
-    const clienteId = req.params.id;
-    return res.json({
-      cliente_id: clienteId,
-      scores: [
-        {
-          tipo: "cardiovascular",
-          ativo: true,
-          score: 85.0,
-          classificacao: "Bom",
-          is_partial: false,
-          mensagem_bloqueio: null,
-          tendencia: "up",
-        },
-        {
-          tipo: "metabolic",
-          ativo: false,
-          score: null,
-          classificacao: null,
-          is_partial: false,
-          mensagem_bloqueio: "Score Metabólico estará disponível em breve.",
-          tendencia: null,
-        },
-        {
-          tipo: "recovery",
-          ativo: false,
-          score: null,
-          classificacao: null,
-          is_partial: false,
-          mensagem_bloqueio: "Score de Recuperação estará disponível em breve.",
-          tendencia: null,
-        },
-        {
-          tipo: "functional",
-          ativo: false,
-          score: null,
-          classificacao: null,
-          is_partial: false,
-          mensagem_bloqueio: "Score Funcional estará disponível em breve.",
-          tendencia: null,
-        },
-      ],
-      data_atualizacao: new Date().toISOString(),
-    });
+    const token = extractBearerToken(req);
+    if (!token) {
+      return res.status(401).json({ message: "Token de autenticação ausente." });
+    }
+    try {
+      const result = await stagingPassthrough(`/api/painel-longevidade/clientes/${req.params.id}/cockpit`, {
+        bearerToken: token,
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[longevidade/cockpit] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao buscar dados do cockpit." });
+    }
   });
 
   app.get("/api/painel-longevidade/clientes/:id/cardiometabolico", async (req, res) => {
-    const clienteId = req.params.id;
-    return res.json({
-      cliente_id: clienteId,
-      metricas_cardio: [
-        {
-          metric_type: "vo2_max",
-          valor_atual: 45.2,
-          unidade: "mL/kg/min",
-          media_30d: 44.8,
-          tendencia: "up",
-          data_ultima_leitura: "2026-03-03T18:00:00+00:00",
-          _sparkline_mock: gerarSparkline(45, 3, "up"),
-        },
-        {
-          metric_type: "hrv_rmssd",
-          valor_atual: 65.0,
-          unidade: "ms",
-          media_30d: 62.1,
-          tendencia: "up",
-          data_ultima_leitura: "2026-03-02T19:22:00+00:00",
-          _sparkline_mock: gerarSparkline(63, 8, "up"),
-        },
-        {
-          metric_type: "resting_hr",
-          valor_atual: 58.0,
-          unidade: "bpm",
-          media_30d: 61.0,
-          tendencia: "down",
-          data_ultima_leitura: "2026-03-03T18:00:00+00:00",
-          _sparkline_mock: gerarSparkline(60, 6, "down"),
-        },
-        {
-          metric_type: "hr_recovery_1min",
-          valor_atual: null,
-          unidade: "bpm",
-          media_30d: null,
-          tendencia: null,
-          data_ultima_leitura: null,
-        },
-      ],
-      secao_metabolica_bloqueada: true,
-      mensagem_bloqueio: "Coleta de exames de sangue pendente.",
-    });
+    const token = extractBearerToken(req);
+    if (!token) {
+      return res.status(401).json({ message: "Token de autenticação ausente." });
+    }
+    try {
+      const result = await stagingPassthrough(`/api/painel-longevidade/clientes/${req.params.id}/cardiometabolico`, {
+        bearerToken: token,
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[longevidade/cardiometabolico] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao buscar dados cardiometabólicos." });
+    }
   });
 
   app.get("/api/painel-longevidade/clientes/:id/tendencia-score", async (req, res) => {
-    const periodo = (req.query.periodo as string) || "30d";
-    const dias = periodo === "365d" ? 365 : periodo === "90d" ? 90 : 30;
-    const hoje = new Date();
-    const dados = [];
-    let score = 78;
-    for (let i = dias - 1; i >= 0; i--) {
-      const data = new Date(hoje);
-      data.setDate(data.getDate() - i);
-      score = Math.max(40, Math.min(100, score + (Math.random() - 0.45) * 3));
-      dados.push({
-        date: data.toISOString().split("T")[0],
-        score: Math.round(score * 10) / 10,
-      });
+    const token = extractBearerToken(req);
+    if (!token) {
+      return res.status(401).json({ message: "Token de autenticação ausente." });
     }
-    return res.json({ range: periodo, data: dados });
+    try {
+      const params: Record<string, string> = {};
+      if (req.query.periodo) params.periodo = req.query.periodo as string;
+      const result = await stagingPassthrough(`/api/painel-longevidade/clientes/${req.params.id}/tendencia-score`, {
+        bearerToken: token,
+        params,
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[longevidade/tendencia-score] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao buscar tendência de score." });
+    }
   });
 
   app.get("/api/nutricao/catalogo/fontes", async (req, res) => {
