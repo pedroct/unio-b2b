@@ -106,11 +106,28 @@ export async function registerRoutes(
   });
 
   app.get("/api/profissional/pacientes/:id", async (req, res) => {
-    const patient = await storage.getPatient(req.params.id);
-    if (!patient) {
-      return res.status(404).json({ message: "Paciente não encontrado." });
+    const token = extractBearerToken(req);
+    if (!token) {
+      return res.status(401).json({ message: "Token de autenticação ausente." });
     }
-    return res.json(patient);
+    try {
+      const result = await stagingPassthrough("/api/profissional/clientes", {
+        bearerToken: token,
+      });
+      if (!result.ok) {
+        return res.status(result.status).json(result.data);
+      }
+      const patient = Array.isArray(result.data)
+        ? result.data.find((p: any) => String(p.id) === String(req.params.id))
+        : null;
+      if (!patient) {
+        return res.status(404).json({ message: "Paciente não encontrado." });
+      }
+      return res.json(patient);
+    } catch (err: any) {
+      console.error("[profissional/pacientes/:id] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao buscar dados do paciente." });
+    }
   });
 
   app.get("/api/profissional/pacientes/:id/metas", async (req, res) => {
