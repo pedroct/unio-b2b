@@ -256,15 +256,6 @@ export default function LoginPage() {
               Entre em contato com o suporte.
             </a>
           </p>
-
-          <button
-            type="button"
-            className="mt-4 px-3 py-1 text-xs rounded border border-destructive text-destructive hover:bg-destructive hover:text-white transition-colors"
-            onClick={() => { throw new Error("This is your first error!"); }}
-            data-testid="button-sentry-test"
-          >
-            Sentry Test Error
-          </button>
         </div>
       </div>
     </div>
