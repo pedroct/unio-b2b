@@ -50,7 +50,7 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
     ?.filter((p) => p.cardiovascular != null)
     .map((p) => ({ data: p.data, score: p.cardiovascular })) ?? [];
 
-  const xInterval = dias >= 365 ? 50 : dias >= 90 ? 13 : 4;
+  const xInterval = chartData.length > 7 ? Math.floor(chartData.length / 7) : 1;
 
   return (
     <div data-testid="grafico-tendencia-score">
