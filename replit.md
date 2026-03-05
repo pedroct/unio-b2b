@@ -42,6 +42,7 @@ Eu prefiro que a terminologia do frontend utilize "Cliente(s)" para telas estrut
 - **Catálogo de Alimentos:** Integrado via proxy com o backend real para busca e detalhes de alimentos, cálculo de nutrientes.
 - **Fontes de Dados de Alimentos:** TBCA, TACO, IBGE, USDA (com planos para Suplementos e "Meus alimentos").
 - **Auth:** JWT Bearer para autenticação e refresh de tokens.
+- **Sentry:** Observabilidade de erros no frontend via `@sentry/react`. Inicializado em `client/src/main.tsx` com `sendDefaultPii: true`.
 
 ## API Endpoints (contrato real — doc integração v1)
 
