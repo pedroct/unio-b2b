@@ -1,0 +1,216 @@
+# Contrato de API - Frontend Web (B2B) - Painel de Longevidade V2
+
+Este documento estabelece o contrato de comunicação entre a aplicação Web Frontend (Painel B2B para Profissionais) e o Backend, englobando a versão 2.0 do motor de pontuação.
+
+A V2 desbloqueia dois novos pilares matemáticos na resposta: o **Score Metabólico (`metabolic`)** e o **Score de Recuperação (`recovery`)**, preenchendo novos nós no objeto dinâmico de `componentes`.
+
+---
+
+## 1. Visão Geral do Cockpit (Resumo dos 4 Estruturais)
+
+**Endpoint:** `GET /api/longevidade/clientes/{cliente_id}/cockpit`
+**Autenticação:** Requer Bearer Token (Profissional)
+
+O schema do Cockpit foi expandido. Os blocos `metabolic` e `recovery` que antes retornavam sempre com `ativo: false` (Bloqueado) agora podem vir com `ativo: true` caso o paciente tenha métricas suficientes para calculá-los.
+
+Se `ativo: true`, as chaves `score`, `classificacao` e `componentes` estarão populadas com dados.
+
+### Exemplo de Response (Status 200 OK)
+
+```json
+{
+  "cliente_id": 1234,
+  "data_atualizacao": "2026-03-07T12:00:00.000000Z",
+  "scores": [
+    {
+      "tipo": "cardiovascular",
+      "ativo": true,
+      "score": 85.5,
+      "classificacao": "excellent",
+      "tendencia_score": "estavel",
+      "delta_30d": null,
+      "is_partial": false,
+      "mensagem_bloqueio": null,
+      "componentes": {
+        "hrv": {
+          "valor": 45.2,
+          "unidade": "ms",
+          "tendencia": "estavel",
+          "referencia": "Comparado a 90d"
+        },
+        "fcr": {
+          "valor": 60.1,
+          "unidade": "bpm",
+          "tendencia": "estavel",
+          "referencia": "Estável"
+        },
+        "vo2": {
+          "valor": 42.5,
+          "unidade": "ml/kg/min",
+          "tendencia": "estavel",
+          "referencia": "P75 - idade/sexo"
+        },
+        "recuperacao": {
+          "valor": 28.0,
+          "unidade": "bpm",
+          "tendencia": "estavel",
+          "referencia": "Média das últimas 5 sessões"
+        }
+      }
+    },
+    {
+      "tipo": "metabolic",
+      "ativo": true, // V2 - Agora pode ser True
+      "score": 75.0,
+      "classificacao": "good",
+      "tendencia_score": "estavel",
+      "delta_30d": null,
+      "is_partial": false,
+      "mensagem_bloqueio": null,
+      "componentes": {
+        // V2 - Novas chaves para UI do Metabólico
+        "gordura": {
+          "valor": 18.5,
+          "unidade": "%",
+          "tendencia": null,
+          "referencia": "Clínico"
+        },
+        "cintura": {
+          "valor": 88.0,
+          "unidade": "cm",
+          "tendencia": null,
+          "referencia": "Clínico"
+        },
+        "massa_magra": {
+          "valor": 32.5,
+          "unidade": "kg",
+          "tendencia": null,
+          "referencia": "Clínico"
+        },
+        "tendencia_peso": {
+          "valor": -1.5,
+          "unidade": "kg",
+          "tendencia": null,
+          "referencia": "Últimos 30d"
+        }
+      }
+    },
+    {
+      "tipo": "recovery",
+      "ativo": true, // V2 - Agora pode ser True
+      "score": 62.0,
+      "classificacao": "attention",
+      "tendencia_score": "estavel",
+      "delta_30d": null,
+      "is_partial": false,
+      "mensagem_bloqueio": null,
+      "componentes": {
+        // V2 - Novas chaves para UI da Recuperação/Sono
+        "sono_total": {
+          "valor": 450.0,
+          "unidade": "min",
+          "tendencia": null,
+          "referencia": "Média 7d"
+        },
+        "sono_rem_profundo": {
+          "valor": 120.0,
+          "unidade": "min",
+          "tendencia": null,
+          "referencia": "Média 7d"
+        },
+        "hrv_noturna": {
+          "valor": 40.0,
+          "unidade": "ms",
+          "tendencia": null,
+          "referencia": "Média 7d"
+        },
+        "fc_noturna": {
+          "valor": 58.0,
+          "unidade": "bpm",
+          "tendencia": null,
+          "referencia": "Média 7d"
+        }
+      }
+    },
+    {
+      "tipo": "functional",
+      "ativo": false, // O eixo Funcional não faz parte da V2 e continuará False.
+      "score": null,
+      "classificacao": null,
+      "mensagem_bloqueio": "Score Funcional estará disponível na V3.",
+      "componentes": null
+    }
+  ]
+}
+```
+
+### Dicionário de Classificações
+
+A interface do frontend deve renderizar esquemas de cores de acordo com a enumeração estrita das classificações:
+
+- `"excellent"` (Excelente - Verde escuro/Premium)
+- `"good"` (Bom - Verde claro)
+- `"attention"` (Atenção - Amarelo/Laranja)
+- `"risk"` (Risco Aumentado - Vermelho)
+
+---
+
+## 2. Histórico de Scores (Gráficos de Tendência)
+
+**Endpoint:** `GET /api/longevidade/clientes/{cliente_id}/historico-scores`
+**Parâmetros de Query:** `?intervalo=30d` (Suporta "30d", "90d", "365d")
+**Autenticação:** Requer Bearer Token
+
+A estrutura de dados permanece uma matriz focada em _Time Series Graphic Plotting_. Na V2, as chaves `metabolico` e `recuperacao` passam a ser populadas com valores float em tempo real, lado a lado do `cardiovascular`.
+
+### Exemplo de Response (Status 200 OK)
+
+```json
+{
+  "cliente_id": 1234,
+  "historico": [
+    {
+      "data": "2026-03-01",
+      "cardiovascular": 85.5,
+      "metabolico": 72.0, // V2 - Passa a vir numérico
+      "recuperacao": 60.5, // V2 - Passa a vir numérico
+      "funcional": null
+    },
+    {
+      "data": "2026-03-02",
+      "cardiovascular": 84.0,
+      "metabolico": 72.0,
+      "recuperacao": 52.0,
+      "funcional": null
+    },
+    {
+      "data": "2026-03-03",
+      "cardiovascular": 84.0,
+      "metabolico": 75.0,
+      "recuperacao": null, // A base avisa caso faltou sync do AppleHealth na madrugadada
+      "funcional": null
+    }
+  ]
+}
+```
+
+---
+
+## 3. Comportamento Semântico UI/UX (Fallback)
+
+A ausência do `Apple Watch` (Recuperação) ou de métricas de Bioimpedância (Gordura corporal) afetará um determinado scorecard.
+
+Quando houver insuficiência de dados primários daquele paciente para rodar qualquer motor na diária, a resposta do backend fará fallback de `ativo: true` para `ativo: false`, contendo uma mensagem de falha em `mensagem_bloqueio`.
+
+Exemplo:
+
+```json
+{
+  "tipo": "metabolic",
+  "ativo": false,
+  "mensagem_bloqueio": "Coleta em andamento. Faltam biomarcadores metabólicos (Ex: Peso, Cintura).",
+  "componentes": null
+}
+```
+
+_O Frontend deverá substituir o modal clicável pela mesma caixa opaca de visualização da v1._
