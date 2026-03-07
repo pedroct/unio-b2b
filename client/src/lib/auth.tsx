@@ -31,6 +31,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
+  const fetchAndUpdateProfile = useCallback(async (currentTokens: AuthTokens, currentProfessional: Professional) => {
+    try {
+      const profileRes = await fetch("/api/profissional/me", {
+        headers: { "Authorization": `Bearer ${currentTokens.access}` },
+      });
+      if (profileRes.ok) {
+        const profile = await profileRes.json();
+        if (profile.name) {
+          const updated = {
+            ...currentProfessional,
+            name: profile.name,
+            specialty: profile.specialty || currentProfessional.specialty,
+            email: profile.email || currentProfessional.email,
+          };
+          setProfessional(updated);
+          const stored = localStorage.getItem("unio_auth");
+          if (stored) {
+            const data = JSON.parse(stored);
+            data.professional = updated;
+            localStorage.setItem("unio_auth", JSON.stringify(data));
+          }
+        }
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (professional && tokens && (!professional.name || /^[A-Z]{2,5}\d+$/i.test(professional.name))) {
+      fetchAndUpdateProfile(tokens, professional);
+    }
+  }, [professional?.name, tokens?.access]);
+
   const login = useCallback(async (registrationNumber: string, uf: string, password: string) => {
     const res = await fetch("/api/auth/pair", {
       method: "POST",
