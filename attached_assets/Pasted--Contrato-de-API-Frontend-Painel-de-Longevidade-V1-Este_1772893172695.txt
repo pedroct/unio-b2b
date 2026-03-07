@@ -1,0 +1,218 @@
+# 📘 Contrato de API --- Frontend (Painel de Longevidade V1)
+
+Este documento define os contratos dos endpoints expostos pelo Backend para alimentar o Painel de Longevidade (V1). Todos os endpoints baseiam-se em acesso restrito a profissionais autenticados.
+
+### Base URL (Prefixo)
+
+`/api/painel_longevidade` _(ou conforme mapeado no roteador principal do Django Ninja)_
+
+---
+
+## 1. Cockpit Central (Scores Estruturais)
+
+Retorna a nota e a classificação geral dos quatro pilares principais. Na V1, apenas o **Cardiovascular** é processado ativamente, os demais retornam estado bloqueado e inativo.
+
+`GET /clientes/{cliente_id}/cockpit`
+
+**Response (`200 OK`):**
+
+```json
+{
+  "cliente_id": 123,
+  "data_atualizacao": "2026-03-07T08:00:00Z",
+  "scores": [
+    {
+      "tipo": "cardiovascular",
+      "ativo": true,
+      "score": 84.0,
+      "classificacao": "bom",
+      "tendencia_score": "estavel",
+      "delta_30d": null,
+      "is_partial": false,
+      "mensagem_bloqueio": null,
+      "componentes": {
+        "hrv": {
+          "valor": 18.1,
+          "unidade": "ms",
+          "tendencia": "estavel",
+          "referencia": "Comparado a 90d"
+        },
+        "fcr": {
+          "valor": 60.0,
+          "unidade": "bpm",
+          "tendencia": "estavel",
+          "referencia": "Estável"
+        },
+        "vo2": {
+          "valor": 37.57,
+          "unidade": "ml/kg/min",
+          "tendencia": "estavel",
+          "referencia": "P75 - idade/sexo"
+        },
+        "recuperacao": {
+          "valor": 68.0,
+          "unidade": "bpm",
+          "tendencia": "estavel",
+          "referencia": "Média das últimas 5 sessões"
+        }
+      }
+    },
+    {
+      "tipo": "metabolic",
+      "ativo": false,
+      "score": null,
+      "classificacao": null,
+      "tendencia_score": null,
+      "delta_30d": null,
+      "is_partial": false,
+      "mensagem_bloqueio": "Score Metabólico estará disponível em breve.",
+      "componentes": null
+    },
+    {
+      "tipo": "recovery",
+      "ativo": false,
+      "score": null,
+      "classificacao": null,
+      "tendencia_score": null,
+      "delta_30d": null,
+      "is_partial": false,
+      "mensagem_bloqueio": "Score de Recuperação estará disponível em breve.",
+      "componentes": null
+    },
+    {
+      "tipo": "functional",
+      "ativo": false,
+      "score": null,
+      "classificacao": null,
+      "tendencia_score": null,
+      "delta_30d": null,
+      "is_partial": false,
+      "mensagem_bloqueio": "Score Funcional estará disponível em breve.",
+      "componentes": null
+    }
+  ]
+}
+```
+
+_Nota para o Frontend:_
+
+- Os textos do nó `referencia` nos `componentes` já vêm montados pelo Backend (ex: "P75 - idade/sexo", "Média das últimas 5 sessões") e devem ser exibidos de forma direta na interface como label/support text da métrica.
+- Se `ativo` for `false`, exiba o conteúdo de `mensagem_bloqueio`.
+
+---
+
+## 2. Detalhamento - Aba Cardiometabólica
+
+Obtém o detalhamento de leituras brutas dos biomarcadores cardiovasculares e sinaliza o bloqueio da seção metabólica (V1).
+
+`GET /clientes/{cliente_id}/cardiometabolico`
+
+**Response (`200 OK`):**
+
+```json
+{
+  "cliente_id": 123,
+  "secao_metabolica_bloqueada": true,
+  "mensagem_bloqueio_metabolico": "A análise metabólica completa e composição corporal estarão disponíveis em breve.",
+  "metricas_cardio": [
+    {
+      "metric_type": "hrv_rmssd",
+      "valor_atual": 18.1,
+      "unidade": "ms",
+      "media_30d": 17.5,
+      "tendencia": "estavel",
+      "data_ultima_leitura": "2026-03-07T07:15:00Z"
+    },
+    {
+      "metric_type": "resting_hr",
+      "valor_atual": 60.0,
+      "unidade": "bpm",
+      "media_30d": 59.8,
+      "tendencia": "estavel",
+      "data_ultima_leitura": "2026-03-07T07:15:00Z"
+    },
+    {
+      "metric_type": "vo2_max",
+      "valor_atual": 37.57,
+      "unidade": "mL/kg/min",
+      "media_30d": 37.0,
+      "tendencia": "estavel",
+      "data_ultima_leitura": "2026-03-01T10:00:00Z"
+    },
+    {
+      "metric_type": "hr_recovery_1min",
+      "valor_atual": 68.0,
+      "unidade": "bpm",
+      "media_30d": 65.5,
+      "tendencia": "subindo",
+      "data_ultima_leitura": "2026-03-05T18:30:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## 3. Gráfico de Tendências (Histórico)
+
+Responsável por fornecer os pontos cronológicos de scores processados para a plotagem dos Gráficos Linha do Tempo.
+
+`GET /clientes/{cliente_id}/historico-scores?intervalo={str}`
+
+**Query Params:**
+
+- `intervalo`: (string) Operandos válidos: `30d`, `90d` e `365d`.
+
+**Response (`200 OK`):**
+
+```json
+{
+  "cliente_id": 123,
+  "historico": [
+    {
+      "data": "2026-02-05",
+      "cardiovascular": 80.5,
+      "metabolico": null,
+      "recuperacao": null,
+      "funcional": null
+    },
+    {
+      "data": "2026-02-15",
+      "cardiovascular": 82.0,
+      "metabolico": null,
+      "recuperacao": null,
+      "funcional": null
+    },
+    {
+      "data": "2026-02-25",
+      "cardiovascular": 84.0,
+      "metabolico": null,
+      "recuperacao": null,
+      "funcional": null
+    }
+  ]
+}
+```
+
+---
+
+## 4. Tracker de Interesse Módulos Inativos
+
+Registra a intenção do profissional quando ele clica no alerta ou botão de "Me avise quando disponível" nas métricas ainda não implementadas.
+
+`POST /interesse`
+
+**Payload:**
+
+```json
+{
+  "componente": "score_metabolico"
+}
+```
+
+**Response (`204 No Content`):**
+_(Vazio estrutural implícito indicando recepção de tracking bem sucedida)_
+
+---
+
+_Gerado por Orion (Orchestrator) para alinhamento entre Backend e Frontend._
