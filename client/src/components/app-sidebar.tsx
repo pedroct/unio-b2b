@@ -24,37 +24,16 @@ const navItems = [
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
-function isRegistrationNumber(name: string): boolean {
-  return /^[A-Z]{2,5}\d+$/i.test(name);
-}
-
-function formatRegistrationDisplay(reg: string, uf: string): string {
-  const match = reg.match(/^([A-Z]+)(\d+)$/i);
-  if (match) {
-    return `${match[1].toUpperCase()} ${match[2]} — ${uf.toUpperCase()}`;
-  }
-  return reg;
-}
-
 export function AppSidebar() {
   const [location] = useLocation();
   const { professional, logout } = useAuth();
 
-  const nameIsReg = professional?.name ? isRegistrationNumber(professional.name) : false;
-  const displayName = professional?.name
-    ? (nameIsReg ? "Profissional" : professional.name)
-    : "Profissional";
-  const displaySpecialty = professional?.name
-    ? (nameIsReg
-      ? formatRegistrationDisplay(professional.name, professional.uf || "")
-      : (professional.specialty || "Especialidade"))
-    : "Especialidade";
+  const displayName = professional?.name || "Profissional";
+  const displaySpecialty = professional?.specialty || "Especialidade";
 
-  const initials = nameIsReg
-    ? "PR"
-    : (professional?.name
-      ? professional.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()
-      : "UN");
+  const initials = professional?.name
+    ? professional.name.split(" ").filter(Boolean).map(n => n[0]).join("").slice(0, 2).toUpperCase()
+    : "UN";
 
   return (
     <Sidebar>

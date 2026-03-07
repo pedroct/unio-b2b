@@ -39,51 +39,30 @@ export async function registerRoutes(
         return res.status(result.status).json({ message: msg });
       }
 
-      const { access, refresh } = result.data;
+      const { access, refresh, nome, tipo_profissional, registro_profissional } = result.data;
       let userId = "";
-      let jwtPayload: any = {};
       try {
         const b64 = access.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-        jwtPayload = JSON.parse(Buffer.from(b64, "base64").toString());
-        userId = String(jwtPayload.user_id || "");
+        const payload = JSON.parse(Buffer.from(b64, "base64").toString());
+        userId = String(payload.user_id || "");
       } catch {}
 
-      const authData = result.data;
-      let profName = authData.nome || authData.name || authData.nome_completo
-        || jwtPayload.nome || jwtPayload.name || jwtPayload.full_name
-        || registrationNumber;
-      let profSpecialty = authData.especialidade || authData.specialty || authData.conselho
-        || jwtPayload.especialidade || jwtPayload.specialty || "";
-      let profEmail = authData.email || jwtPayload.email || "";
-
-      if (profName === registrationNumber) {
-        const profilePaths = ["/api/nucleo/profissional/me", "/api/profissional/me"];
-        for (const profilePath of profilePaths) {
-          try {
-            const profileResult = await stagingPassthrough(profilePath, {
-              method: "GET",
-              bearerToken: access,
-            });
-            if (profileResult.ok && profileResult.data) {
-              const d = profileResult.data;
-              profName = d.nome || d.name || d.nome_completo || profName;
-              profSpecialty = d.especialidade || d.specialty || d.conselho || profSpecialty;
-              profEmail = d.email || profEmail;
-              break;
-            }
-          } catch {}
-        }
-      }
+      const TIPO_LABELS: Record<string, string> = {
+        medico: "Médico(a)",
+        personal: "Personal Trainer",
+        nutricionista: "Nutricionista",
+      };
 
       return res.json({
         tokens: { access, refresh },
         professional: {
           id: userId,
-          name: profName,
-          registrationNumber,
+          name: nome || registrationNumber,
+          registrationNumber: registro_profissional || registrationNumber,
           uf,
-          specialty: profSpecialty,
-          email: profEmail,
+          specialty: TIPO_LABELS[tipo_profissional] || tipo_profissional || "",
+          tipoProfissional: tipo_profissional || "",
+          email: "",
         },
       });
     } catch (err: any) {
@@ -103,35 +82,6 @@ export async function registerRoutes(
       console.error("[auth/refresh] proxy error:", err.message);
       return res.status(502).json({ message: "Erro ao renovar token." });
     }
-  });
-
-  app.get("/api/profissional/me", async (req, res) => {
-    const token = extractBearerToken(req);
-    if (!token) {
-      return res.status(401).json({ message: "Token de autenticação ausente." });
-    }
-    const profilePaths = [
-      "/api/nucleo/profissional/me",
-      "/api/profissional/me",
-      "/api/nucleo/me",
-    ];
-    for (const profilePath of profilePaths) {
-      try {
-        const result = await stagingPassthrough(profilePath, {
-          method: "GET",
-          bearerToken: token,
-        });
-        if (result.ok && result.data) {
-          const d = result.data;
-          return res.json({
-            name: d.nome || d.name || d.nome_completo || "",
-            specialty: d.especialidade || d.specialty || d.conselho || "",
-            email: d.email || "",
-          });
-        }
-      } catch {}
-    }
-    return res.status(404).json({ message: "Perfil não encontrado." });
   });
 
   app.get("/api/profissional/clientes", async (req, res) => {

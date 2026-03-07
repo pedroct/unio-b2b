@@ -20,7 +20,8 @@ const professionals: Professional[] = [
     name: "Rafael Mendes",
     registrationNumber: "CRM-12345",
     uf: "SP",
-    specialty: "Médico do Esporte",
+    specialty: "Médico(a)",
+    tipoProfissional: "medico",
     email: "rafael.mendes@unio.health",
   },
 ];

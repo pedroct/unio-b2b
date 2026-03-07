@@ -14,6 +14,7 @@ export interface Professional {
   registrationNumber: string;
   uf: string;
   specialty: string;
+  tipoProfissional: string;
   email: string;
 }
 

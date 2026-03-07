@@ -17,7 +17,7 @@ Eu prefiro que a terminologia do frontend utilize "Cliente(s)" para telas estrut
 - **Gráficos:** Recharts
 - **Roteamento:** wouter (SPA)
 - **Gerenciamento de Estado:** TanStack Query (React Query)
-- **Autenticação:** Mock de JWT (Registro Profissional + UF / CPF)
+- **Autenticação:** JWT via staging (Registro Profissional + UF / CPF). Login retorna `nome`, `tipo_profissional`, `registro_profissional` na raiz do JSON.
 
 ### Backend
 - **Mock API:** Express.js (simula Django Ninja API)
@@ -74,8 +74,10 @@ Ambos os prefixos `/api/painel-longevidade/` e `/api/longevidade/` são aceitos 
   - `registro_profissional`: somente dígitos (proxy remove letras/prefixos como "CRM")
   - `uf_registro`: maiúsculas (proxy aplica `.toUpperCase()`)
   - `cpf`: somente dígitos, sem máscara (proxy aplica `.replace(/\D/g, "")`)
+  - Resposta staging inclui `nome`, `tipo_profissional`, `registro_profissional` na raiz. Frontend mapeia `tipo_profissional` para label PT-BR (medico→"Médico(a)", personal→"Personal Trainer", nutricionista→"Nutricionista").
 - `POST /api/auth/refresh` → proxy para `/api/auth/refresh`
 - `stagingPassthrough()` repassa Bearer token do profissional; `stagingFetch()` usa credenciais de serviço
+- Endpoint `/api/profissional/me` removido — dados de perfil vêm diretamente do login.
 
 ### Nutrição (proxy staging)
 - `GET /api/nutricao/catalogo/alimentos?busca&fontes&limite&offset` — Busca alimentos

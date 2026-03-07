@@ -14,7 +14,7 @@
 | **Componentes do score** | Fixos: `hrv`, `fcr`, `vo2`, `recuperacao` | Dinâmicos: `Record<string, ComponenteScore>`, chaves variam por pilar |
 | **Gráfico de tendência** | Linha única (cardiovascular) | Multi-linha: cardiovascular, metabólico, recuperação |
 | **Prefixo de rotas** | `/api/painel-longevidade/` | Aceita `/api/longevidade/` **e** `/api/painel-longevidade/` (aliases) |
-| **Perfil do profissional** | Não utilizado | Frontend tenta `GET /api/nucleo/profissional/me` para nome/especialidade |
+| **Perfil do profissional** | Não retornado no login | Login retorna `nome`, `tipo_profissional`, `registro_profissional` na raiz do JSON |
 
 ---
 
@@ -262,26 +262,39 @@ Valores enviados pelo frontend:
 
 ---
 
-### 2.6. `GET /api/nucleo/profissional/me` *(novo — sugerido)*
+### 2.6. `POST /api/nucleo/profissional-auth` *(atualizado — hotfix staging)*
 
-**Status atual:** Endpoint **não existe** no staging. Frontend tenta chamá-lo mas trata 404 gracefully.
+O endpoint de login foi atualizado pelo DevOps para incluir dados do profissional na raiz da resposta.
 
-**Motivação:** O endpoint `POST /api/nucleo/profissional-auth` retorna apenas `{ access, refresh }` — sem nome ou especialidade do profissional. A sidebar atualmente exibe "Profissional" como fallback.
-
-**Response sugerida:**
+**Response (200 OK):**
 
 ```json
 {
-  "nome": "Dr. João Silva",
-  "especialidade": "Medicina Esportiva",
-  "email": "joao@clinica.com",
-  "conselho": "CRM",
-  "registro": "7683",
-  "uf": "RJ"
+  "access": "eyJhbGci...",
+  "refresh": "eyJhbGci...",
+  "nome": "Dr. Nome Completo",
+  "tipo_profissional": "medico",
+  "registro_profissional": "CRM7683"
 }
 ```
 
-> Se este endpoint for implementado, o frontend automaticamente passará a exibir o nome real no lugar de "Profissional".
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `access` | `string` | JWT de acesso |
+| `refresh` | `string` | JWT de refresh |
+| `nome` | `string` | Nome completo do profissional (exibido na sidebar) |
+| `tipo_profissional` | `string` | `"medico"` \| `"personal"` \| `"nutricionista"` |
+| `registro_profissional` | `string` | Registro completo (ex: `"CRM7683"`) |
+
+**Mapeamento no frontend:**
+
+| Campo staging | Campo frontend (`Professional`) |
+|---|---|
+| `nome` | `name` |
+| `tipo_profissional` | `tipoProfissional` + `specialty` (label traduzido: `"medico"` → `"Médico(a)"`, `"personal"` → `"Personal Trainer"`, `"nutricionista"` → `"Nutricionista"`) |
+| `registro_profissional` | `registrationNumber` |
+
+> **Nota:** O endpoint `GET /api/nucleo/profissional/me` **não** é mais necessário. Todo dado de perfil vem embutido na resposta de login.
 
 ---
 
@@ -341,7 +354,7 @@ O frontend V2 é **totalmente retrocompatível** com o staging V1 atual:
 - [ ] **Campo `tendencia_score`:** Presente em cada `ScorePilar` (ou continuar enviando `tendencia` como fallback)
 - [ ] **Histórico multi-pilar:** Endpoint `/historico-scores` retorna `metabolico` e `recuperacao` preenchidos quando disponíveis
 - [ ] **Interesse:** Endpoint `/interesse` aceita `"score_metabolico"`, `"score_recuperacao"`, `"score_funcional"`
-- [ ] **Perfil profissional (opcional):** Implementar `GET /api/nucleo/profissional/me` retornando `nome`, `especialidade`, `email`
+- [x] **Login com perfil profissional:** `POST /api/nucleo/profissional-auth` retorna `nome`, `tipo_profissional`, `registro_profissional` na raiz do JSON (hotfix staging aplicado)
 - [ ] **Alias de rotas (opcional):** Aceitar prefixo `/api/longevidade/` além de `/api/painel-longevidade/`
 
 ---
@@ -351,10 +364,11 @@ O frontend V2 é **totalmente retrocompatível** com o staging V1 atual:
 | Arquivo | Mudança |
 |---|---|
 | `shared/schema.ts` | `ComponentesCockpit` → `Record<string, ComponenteScore \| null>`; `PontoHistoricoScore` com 4 pilares |
-| `server/routes.ts` | Aliases `/api/longevidade/*`; proxy `?intervalo→?dias`; endpoint `/api/profissional/me` |
+| `server/routes.ts` | Aliases `/api/longevidade/*`; proxy `?intervalo→?dias`; login extrai `nome`/`tipo_profissional` da resposta staging |
 | `client/src/components/longevidade/aba-cockpit.tsx` | Cockpit dinâmico multi-pilar; `COMPONENTES_POR_PILAR` config; fallback cardio |
 | `client/src/components/longevidade/card-score.tsx` | Prop `pilarTipo` → título/ícone dinâmicos |
 | `client/src/components/longevidade/card-biomarcador.tsx` | `GradeGenerica` substituiu `GradeBiomarcadores`; aceita `BiomarcadorItem[]` genérico |
 | `client/src/components/longevidade/grafico-tendencia-score.tsx` | Multi-linha (3 pilares); legenda condicional; tooltip multi-valor |
-| `client/src/components/app-sidebar.tsx` | Exibe "Profissional" quando nome é registro; formata "CRM 7683 — UF" |
-| `client/src/lib/auth.tsx` | Tenta fetch de perfil real ao detectar nome = registro |
+| `client/src/components/app-sidebar.tsx` | Exibe nome real e tipo profissional do login |
+| `client/src/lib/auth.tsx` | Simplificado — perfil vem direto do login, sem fetch separado |
+| `shared/schema.ts` | `Professional` inclui campo `tipoProfissional` |

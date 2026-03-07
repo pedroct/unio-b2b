@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import type { Professional, AuthTokens } from "@shared/schema";
 
 interface AuthContextType {
@@ -30,41 +30,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setIsLoading(false);
   }, []);
-
-  const profileFetchedRef = useRef(false);
-
-  useEffect(() => {
-    if (!professional || !tokens) return;
-    if (profileFetchedRef.current) return;
-    if (professional.name && !/^[A-Z]{2,5}\d+$/i.test(professional.name)) return;
-
-    profileFetchedRef.current = true;
-    (async () => {
-      try {
-        const profileRes = await fetch("/api/profissional/me", {
-          headers: { "Authorization": `Bearer ${tokens.access}` },
-        });
-        if (profileRes.ok) {
-          const profile = await profileRes.json();
-          if (profile.name) {
-            const updated = {
-              ...professional,
-              name: profile.name,
-              specialty: profile.specialty || professional.specialty,
-              email: profile.email || professional.email,
-            };
-            setProfessional(updated);
-            const stored = localStorage.getItem("unio_auth");
-            if (stored) {
-              const data = JSON.parse(stored);
-              data.professional = updated;
-              localStorage.setItem("unio_auth", JSON.stringify(data));
-            }
-          }
-        }
-      } catch {}
-    })();
-  }, [professional?.name, tokens?.access]);
 
   const login = useCallback(async (registrationNumber: string, uf: string, password: string) => {
     const res = await fetch("/api/auth/pair", {
