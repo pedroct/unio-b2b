@@ -1,0 +1,220 @@
+# Contrato de Autenticação — Portal B2B Profissional
+
+> **Data**: 07/03/2026
+> **Versão**: 1.0
+> **Autor**: Backend UNIO
+> **Destinatário**: LLM / Agente do Portal B2B
+
+---
+
+## Visão Geral
+
+O portal B2B utiliza um fluxo de autenticação **customizado** para profissionais de saúde (médicos, nutricionistas, etc.). **Não use** o endpoint padrão de JWT (`/api/auth/pair`). O endpoint correto é exclusivo para profissionais e utiliza **Registro Profissional + UF + CPF** como credenciais.
+
+---
+
+## Endpoint de Autenticação
+
+```
+POST /api/nucleo/profissional-auth
+Content-Type: application/json
+Authorization: (não necessário — endpoint público)
+```
+
+---
+
+## Payload da Requisição
+
+```json
+{
+  "registro_profissional": "7683",
+  "uf_registro": "CE",
+  "cpf": "79495997313"
+}
+```
+
+### Descrição dos Campos
+
+| Campo                   | Tipo     | Obrigatório | Descrição                                                                  |
+| ----------------------- | -------- | ----------- | -------------------------------------------------------------------------- |
+| `registro_profissional` | `string` | ✅          | Número do CRM, CRN, CREF, etc. (sem prefixo de conselho)                   |
+| `uf_registro`           | `string` | ✅          | UF do registro profissional em **maiúsculas** (ex: `"CE"`, `"SP"`, `"RJ"`) |
+| `cpf`                   | `string` | ✅          | CPF do profissional — **somente dígitos, sem máscara**                     |
+
+> [!IMPORTANT]
+> **`cpf` deve ser enviado SOMENTE com dígitos numéricos.**
+> Enviar `"794.959.973-13"` (com pontos e traço) **causará falha de autenticação** — a validação compara o valor enviado com um hash gerado a partir dos dígitos puros.
+
+> [!IMPORTANT]
+> **`uf_registro` deve ser em MAIÚSCULAS.**
+> A busca no banco é exata (`=`), não case-insensitive. `"ce"` ou `"Ce"` **não serão encontrados**.
+
+---
+
+## Resposta — Sucesso (`200 OK`)
+
+```json
+{
+  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+| Campo     | Descrição                                                            |
+| --------- | -------------------------------------------------------------------- |
+| `access`  | JWT de curta duração para autenticar chamadas subsequentes           |
+| `refresh` | JWT de longa duração para renovar o `access` via `/api/auth/refresh` |
+
+---
+
+## Resposta — Falha (`401 Unauthorized`)
+
+```json
+{
+  "mensagem": "Credenciais inválidas. Verifique seu Registro, UF e CPF."
+}
+```
+
+**Este erro ocorre em qualquer um dos seguintes casos:**
+
+1. `registro_profissional` + `uf_registro` não encontrados no banco
+2. `cpf` enviado não corresponde à senha hasheada do usuário
+3. CPF enviado com máscara (ex: `"794.959.973-13"`)
+4. `uf_registro` enviado em minúsculas (ex: `"ce"`)
+
+> [!NOTE]
+> A resposta é idêntica para "registro não encontrado" e "CPF incorreto" — **por design de segurança** para evitar enumeração de usuários.
+
+---
+
+## Fluxo Completo de Autenticação
+
+```mermaid
+sequenceDiagram
+    participant Portal as Portal B2B
+    participant API as UNIO API
+
+    Portal->>API: POST /api/nucleo/profissional-auth
+    Note over Portal,API: { registro_profissional, uf_registro, cpf }
+
+    API->>API: Busca Perfil por (registro + UF)
+    alt Perfil não encontrado
+        API-->>Portal: 401 { mensagem: "Credenciais inválidas..." }
+    else Perfil encontrado
+        API->>API: check_password(cpf, usuario.password)
+        alt CPF não bate
+            API-->>Portal: 401 { mensagem: "Credenciais inválidas..." }
+        else CPF correto
+            API-->>Portal: 200 { access, refresh }
+        end
+    end
+```
+
+---
+
+## Como Usar o Token Após Login
+
+Todas as chamadas autenticadas devem incluir o `access` token no header:
+
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+### Renovar Token Expirado
+
+```
+POST /api/auth/refresh
+Content-Type: application/json
+
+{
+  "refresh": "<refresh_token>"
+}
+```
+
+---
+
+## Exemplos de Implementação
+
+### cURL
+
+```bash
+curl -X POST https://api.unio.app/api/nucleo/profissional-auth \
+  -H "Content-Type: application/json" \
+  -d '{
+    "registro_profissional": "7683",
+    "uf_registro": "CE",
+    "cpf": "79495997313"
+  }'
+```
+
+### JavaScript / Fetch
+
+```javascript
+async function autenticarProfissional(registro, uf, cpf) {
+  // IMPORTANTE: remover máscara do CPF antes de enviar
+  const cpfSomenteDigitos = cpf.replace(/\D/g, "");
+
+  const response = await fetch("/api/nucleo/profissional-auth", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      registro_profissional: registro,
+      uf_registro: uf.toUpperCase(), // garantir maiúsculas
+      cpf: cpfSomenteDigitos, // somente dígitos
+    }),
+  });
+
+  if (!response.ok) {
+    const erro = await response.json();
+    throw new Error(erro.mensagem);
+  }
+
+  return await response.json(); // { access, refresh }
+}
+```
+
+---
+
+## Regras Críticas para o Portal B2B
+
+| Regra                 | Correto                         | Incorreto                      |
+| --------------------- | ------------------------------- | ------------------------------ |
+| Formato do CPF        | `"79495997313"`                 | `"794.959.973-13"`             |
+| Formato da UF         | `"CE"`                          | `"ce"` / `"Ce"`                |
+| Registro profissional | `"7683"`                        | `"CRM-7683"` / `7683` (número) |
+| Endpoint              | `/api/nucleo/profissional-auth` | `/api/auth/pair`               |
+| Content-Type          | `application/json`              | `form-data`                    |
+
+---
+
+## Resolução de Problemas
+
+### "Credenciais inválidas" mesmo com dados corretos
+
+1. **Verificar formato do CPF** — o campo de CPF do formulário geralmente aplica máscara automaticamente. Certifique-se de remover com `cpf.replace(/\D/g, "")` antes de enviar
+2. **Verificar UF** — usar `.toUpperCase()` no valor da UF antes de serializar
+3. **Verificar tipo do registro** — enviar como `string`, não como `number`
+
+### Usuário nunca consegue logar
+
+O profissional pode não ter sido configurado corretamente no admin. Verifique se:
+
+- O campo `Registro Profissional` está preenchido no perfil
+- O campo `UF do Registro` está preenchido em maiúsculas
+- A senha do usuário foi definida usando o CPF (sem máscara) como senha padrão
+
+---
+
+## Informações de Validação (07/03/2026)
+
+Validado em ambiente **staging** com o usuário `medico@pedroct.com.br`:
+
+```
+registro_profissional : "7683"
+uf_registro           : "CE"
+cpf (senha)           : "79495997313"
+check_password        : True ✅
+is_active             : True ✅
+```
+
+O backend **retorna 200** para essas credenciais quando enviadas no formato correto. Qualquer falha é originada no frontend/portal.

@@ -21,12 +21,16 @@ export async function registerRoutes(
       return res.status(400).json({ message: "Preencha todos os campos." });
     }
     try {
+      const registroLimpo = registrationNumber.replace(/[^0-9]/g, "");
+      const cpfLimpo = password.replace(/\D/g, "");
+      const ufMaiuscula = uf.toUpperCase();
+
       const result = await stagingPassthrough("/api/nucleo/profissional-auth", {
         method: "POST",
         body: {
-          registro_profissional: registrationNumber,
-          uf_registro: uf,
-          cpf: password,
+          registro_profissional: registroLimpo,
+          uf_registro: ufMaiuscula,
+          cpf: cpfLimpo,
         },
       });
 

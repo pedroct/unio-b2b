@@ -57,7 +57,10 @@ Eu prefiro que a terminologia do frontend utilize "Cliente(s)" para telas estrut
 - `GET /api/profissional/pacientes/:id` → busca da lista /clientes e filtra por ID
 
 ### Auth
-- `POST /api/auth/pair` → proxy para `/api/nucleo/profissional-auth` { registro_profissional, uf_registro, cpf (com formatação) }
+- `POST /api/auth/pair` → proxy para `/api/nucleo/profissional-auth` { registro_profissional, uf_registro, cpf }
+  - `registro_profissional`: somente dígitos (proxy remove letras/prefixos como "CRM")
+  - `uf_registro`: maiúsculas (proxy aplica `.toUpperCase()`)
+  - `cpf`: somente dígitos, sem máscara (proxy aplica `.replace(/\D/g, "")`)
 - `POST /api/auth/refresh` → proxy para `/api/auth/refresh`
 - `stagingPassthrough()` repassa Bearer token do profissional; `stagingFetch()` usa credenciais de serviço
 
