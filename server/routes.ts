@@ -237,7 +237,7 @@ export async function registerRoutes(
     return res.status(201).json(refeicao);
   });
 
-  app.get("/api/painel-longevidade/clientes/:id/cockpit", async (req, res) => {
+  app.get(["/api/painel-longevidade/clientes/:id/cockpit", "/api/longevidade/clientes/:id/cockpit"], async (req, res) => {
     const token = extractBearerToken(req);
     if (!token) {
       return res.status(401).json({ message: "Token de autenticação ausente." });
@@ -253,7 +253,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/painel-longevidade/clientes/:id/cardiometabolico", async (req, res) => {
+  app.get(["/api/painel-longevidade/clientes/:id/cardiometabolico", "/api/longevidade/clientes/:id/cardiometabolico"], async (req, res) => {
     const token = extractBearerToken(req);
     if (!token) {
       return res.status(401).json({ message: "Token de autenticação ausente." });
@@ -269,7 +269,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/painel-longevidade/interesse", async (req, res) => {
+  app.post(["/api/painel-longevidade/interesse", "/api/longevidade/interesse"], async (req, res) => {
     const token = extractBearerToken(req);
     if (!token) {
       return res.status(401).json({ message: "Token de autenticação ausente." });
@@ -291,7 +291,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/painel-longevidade/clientes/:id/historico-scores", async (req, res) => {
+  app.get(["/api/painel-longevidade/clientes/:id/historico-scores", "/api/longevidade/clientes/:id/historico-scores"], async (req, res) => {
     const token = extractBearerToken(req);
     if (!token) {
       return res.status(401).json({ message: "Token de autenticação ausente." });

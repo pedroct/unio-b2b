@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea, Legend } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { RespostaHistoricoScores } from "@shared/schema";
 
@@ -14,20 +14,41 @@ function formatarDataCurta(dateStr: string): string {
   return `${parts[2]}/${parts[1]}`;
 }
 
-function CustomTooltip({ active, payload, label }: any) {
+interface PilarConfig {
+  key: "cardiovascular" | "metabolico" | "recuperacao";
+  label: string;
+  color: string;
+}
+
+const PILARES_CHART: PilarConfig[] = [
+  { key: "cardiovascular", label: "Cardiovascular", color: "#4A5899" },
+  { key: "metabolico", label: "Metabólico", color: "#5B8C6F" },
+  { key: "recuperacao", label: "Recuperação", color: "#3D7A8C" },
+];
+
+function classificarScore(valor: number): string {
+  if (valor >= 80) return "Excelente";
+  if (valor >= 60) return "Bom";
+  if (valor >= 40) return "Atenção";
+  return "Risco Aumentado";
+}
+
+function MultiTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
-  const valor = payload[0].value;
-  if (valor == null) return null;
-  let classificacao = "Risco Aumentado";
-  if (valor >= 80) classificacao = "Excelente";
-  else if (valor >= 60) classificacao = "Bom";
-  else if (valor >= 40) classificacao = "Atenção";
+  const validPayloads = payload.filter((p: any) => p.value != null);
+  if (validPayloads.length === 0) return null;
 
   return (
     <div className="rounded-lg px-3 py-2 text-sm shadow-lg" style={{ background: "var(--mod-longevidade-bg)", border: "1px solid var(--mod-longevidade-border)" }}>
-      <p className="text-xs text-muted-foreground">{formatarDataCurta(label)}</p>
-      <p className="font-bold" style={{ color: "var(--mod-longevidade-text)" }}>{valor.toFixed(1)}</p>
-      <p className="text-xs" style={{ color: "var(--mod-longevidade-icon)" }}>{classificacao}</p>
+      <p className="text-xs text-muted-foreground mb-1">{formatarDataCurta(label)}</p>
+      {validPayloads.map((entry: any) => (
+        <div key={entry.dataKey} className="flex items-center gap-2">
+          <span className="inline-block w-2 h-2 rounded-full" style={{ background: entry.color }} />
+          <span className="text-xs" style={{ color: entry.color }}>{entry.name}</span>
+          <span className="font-bold text-xs" style={{ color: "var(--mod-longevidade-text)" }}>{entry.value.toFixed(1)}</span>
+          <span className="text-[10px] text-muted-foreground">{classificarScore(entry.value)}</span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -46,11 +67,26 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
     enabled: !!pacienteId,
   });
 
-  const chartData = resposta?.historico
-    ?.filter((p) => p.cardiovascular != null)
-    .map((p) => ({ data: p.data, score: p.cardiovascular })) ?? [];
+  const chartData = useMemo(() => {
+    if (!resposta?.historico) return [];
+    return resposta.historico
+      .filter(p => p.cardiovascular != null || p.metabolico != null || p.recuperacao != null)
+      .map(p => ({
+        data: p.data,
+        cardiovascular: p.cardiovascular ?? undefined,
+        metabolico: p.metabolico ?? undefined,
+        recuperacao: p.recuperacao ?? undefined,
+      }));
+  }, [resposta]);
+
+  const activePilares = useMemo(() => {
+    return PILARES_CHART.filter(pc =>
+      chartData.some(d => (d as any)[pc.key] !== undefined)
+    );
+  }, [chartData]);
 
   const xInterval = chartData.length > 7 ? Math.floor(chartData.length / 7) : 1;
+  const showLegend = activePilares.length > 1;
 
   return (
     <div data-testid="grafico-tendencia-score">
@@ -82,10 +118,12 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
         <ResponsiveContainer width="100%" height={260}>
           <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
             <defs>
-              <linearGradient id="gradienteScore" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--mod-longevidade-base)" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="var(--mod-longevidade-base)" stopOpacity={0.02} />
-              </linearGradient>
+              {activePilares.map(pc => (
+                <linearGradient key={`grad-${pc.key}`} id={`gradiente-${pc.key}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={pc.color} stopOpacity={0.25} />
+                  <stop offset="100%" stopColor={pc.color} stopOpacity={0.02} />
+                </linearGradient>
+              ))}
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis
@@ -107,20 +145,33 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
             <ReferenceArea y1={60} y2={80} fill="var(--score-good-bg)" fillOpacity={0.5} />
             <ReferenceArea y1={40} y2={60} fill="var(--score-attention-bg)" fillOpacity={0.5} />
             <ReferenceArea y1={0} y2={40} fill="var(--score-risk-bg)" fillOpacity={0.5} />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<MultiTooltip />} />
             <ReferenceLine y={80} stroke="var(--score-excellent-border)" strokeDasharray="4 4" strokeOpacity={0.3} />
             <ReferenceLine y={60} stroke="var(--score-good-border)" strokeDasharray="4 4" strokeOpacity={0.3} />
             <ReferenceLine y={40} stroke="var(--score-attention-border)" strokeDasharray="4 4" strokeOpacity={0.3} />
-            <Area
-              type="monotone"
-              dataKey="score"
-              stroke="var(--mod-longevidade-base)"
-              strokeWidth={2}
-              fill="url(#gradienteScore)"
-              dot={false}
-              activeDot={{ r: 4, fill: "var(--mod-longevidade-base)", stroke: "#fff", strokeWidth: 2 }}
-              connectNulls
-            />
+            {activePilares.map((pc, idx) => (
+              <Area
+                key={pc.key}
+                type="monotone"
+                dataKey={pc.key}
+                name={pc.label}
+                stroke={pc.color}
+                strokeWidth={idx === 0 ? 2 : 1.5}
+                fill={`url(#gradiente-${pc.key})`}
+                dot={false}
+                activeDot={{ r: 4, fill: pc.color, stroke: "#fff", strokeWidth: 2 }}
+                connectNulls={false}
+              />
+            ))}
+            {showLegend && (
+              <Legend
+                verticalAlign="bottom"
+                height={24}
+                iconType="circle"
+                iconSize={8}
+                wrapperStyle={{ fontSize: 11 }}
+              />
+            )}
           </AreaChart>
         </ResponsiveContainer>
       ) : (

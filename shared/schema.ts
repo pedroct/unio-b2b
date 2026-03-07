@@ -282,12 +282,7 @@ export interface ComponenteScore {
   referencia: string | null;
 }
 
-export interface ComponentesCockpit {
-  hrv: ComponenteScore | null;
-  fcr: ComponenteScore | null;
-  vo2: ComponenteScore | null;
-  recuperacao: ComponenteScore | null;
-}
+export type ComponentesCockpit = Record<string, ComponenteScore | null>;
 
 export interface ScorePilar {
   tipo: string;

@@ -1,4 +1,4 @@
-import { HeartPulse, TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react";
+import { HeartPulse, Activity, Moon, Dumbbell, TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ClassificacaoScore, TendenciaBiomarcador } from "@shared/schema";
 import { LABELS_CLASSIFICACAO } from "@shared/schema";
@@ -10,7 +10,23 @@ interface CardScoreProps {
   is_partial?: boolean;
   updated_at: string | null;
   isLoading?: boolean;
+  title?: string;
+  pilarTipo?: string;
 }
+
+const ICONES_PILAR: Record<string, typeof HeartPulse> = {
+  cardiovascular: HeartPulse,
+  metabolic: Activity,
+  recovery: Moon,
+  functional: Dumbbell,
+};
+
+const TITULOS_PILAR: Record<string, string> = {
+  cardiovascular: "Score Cardiovascular",
+  metabolic: "Score Metabólico",
+  recovery: "Score Recuperação",
+  functional: "Score Funcional",
+};
 
 function formatarData(iso: string): string {
   const d = new Date(iso);
@@ -25,7 +41,10 @@ const ICONE_TENDENCIA = {
   stable: Minus,
 };
 
-export function CardScore({ score, classification, tendencia, is_partial = false, updated_at, isLoading }: CardScoreProps) {
+export function CardScore({ score, classification, tendencia, is_partial = false, updated_at, isLoading, title, pilarTipo = "cardiovascular" }: CardScoreProps) {
+  const Icone = ICONES_PILAR[pilarTipo] ?? HeartPulse;
+  const tituloExibido = title ?? TITULOS_PILAR[pilarTipo] ?? "Score";
+
   if (isLoading) {
     return (
       <div
@@ -46,12 +65,12 @@ export function CardScore({ score, classification, tendencia, is_partial = false
       <div
         className="rounded-xl p-6"
         style={{ background: "var(--mod-longevidade-bg)", border: "1px solid var(--mod-longevidade-border)" }}
-        data-testid="card-score-insuficiente"
+        data-testid={`card-score-insuficiente-${pilarTipo}`}
       >
         <div className="flex items-center gap-2 mb-4">
-          <HeartPulse className="h-5 w-5" style={{ color: "var(--mod-longevidade-icon)" }} />
+          <Icone className="h-5 w-5" style={{ color: "var(--mod-longevidade-icon)" }} />
           <span className="text-sm font-semibold uppercase tracking-wider" style={{ color: "var(--mod-longevidade-text)" }}>
-            Score Cardiovascular
+            {tituloExibido}
           </span>
         </div>
         <p className="font-serif text-5xl font-bold" style={{ color: "var(--mod-longevidade-text)" }}>—</p>
@@ -66,23 +85,23 @@ export function CardScore({ score, classification, tendencia, is_partial = false
     <div
       className="rounded-xl p-6"
       style={{ background: "var(--mod-longevidade-bg)", border: "1px solid var(--mod-longevidade-border)" }}
-      data-testid="card-score-cardiovascular"
+      data-testid={`card-score-${pilarTipo}`}
     >
       <div className="flex items-center gap-2 mb-4">
-        <HeartPulse className="h-5 w-5" style={{ color: "var(--mod-longevidade-icon)" }} />
+        <Icone className="h-5 w-5" style={{ color: "var(--mod-longevidade-icon)" }} />
         <span className="text-sm font-semibold uppercase tracking-wider" style={{ color: "var(--mod-longevidade-text)" }}>
-          Score Cardiovascular
+          {tituloExibido}
         </span>
       </div>
 
-      <p className="font-serif text-5xl font-bold leading-none" style={{ color: "var(--mod-longevidade-text)" }} data-testid="text-score-value">
+      <p className="font-serif text-5xl font-bold leading-none" style={{ color: "var(--mod-longevidade-text)" }} data-testid={`text-score-value-${pilarTipo}`}>
         {Math.round(score)}
       </p>
 
       <div className="flex items-center gap-3 mt-4">
         <span
           className={`score-badge--${classification} inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold`}
-          data-testid="badge-classificacao"
+          data-testid={`badge-classificacao-${pilarTipo}`}
         >
           {LABELS_CLASSIFICACAO[classification]}
         </span>
@@ -90,7 +109,7 @@ export function CardScore({ score, classification, tendencia, is_partial = false
         {is_partial && (
           <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold"
             style={{ background: "var(--score-attention-bg)", color: "var(--score-attention-icon)" }}
-            data-testid="badge-parcial"
+            data-testid={`badge-parcial-${pilarTipo}`}
           >
             <AlertTriangle className="h-3 w-3" />
             Score parcial
@@ -98,7 +117,7 @@ export function CardScore({ score, classification, tendencia, is_partial = false
         )}
 
         {TendenciaIcon && (
-          <span className="flex items-center gap-1 text-sm" style={{ color: `var(--score-${classification}-icon)` }} data-testid="text-tendencia">
+          <span className="flex items-center gap-1 text-sm" style={{ color: `var(--score-${classification}-icon)` }} data-testid={`text-tendencia-${pilarTipo}`}>
             <TendenciaIcon className="h-3.5 w-3.5" />
             {tendencia === "up" ? "Em alta" : tendencia === "down" ? "Em queda" : "Estável"}
           </span>
@@ -106,7 +125,7 @@ export function CardScore({ score, classification, tendencia, is_partial = false
       </div>
 
       {updated_at && (
-        <p className="text-xs text-muted-foreground mt-3" data-testid="text-atualizado">
+        <p className="text-xs text-muted-foreground mt-3" data-testid={`text-atualizado-${pilarTipo}`}>
           Atualizado {formatarData(updated_at)}
         </p>
       )}

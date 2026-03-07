@@ -147,33 +147,26 @@ export function CardBiomarcador({
   );
 }
 
-interface ComponenteGrade {
+export interface BiomarcadorItem {
+  key: string;
+  nome: string;
   value: number | null;
   unit: string;
   trend: TendenciaBiomarcador;
   baseline?: number;
   referencia?: string;
+  invertedSemantics?: boolean;
+  formatValue?: (v: number) => string;
 }
 
-interface GradeBiomarcadoresProps {
-  componentes: {
-    hrv: ComponenteGrade;
-    rhr: ComponenteGrade;
-    vo2: ComponenteGrade;
-    recovery: ComponenteGrade;
-  };
+interface GradeGenericaProps {
+  items: BiomarcadorItem[];
+  testId?: string;
 }
 
-export function GradeBiomarcadores({ componentes }: GradeBiomarcadoresProps) {
-  const items = [
-    { key: "hrv", nome: "HRV (RMSSD)", value: componentes.hrv.value, unit: componentes.hrv.unit, trend: componentes.hrv.trend, baseline: componentes.hrv.baseline, invertedSemantics: false, labelSecundario: componentes.hrv.referencia },
-    { key: "rhr", nome: "FC de Repouso", value: componentes.rhr.value, unit: componentes.rhr.unit, trend: componentes.rhr.trend, baseline: componentes.rhr.baseline, invertedSemantics: true, labelSecundario: componentes.rhr.referencia },
-    { key: "vo2", nome: "VO₂ Máximo", value: componentes.vo2.value, unit: componentes.vo2.unit, trend: componentes.vo2.trend, baseline: componentes.vo2.baseline, invertedSemantics: false, labelSecundario: componentes.vo2.referencia },
-    { key: "recovery", nome: "Recuperação da FC", value: componentes.recovery.value, unit: componentes.recovery.unit, trend: componentes.recovery.trend, baseline: componentes.recovery.baseline, invertedSemantics: false, labelSecundario: componentes.recovery.referencia ?? "Média das últimas 5 sessões" },
-  ];
-
+export function GradeGenerica({ items, testId = "grade-biomarcadores" }: GradeGenericaProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-testid="grade-biomarcadores">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-testid={testId}>
       {items.map((item) => (
         <CardBiomarcador
           key={item.key}
@@ -183,7 +176,7 @@ export function GradeBiomarcadores({ componentes }: GradeBiomarcadoresProps) {
           tendencia={item.trend}
           baseline={item.baseline}
           invertedSemantics={item.invertedSemantics}
-          labelSecundario={item.labelSecundario}
+          labelSecundario={item.referencia}
           aguardandoLeitura={item.value === null}
         />
       ))}

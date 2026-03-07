@@ -2,11 +2,13 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Activity, Moon, Dumbbell, Lock, Bell, Check } from "lucide-react";
 import { CardScore } from "./card-score";
-import { GradeBiomarcadores } from "./card-biomarcador";
+import { GradeGenerica } from "./card-biomarcador";
+import type { BiomarcadorItem } from "./card-biomarcador";
 import { GraficoTendenciaScore } from "./grafico-tendencia-score";
 import { EstadoDiaZero } from "./estado-dia-zero";
-import type { RespostaCockpit, RespostaCardiometabolico, ScorePilar } from "@shared/schema";
+import type { RespostaCockpit, RespostaCardiometabolico, ScorePilar, ComponentesCockpit } from "@shared/schema";
 import { CLASSIFICACAO_FROM_LABEL, TENDENCIA_FROM_API } from "@shared/schema";
+import type { TendenciaBiomarcador } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -21,6 +23,7 @@ const ICONES_PILAR: Record<string, typeof Activity> = {
 };
 
 const LABELS_PILAR: Record<string, string> = {
+  cardiovascular: "Score Cardiovascular",
   metabolic: "Score Metabólico",
   recovery: "Score Recuperação",
   functional: "Score Funcional",
@@ -31,6 +34,87 @@ const TIPO_TO_COMPONENTE: Record<string, string> = {
   recovery: "score_recuperacao",
   functional: "score_funcional",
 };
+
+const ORDEM_PILARES = ["cardiovascular", "metabolic", "recovery", "functional"];
+
+interface ComponenteConfig {
+  key: string;
+  nome: string;
+  defaultUnit: string;
+  invertedSemantics?: boolean;
+  defaultReferencia?: string;
+}
+
+const COMPONENTES_POR_PILAR: Record<string, ComponenteConfig[]> = {
+  cardiovascular: [
+    { key: "hrv", nome: "HRV (RMSSD)", defaultUnit: "ms" },
+    { key: "fcr", nome: "FC de Repouso", defaultUnit: "bpm", invertedSemantics: true },
+    { key: "vo2", nome: "VO₂ Máximo", defaultUnit: "mL/kg/min" },
+    { key: "recuperacao", nome: "Recuperação da FC", defaultUnit: "bpm", defaultReferencia: "Média das últimas 5 sessões" },
+  ],
+  metabolic: [
+    { key: "gordura", nome: "% Gordura Corporal", defaultUnit: "%" },
+    { key: "cintura", nome: "Cintura", defaultUnit: "cm" },
+    { key: "massa_magra", nome: "Massa Magra", defaultUnit: "kg" },
+    { key: "tendencia_peso", nome: "Tendência Peso", defaultUnit: "kg", invertedSemantics: true },
+  ],
+  recovery: [
+    { key: "sono_total", nome: "Sono Total", defaultUnit: "min" },
+    { key: "sono_rem_profundo", nome: "REM + Profundo", defaultUnit: "min" },
+    { key: "hrv_noturna", nome: "HRV Noturna", defaultUnit: "ms" },
+    { key: "fc_noturna", nome: "FC Noturna", defaultUnit: "bpm", invertedSemantics: true },
+  ],
+};
+
+function normTrend(t: string | null | undefined): TendenciaBiomarcador {
+  if (!t) return null;
+  return TENDENCIA_FROM_API[t] ?? TENDENCIA_FROM_API[t.toLowerCase()] ?? null;
+}
+
+function normClassificacao(c: string | null | undefined) {
+  if (!c) return null;
+  return CLASSIFICACAO_FROM_LABEL[c] ?? CLASSIFICACAO_FROM_LABEL[c.toLowerCase()] ?? null;
+}
+
+function buildBiomarcadorItems(componentes: ComponentesCockpit, pilarTipo: string): BiomarcadorItem[] {
+  const configs = COMPONENTES_POR_PILAR[pilarTipo];
+  if (!configs) return [];
+  return configs.map((cfg) => {
+    const comp = componentes[cfg.key];
+    return {
+      key: cfg.key,
+      nome: cfg.nome,
+      value: comp?.valor ?? null,
+      unit: comp?.unidade ?? cfg.defaultUnit,
+      trend: normTrend(comp?.tendencia),
+      referencia: comp?.referencia ?? cfg.defaultReferencia,
+      invertedSemantics: cfg.invertedSemantics,
+    };
+  });
+}
+
+function buildCardioFromLegacy(cardio: RespostaCardiometabolico): BiomarcadorItem[] {
+  const configs = COMPONENTES_POR_PILAR.cardiovascular;
+  const metricMap: Record<string, string> = {
+    hrv: "hrv_rmssd",
+    fcr: "resting_hr",
+    vo2: "vo2_max",
+    recuperacao: "hr_recovery_1min",
+  };
+  return configs.map((cfg) => {
+    const m = cardio.metricas_cardio.find(mc => mc.metric_type === metricMap[cfg.key]);
+    return {
+      key: cfg.key,
+      nome: cfg.nome,
+      value: m?.valor_atual ?? null,
+      unit: m?.unidade ?? cfg.defaultUnit,
+      trend: normTrend(m?.tendencia),
+      baseline: m?.media_30d ?? undefined,
+      referencia: cfg.defaultReferencia,
+      invertedSemantics: cfg.invertedSemantics,
+    };
+  });
+}
 
 export function AbaCockpit({ pacienteId }: AbaCockpitProps) {
   const { toast } = useToast();
@@ -74,68 +158,40 @@ export function AbaCockpit({ pacienteId }: AbaCockpitProps) {
     return <EstadoDiaZero />;
   }
 
-  const classificacaoEN = scoreCV?.classificacao
-    ? (CLASSIFICACAO_FROM_LABEL[scoreCV.classificacao] ?? CLASSIFICACAO_FROM_LABEL[scoreCV.classificacao.toLowerCase()] ?? null)
-    : null;
-  const tendenciaRaw = scoreCV?.tendencia_score ?? scoreCV?.tendencia ?? null;
-  const tendenciaCV = tendenciaRaw
-    ? (TENDENCIA_FROM_API[tendenciaRaw] ?? TENDENCIA_FROM_API[tendenciaRaw.toLowerCase()] ?? null)
-    : null;
-  const scoresFuturos = cockpit?.scores?.filter(s => s.tipo !== "cardiovascular") ?? [];
+  const sortedScores = cockpit?.scores
+    ? [...cockpit.scores].sort((a, b) => {
+        const ia = ORDEM_PILARES.indexOf(a.tipo);
+        const ib = ORDEM_PILARES.indexOf(b.tipo);
+        return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+      })
+    : [];
 
-  function normTrend(t: string | null | undefined) {
-    if (!t) return null;
-    return TENDENCIA_FROM_API[t] ?? null;
-  }
-
-  const componentesParaGrade = (() => {
-    if (scoreCV?.componentes) {
-      const c = scoreCV.componentes;
-      return {
-        hrv: { value: c.hrv?.valor ?? null, unit: c.hrv?.unidade ?? "ms", trend: normTrend(c.hrv?.tendencia), referencia: c.hrv?.referencia ?? undefined },
-        rhr: { value: c.fcr?.valor ?? null, unit: c.fcr?.unidade ?? "bpm", trend: normTrend(c.fcr?.tendencia), referencia: c.fcr?.referencia ?? undefined },
-        vo2: { value: c.vo2?.valor ?? null, unit: c.vo2?.unidade ?? "mL/kg/min", trend: normTrend(c.vo2?.tendencia), referencia: c.vo2?.referencia ?? undefined },
-        recovery: { value: c.recuperacao?.valor ?? null, unit: c.recuperacao?.unidade ?? "bpm", trend: normTrend(c.recuperacao?.tendencia), referencia: c.recuperacao?.referencia ?? undefined },
-      };
-    }
-    if (cardio) {
-      return {
-        hrv: (() => {
-          const m = cardio.metricas_cardio.find(mc => mc.metric_type === "hrv_rmssd");
-          return { value: m?.valor_atual ?? null, unit: m?.unidade ?? "ms", trend: normTrend(m?.tendencia), baseline: m?.media_30d ?? undefined };
-        })(),
-        rhr: (() => {
-          const m = cardio.metricas_cardio.find(mc => mc.metric_type === "resting_hr");
-          return { value: m?.valor_atual ?? null, unit: m?.unidade ?? "bpm", trend: normTrend(m?.tendencia), baseline: m?.media_30d ?? undefined };
-        })(),
-        vo2: (() => {
-          const m = cardio.metricas_cardio.find(mc => mc.metric_type === "vo2_max");
-          return { value: m?.valor_atual ?? null, unit: m?.unidade ?? "mL/kg/min", trend: normTrend(m?.tendencia), baseline: m?.media_30d ?? undefined };
-        })(),
-        recovery: (() => {
-          const m = cardio.metricas_cardio.find(mc => mc.metric_type === "hr_recovery_1min");
-          return { value: m?.valor_atual ?? null, unit: m?.unidade ?? "bpm", trend: normTrend(m?.tendencia), baseline: m?.media_30d ?? undefined };
-        })(),
-      };
-    }
-    return null;
-  })();
+  const ativosScores = sortedScores.filter(s => s.ativo !== false);
+  const inativosScores = sortedScores.filter(s => s.ativo === false);
 
   return (
     <div className="space-y-6" data-testid="aba-cockpit">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <div className="lg:col-span-1">
-          <CardScore
-            score={scoreCV?.score ?? null}
-            classification={classificacaoEN}
-            tendencia={tendenciaCV}
-            is_partial={scoreCV?.is_partial ?? false}
-            updated_at={cockpit?.data_atualizacao ?? null}
-            isLoading={isLoading}
-          />
-        </div>
+        {ativosScores.map((pilar: ScorePilar) => {
+          const classificacao = normClassificacao(pilar.classificacao);
+          const tendenciaRaw = pilar.tendencia_score ?? pilar.tendencia ?? null;
+          const tendencia = normTrend(tendenciaRaw);
+          return (
+            <div key={pilar.tipo} className="lg:col-span-1">
+              <CardScore
+                score={pilar.score}
+                classification={classificacao}
+                tendencia={tendencia}
+                is_partial={pilar.is_partial ?? false}
+                updated_at={cockpit?.data_atualizacao ?? null}
+                isLoading={isLoading}
+                pilarTipo={pilar.tipo}
+              />
+            </div>
+          );
+        })}
 
-        {scoresFuturos.map((sf: ScorePilar) => {
+        {inativosScores.map((sf: ScorePilar) => {
           const Icone = ICONES_PILAR[sf.tipo] ?? Activity;
           const label = LABELS_PILAR[sf.tipo] ?? sf.tipo;
           const componente = TIPO_TO_COMPONENTE[sf.tipo] ?? sf.tipo;
@@ -180,14 +236,38 @@ export function AbaCockpit({ pacienteId }: AbaCockpitProps) {
         })}
       </div>
 
-      {componentesParaGrade && !(loadingCardio && !temComponentesCockpit) && (
-        <div>
-          <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--mod-longevidade-text)" }}>
-            Componentes do Score
-          </h3>
-          <GradeBiomarcadores componentes={componentesParaGrade} />
-        </div>
-      )}
+      {ativosScores.map((pilar) => {
+        let items: BiomarcadorItem[] | null = null;
+
+        if (pilar.componentes && Object.keys(pilar.componentes).length > 0) {
+          items = buildBiomarcadorItems(pilar.componentes, pilar.tipo);
+        } else if (pilar.tipo === "cardiovascular" && cardio && !loadingCardio) {
+          items = buildCardioFromLegacy(cardio);
+        }
+
+        if (!items || items.length === 0) {
+          if (pilar.score != null) {
+            return (
+              <div key={`componentes-${pilar.tipo}`}>
+                <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--mod-longevidade-text)" }}>
+                  Componentes — {LABELS_PILAR[pilar.tipo] ?? pilar.tipo}
+                </h3>
+                <p className="text-sm text-muted-foreground">Dados dos componentes serão disponibilizados em breve.</p>
+              </div>
+            );
+          }
+          return null;
+        }
+
+        return (
+          <div key={`componentes-${pilar.tipo}`}>
+            <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--mod-longevidade-text)" }}>
+              Componentes — {LABELS_PILAR[pilar.tipo] ?? pilar.tipo}
+            </h3>
+            <GradeGenerica items={items} testId={`grade-biomarcadores-${pilar.tipo}`} />
+          </div>
+        );
+      })}
 
       <GraficoTendenciaScore pacienteId={pacienteId} />
     </div>

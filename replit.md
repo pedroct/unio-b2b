@@ -30,10 +30,17 @@ Eu prefiro que a terminologia do frontend utilize "Cliente(s)" para telas estrut
 - **Modo Escuro:** Implementado dinamicamente via classe CSS.
 
 ### Key Features
-- **Painel de Longevidade (V1):** Substitui o dashboard antigo, organizado por sistemas fisiológicos com 5 abas: Cockpit, Sistema Cardiometabólico, Recuperação & Sono (🔒), Performance (🔒), Nutrição (🔒).
-- **Score Cardiovascular (V1):** Score de 0–100 com classificação dinâmica (Excelente ≥80 / Bom ≥60 / Atenção ≥40 / Risco Aumentado <40), composto por HRV, FCR, VO₂ e Recuperação FC.
-- **Inversão Semântica de Tendência:** Controlada para biomarcadores onde o decréscimo é positivo (ex: FCR).
-- **Scores Futuros:** Metabólico, Recuperação, Funcional (cards bloqueados com tokens `--sys-*`).
+- **Painel de Longevidade (V2):** Substitui o dashboard antigo, organizado por sistemas fisiológicos com 5 abas: Cockpit, Sistema Cardiometabólico, Recuperação & Sono (🔒), Performance (🔒), Nutrição (🔒).
+- **Multi-Pilar Cockpit (V2):** Cada pilar (cardiovascular, metabolic, recovery, functional) é renderizado dinamicamente: pilares com `ativo: true` mostram CardScore com score/classificação/tendência + grade de componentes; pilares com `ativo: false` mostram card bloqueado com botão "Me avise".
+- **Componentes Dinâmicos por Pilar (V2):** `ComponentesCockpit` é `Record<string, ComponenteScore>` — chaves variam por pilar:
+  - Cardiovascular: `hrv`, `fcr`, `vo2`, `recuperacao`
+  - Metabólico: `gordura`, `cintura`, `massa_magra`, `tendencia_peso`
+  - Recuperação: `sono_total`, `sono_rem_profundo`, `hrv_noturna`, `fc_noturna`
+- **Score de 0–100:** Classificação dinâmica (Excelente ≥80 / Bom ≥60 / Atenção ≥40 / Risco Aumentado <40), usado por todos os pilares.
+- **Inversão Semântica de Tendência:** Controlada para biomarcadores onde o decréscimo é positivo (ex: FCR, fc_noturna, tendencia_peso).
+- **Gráfico Multi-Linha (V2):** Tendência do Score plota linhas separadas para cardiovascular (indigo #4A5899), metabólico (green #5B8C6F) e recuperação (blue #3D7A8C). Legenda aparece quando múltiplas linhas estão ativas.
+- **Score Funcional:** Permanece bloqueado (locked card).
+- **`GradeGenerica`:** Substitui `GradeBiomarcadores` — aceita array de `BiomarcadorItem` e renderiza cards para qualquer pilar.
 - **Aba Cardiometabólico:** Análise detalhada com sparklines de 30 dias, grid 2x2 por eixo fisiológico e cópia expandida.
 - **Prescrição Alimentar:** Ferramenta completa para nutricionistas com múltiplos planos por cliente, edição de descrição, dias ativos, refeições e adição de alimentos de um catálogo.
 
@@ -44,16 +51,18 @@ Eu prefiro que a terminologia do frontend utilize "Cliente(s)" para telas estrut
 - **Auth:** JWT Bearer para autenticação e refresh de tokens.
 - **Sentry:** Observabilidade de erros no frontend via `@sentry/react`. Inicializado em `client/src/main.tsx` com `sendDefaultPii: true`.
 
-## API Endpoints (contrato real — doc integração v1)
+## API Endpoints (contrato real — doc integração v2)
 
 ### Painel de Longevidade
-- `GET /api/painel-longevidade/clientes/:id/cockpit` → `RespostaCockpit` { cliente_id, scores: ScorePilar[], data_atualizacao }.
-  - `ScorePilar` inclui: `tendencia_score` (preferido) ou `tendencia` (fallback), `delta_30d`, `componentes: { hrv, fcr, vo2, recuperacao }` (cada um com `valor`, `unidade`, `tendencia`, `referencia`).
+Ambos os prefixos `/api/painel-longevidade/` e `/api/longevidade/` são aceitos (aliases no proxy).
+
+- `GET /api/longevidade/clientes/:id/cockpit` → `RespostaCockpit` { cliente_id, scores: ScorePilar[], data_atualizacao }.
+  - `ScorePilar` inclui: `tipo` (cardiovascular/metabolic/recovery/functional), `ativo` (boolean), `score`, `classificacao`, `is_partial`, `mensagem_bloqueio`, `tendencia_score` (preferido) ou `tendencia` (fallback), `delta_30d`, `componentes: Record<string, ComponenteScore>` (chaves variam por pilar).
   - Se `componentes` presente, cockpit exibe biomarcadores diretamente sem fetch cardiometabólico separado.
   - classificacao: EN ("good") ou PT-BR ("bom"/"Bom"). Normalizado via `CLASSIFICACAO_FROM_LABEL` e `TENDENCIA_FROM_API`.
-- `GET /api/painel-longevidade/clientes/:id/cardiometabolico` → `RespostaCardiometabolico` { metricas_cardio, secao_metabolica_bloqueada, mensagem_bloqueio ou mensagem_bloqueio_metabolico }. Fallback para cockpit sem `componentes`.
-- `GET /api/painel-longevidade/clientes/:id/historico-scores?intervalo=30d|90d|365d` → `RespostaHistoricoScores`. Frontend usa `?intervalo=`; proxy converte para `?dias=` para staging. Também aceita `?dias=` diretamente (backward compat).
-- `POST /api/painel-longevidade/interesse` → { componente: string }. Registra interesse do profissional em módulos inativos. Retorna 204.
+- `GET /api/longevidade/clientes/:id/cardiometabolico` → `RespostaCardiometabolico` { metricas_cardio, secao_metabolica_bloqueada, mensagem_bloqueio ou mensagem_bloqueio_metabolico }. Fallback para cockpit cardiovascular sem `componentes`.
+- `GET /api/longevidade/clientes/:id/historico-scores?intervalo=30d|90d|365d` → `RespostaHistoricoScores`. Frontend usa `?intervalo=`; proxy converte para `?dias=` para staging. Histórico inclui campos `cardiovascular`, `metabolico`, `recuperacao`, `funcional` por data. Gráfico plota linhas para cada pilar com dados não-nulos.
+- `POST /api/longevidade/interesse` → { componente: string }. Registra interesse do profissional em módulos inativos. Retorna 204.
 
 ### Listagem de Clientes
 - `GET /api/profissional/clientes` → array de Patient. Campos: id, name, email, phone, birthDate, gender (F/M/N), age, avatarUrl (string|null), adherenceTraining, adherenceDiet, lastActivity, status. Filtros client-side (busca, status, ordenação).
