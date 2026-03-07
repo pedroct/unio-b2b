@@ -39,7 +39,6 @@ export async function registerRoutes(
         return res.status(result.status).json({ message: msg });
       }
 
-      console.log("[auth/pair] staging auth response:", JSON.stringify(result.data)?.substring(0, 1000));
       const { access, refresh } = result.data;
       let userId = "";
       let jwtPayload: any = {};
@@ -47,7 +46,6 @@ export async function registerRoutes(
         const b64 = access.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
         jwtPayload = JSON.parse(Buffer.from(b64, "base64").toString());
         userId = String(jwtPayload.user_id || "");
-        console.log("[auth/pair] JWT payload keys:", Object.keys(jwtPayload));
       } catch {}
 
       const authData = result.data;
@@ -66,7 +64,6 @@ export async function registerRoutes(
               method: "GET",
               bearerToken: access,
             });
-            console.log(`[auth/pair] profile ${profilePath} => ${profileResult.status}`, JSON.stringify(profileResult.data)?.substring(0, 500));
             if (profileResult.ok && profileResult.data) {
               const d = profileResult.data;
               profName = d.nome || d.name || d.nome_completo || profName;
@@ -74,9 +71,7 @@ export async function registerRoutes(
               profEmail = d.email || profEmail;
               break;
             }
-          } catch (profileErr: any) {
-            console.warn(`[auth/pair] profile ${profilePath} error:`, profileErr.message);
-          }
+          } catch {}
         }
       }
 
@@ -119,8 +114,6 @@ export async function registerRoutes(
       "/api/nucleo/profissional/me",
       "/api/profissional/me",
       "/api/nucleo/me",
-      "/api/nucleo/usuario/me",
-      "/api/auth/user",
     ];
     for (const profilePath of profilePaths) {
       try {
@@ -128,7 +121,6 @@ export async function registerRoutes(
           method: "GET",
           bearerToken: token,
         });
-        console.log(`[profissional/me] trying ${profilePath} => ${result.status}`, JSON.stringify(result.data)?.substring(0, 300));
         if (result.ok && result.data) {
           const d = result.data;
           return res.json({
