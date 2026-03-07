@@ -275,6 +275,20 @@ export type ClassificacaoScore = "excellent" | "good" | "attention" | "risk";
 
 export type TendenciaBiomarcador = "up" | "down" | "stable" | null;
 
+export interface ComponenteScore {
+  valor: number | null;
+  unidade: string;
+  tendencia: string | null;
+  referencia: string | null;
+}
+
+export interface ComponentesCockpit {
+  hrv: ComponenteScore | null;
+  fcr: ComponenteScore | null;
+  vo2: ComponenteScore | null;
+  recuperacao: ComponenteScore | null;
+}
+
 export interface ScorePilar {
   tipo: string;
   ativo: boolean;
@@ -282,7 +296,10 @@ export interface ScorePilar {
   classificacao: string | null;
   is_partial: boolean;
   mensagem_bloqueio: string | null;
-  tendencia: string | null;
+  tendencia?: string | null;
+  tendencia_score?: string | null;
+  delta_30d?: number | null;
+  componentes?: ComponentesCockpit | null;
 }
 
 export interface RespostaCockpit {
@@ -338,6 +355,12 @@ export const CLASSIFICACAO_FROM_LABEL: Record<string, ClassificacaoScore> = {
   "good": "good",
   "attention": "attention",
   "risk": "risk",
+  "excelente": "excellent",
+  "bom": "good",
+  "atenção": "attention",
+  "atencao": "attention",
+  "risco aumentado": "risk",
+  "risco": "risk",
 };
 
 export const TENDENCIA_FROM_API: Record<string, TendenciaBiomarcador> = {

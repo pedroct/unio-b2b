@@ -269,13 +269,39 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/painel-longevidade/interesse", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) {
+      return res.status(401).json({ message: "Token de autenticação ausente." });
+    }
+    const { componente } = req.body || {};
+    if (!componente || typeof componente !== "string") {
+      return res.status(400).json({ message: "Campo 'componente' é obrigatório." });
+    }
+    try {
+      const result = await stagingPassthrough("/api/painel-longevidade/interesse", {
+        method: "POST",
+        bearerToken: token,
+        body: { componente },
+      });
+      return res.status(result.status >= 200 && result.status < 300 ? 204 : result.status).end();
+    } catch (err: any) {
+      console.error("[longevidade/interesse] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao registrar interesse." });
+    }
+  });
+
   app.get("/api/painel-longevidade/clientes/:id/historico-scores", async (req, res) => {
     const token = extractBearerToken(req);
     if (!token) {
       return res.status(401).json({ message: "Token de autenticação ausente." });
     }
     try {
-      const diasParam = String(req.query.dias || "30");
+      const INTERVALO_TO_DIAS: Record<string, string> = { "30d": "30", "90d": "90", "365d": "365" };
+      const intervaloParam = req.query.intervalo ? String(req.query.intervalo) : null;
+      const diasParam = intervaloParam
+        ? (INTERVALO_TO_DIAS[intervaloParam] || "30")
+        : String(req.query.dias || "30");
       const dias = ["30", "90", "365"].includes(diasParam) ? diasParam : "30";
       const result = await stagingPassthrough(`/api/painel-longevidade/clientes/${req.params.id}/historico-scores?dias=${dias}`, {
         bearerToken: token,

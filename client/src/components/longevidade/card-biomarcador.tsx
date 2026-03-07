@@ -147,21 +147,29 @@ export function CardBiomarcador({
   );
 }
 
+interface ComponenteGrade {
+  value: number | null;
+  unit: string;
+  trend: TendenciaBiomarcador;
+  baseline?: number;
+  referencia?: string;
+}
+
 interface GradeBiomarcadoresProps {
   componentes: {
-    hrv: { value: number | null; unit: string; trend: TendenciaBiomarcador; baseline?: number };
-    rhr: { value: number | null; unit: string; trend: TendenciaBiomarcador; baseline?: number };
-    vo2: { value: number | null; unit: string; trend: TendenciaBiomarcador; baseline?: number };
-    recovery: { value: number | null; unit: string; trend: TendenciaBiomarcador; baseline?: number };
+    hrv: ComponenteGrade;
+    rhr: ComponenteGrade;
+    vo2: ComponenteGrade;
+    recovery: ComponenteGrade;
   };
 }
 
 export function GradeBiomarcadores({ componentes }: GradeBiomarcadoresProps) {
   const items = [
-    { key: "hrv", nome: "HRV (RMSSD)", value: componentes.hrv.value, unit: componentes.hrv.unit, trend: componentes.hrv.trend, baseline: componentes.hrv.baseline, invertedSemantics: false },
-    { key: "rhr", nome: "FC de Repouso", value: componentes.rhr.value, unit: componentes.rhr.unit, trend: componentes.rhr.trend, baseline: componentes.rhr.baseline, invertedSemantics: true },
-    { key: "vo2", nome: "VO₂ Máximo", value: componentes.vo2.value, unit: componentes.vo2.unit, trend: componentes.vo2.trend, baseline: componentes.vo2.baseline, invertedSemantics: false },
-    { key: "recovery", nome: "Recuperação da FC", value: componentes.recovery.value, unit: componentes.recovery.unit, trend: componentes.recovery.trend, baseline: componentes.recovery.baseline, invertedSemantics: false, labelSecundario: "Média das últimas 5 sessões" },
+    { key: "hrv", nome: "HRV (RMSSD)", value: componentes.hrv.value, unit: componentes.hrv.unit, trend: componentes.hrv.trend, baseline: componentes.hrv.baseline, invertedSemantics: false, labelSecundario: componentes.hrv.referencia },
+    { key: "rhr", nome: "FC de Repouso", value: componentes.rhr.value, unit: componentes.rhr.unit, trend: componentes.rhr.trend, baseline: componentes.rhr.baseline, invertedSemantics: true, labelSecundario: componentes.rhr.referencia },
+    { key: "vo2", nome: "VO₂ Máximo", value: componentes.vo2.value, unit: componentes.vo2.unit, trend: componentes.vo2.trend, baseline: componentes.vo2.baseline, invertedSemantics: false, labelSecundario: componentes.vo2.referencia },
+    { key: "recovery", nome: "Recuperação da FC", value: componentes.recovery.value, unit: componentes.recovery.unit, trend: componentes.recovery.trend, baseline: componentes.recovery.baseline, invertedSemantics: false, labelSecundario: componentes.recovery.referencia ?? "Média das últimas 5 sessões" },
   ];
 
   return (

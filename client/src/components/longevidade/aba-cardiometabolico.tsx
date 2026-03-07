@@ -33,7 +33,7 @@ function renderMetrica(m: MetricaCardio) {
       nome={nome}
       valor={m.valor_atual}
       unidade={m.unidade}
-      tendencia={m.tendencia ? (TENDENCIA_FROM_API[m.tendencia] ?? null) : null}
+      tendencia={m.tendencia ? (TENDENCIA_FROM_API[m.tendencia] ?? TENDENCIA_FROM_API[m.tendencia.toLowerCase()] ?? null) : null}
       baseline={m.media_30d ?? undefined}
       invertedSemantics={config.invertedSemantics}
       labelSecundario={config.labelSecundario}

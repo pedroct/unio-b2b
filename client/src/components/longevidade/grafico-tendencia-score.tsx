@@ -33,16 +33,16 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 const PERIODOS = [
-  { dias: 30, label: "30 dias" },
-  { dias: 90, label: "90 dias" },
-  { dias: 365, label: "365 dias" },
+  { intervalo: "30d", label: "30 dias" },
+  { intervalo: "90d", label: "90 dias" },
+  { intervalo: "365d", label: "365 dias" },
 ];
 
 export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps) {
-  const [dias, setDias] = useState(30);
+  const [intervalo, setIntervalo] = useState("30d");
 
   const { data: resposta, isLoading } = useQuery<RespostaHistoricoScores>({
-    queryKey: [`/api/painel-longevidade/clientes/${pacienteId}/historico-scores?dias=${dias}`],
+    queryKey: [`/api/painel-longevidade/clientes/${pacienteId}/historico-scores?intervalo=${intervalo}`],
     enabled: !!pacienteId,
   });
 
@@ -61,14 +61,14 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
         <div className="flex gap-1">
           {PERIODOS.map((p) => (
             <button
-              key={p.dias}
-              onClick={() => setDias(p.dias)}
+              key={p.intervalo}
+              onClick={() => setIntervalo(p.intervalo)}
               className="px-3 py-1 rounded text-xs font-medium transition-colors"
               style={{
-                background: dias === p.dias ? "var(--mod-longevidade-base)" : "transparent",
-                color: dias === p.dias ? "#fff" : "var(--sys-text-muted)",
+                background: intervalo === p.intervalo ? "var(--mod-longevidade-base)" : "transparent",
+                color: intervalo === p.intervalo ? "#fff" : "var(--sys-text-muted)",
               }}
-              data-testid={`button-periodo-${p.dias}d`}
+              data-testid={`button-periodo-${p.intervalo}`}
             >
               {p.label}
             </button>

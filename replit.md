@@ -47,9 +47,13 @@ Eu prefiro que a terminologia do frontend utilize "Cliente(s)" para telas estrut
 ## API Endpoints (contrato real — doc integração v1)
 
 ### Painel de Longevidade
-- `GET /api/painel-longevidade/clientes/:id/cockpit` → `RespostaCockpit` { cliente_id, scores: ScorePilar[], data_atualizacao }. classificacao: EN ("good") ou PT-BR ("Bom"), tendencia: EN ("up"/"down"/"stable") ou PT-BR ("subindo"/"descendo"/"estavel"). Normalizado via `CLASSIFICACAO_FROM_LABEL` e `TENDENCIA_FROM_API`.
-- `GET /api/painel-longevidade/clientes/:id/cardiometabolico` → `RespostaCardiometabolico` { metricas_cardio, secao_metabolica_bloqueada, mensagem_bloqueio ou mensagem_bloqueio_metabolico }. Frontend lê `mensagem_bloqueio_metabolico ?? mensagem_bloqueio ?? "Em breve"`.
-- `GET /api/painel-longevidade/clientes/:id/historico-scores?dias=30|90|365` → `RespostaHistoricoScores` { cliente_id, historico: [{ data, cardiovascular, metabolico, recuperacao, funcional }] }. Valores null = dia sem cálculo. Frontend filtra nulls e plota apenas cardiovascular (V1).
+- `GET /api/painel-longevidade/clientes/:id/cockpit` → `RespostaCockpit` { cliente_id, scores: ScorePilar[], data_atualizacao }.
+  - `ScorePilar` inclui: `tendencia_score` (preferido) ou `tendencia` (fallback), `delta_30d`, `componentes: { hrv, fcr, vo2, recuperacao }` (cada um com `valor`, `unidade`, `tendencia`, `referencia`).
+  - Se `componentes` presente, cockpit exibe biomarcadores diretamente sem fetch cardiometabólico separado.
+  - classificacao: EN ("good") ou PT-BR ("bom"/"Bom"). Normalizado via `CLASSIFICACAO_FROM_LABEL` e `TENDENCIA_FROM_API`.
+- `GET /api/painel-longevidade/clientes/:id/cardiometabolico` → `RespostaCardiometabolico` { metricas_cardio, secao_metabolica_bloqueada, mensagem_bloqueio ou mensagem_bloqueio_metabolico }. Fallback para cockpit sem `componentes`.
+- `GET /api/painel-longevidade/clientes/:id/historico-scores?intervalo=30d|90d|365d` → `RespostaHistoricoScores`. Frontend usa `?intervalo=`; proxy converte para `?dias=` para staging. Também aceita `?dias=` diretamente (backward compat).
+- `POST /api/painel-longevidade/interesse` → { componente: string }. Registra interesse do profissional em módulos inativos. Retorna 204.
 
 ### Listagem de Clientes
 - `GET /api/profissional/clientes` → array de Patient. Campos: id, name, email, phone, birthDate, gender (F/M/N), age, avatarUrl (string|null), adherenceTraining, adherenceDiet, lastActivity, status. Filtros client-side (busca, status, ordenação).
