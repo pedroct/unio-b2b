@@ -304,13 +304,10 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Token de autenticação ausente." });
     }
     try {
-      const INTERVALO_TO_DIAS: Record<string, string> = { "30d": "30", "90d": "90", "365d": "365" };
-      const intervaloParam = req.query.intervalo ? String(req.query.intervalo) : null;
-      const diasParam = intervaloParam
-        ? (INTERVALO_TO_DIAS[intervaloParam] || "30")
-        : String(req.query.dias || "30");
-      const dias = ["30", "90", "365"].includes(diasParam) ? diasParam : "30";
-      const result = await stagingPassthrough(`/api/painel-longevidade/clientes/${req.params.id}/historico-scores?dias=${dias}`, {
+      const VALID_INTERVALOS = ["30d", "90d", "365d"];
+      const intervaloRaw = req.query.intervalo ? String(req.query.intervalo) : null;
+      const intervalo = intervaloRaw && VALID_INTERVALOS.includes(intervaloRaw) ? intervaloRaw : "30d";
+      const result = await stagingPassthrough(`/api/painel-longevidade/clientes/${req.params.id}/historico-scores?intervalo=${intervalo}`, {
         bearerToken: token,
       });
       return res.status(result.status).json(result.data);

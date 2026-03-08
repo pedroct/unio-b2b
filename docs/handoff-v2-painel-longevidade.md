@@ -234,12 +234,19 @@ interface PontoHistoricoScore {
 }
 ```
 
+#### Nota sobre o backend (hotfix 2026-03-08):
+
+O campo de filtragem foi corrigido de `calculated_at` (data de execução do motor) para `period_end` (data clínica do score). Após backfill retroativo, dados desde dezembro/2025 estão disponíveis. Os três filtros (30d, 90d, 365d) agora retornam quantidades distintas de dados reais.
+
 #### Comportamento do gráfico:
 - Plota uma linha por pilar que tenha **pelo menos um valor não-nulo** na série
 - Cores: cardiovascular = `#4A5899` (indigo), metabólico = `#5B8C6F` (verde), recuperação = `#3D7A8C` (azul)
 - Legenda aparece quando **mais de uma linha** está visível
 - Tooltip mostra todos os valores do ponto na data hover
 - `null` cria gap na linha (sem interpolação)
+- **Formatação adaptativa do eixo X:** 30d → `DD/MM`, 90d → `DD Mon` (ex: "05 Fev"), 365d → `Mon AA` (ex: "Dez 25")
+- **Agregação semanal para 365d:** Quando há mais de 60 pontos diários, dados são agrupados por semana ISO com média dos valores por pilar, reduzindo ~120 pontos para ~17 semanas
+- **Ticks adaptativos:** ~7 ticks para 30d, ~6 para 90d, ~12 para 365d
 
 ---
 

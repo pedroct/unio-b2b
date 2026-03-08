@@ -8,10 +8,82 @@ interface GraficoTendenciaScoreProps {
   pacienteId: string;
 }
 
-function formatarDataCurta(dateStr: string): string {
+const MESES_CURTOS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+function formatarData30d(dateStr: string): string {
   const parts = dateStr.split("-");
   if (parts.length < 3) return dateStr;
   return `${parts[2]}/${parts[1]}`;
+}
+
+function formatarData90d(dateStr: string): string {
+  const parts = dateStr.split("-");
+  if (parts.length < 3) return dateStr;
+  const mes = parseInt(parts[1], 10) - 1;
+  return `${parseInt(parts[2], 10)} ${MESES_CURTOS[mes] ?? parts[1]}`;
+}
+
+function formatarData365d(dateStr: string): string {
+  const parts = dateStr.split("-");
+  if (parts.length < 2) return dateStr;
+  const mes = parseInt(parts[1], 10) - 1;
+  const ano = parts[0].slice(2);
+  return `${MESES_CURTOS[mes] ?? parts[1]} ${ano}`;
+}
+
+function getTickFormatter(intervalo: string) {
+  if (intervalo === "365d") return formatarData365d;
+  if (intervalo === "90d") return formatarData90d;
+  return formatarData30d;
+}
+
+interface ChartPoint {
+  data: string;
+  cardiovascular: number | undefined;
+  metabolico: number | undefined;
+  recuperacao: number | undefined;
+}
+
+const PILAR_KEYS: Array<"cardiovascular" | "metabolico" | "recuperacao"> = ["cardiovascular", "metabolico", "recuperacao"];
+
+function isoWeekKey(dateStr: string): string {
+  const [y, m, day] = dateStr.split("-").map(Number);
+  const d = new Date(Date.UTC(y, m - 1, day));
+  const dayOfWeek = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayOfWeek);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+}
+
+function aggregateWeekly(points: ChartPoint[]): ChartPoint[] {
+  const weeks = new Map<string, { points: ChartPoint[]; lastDate: string }>();
+
+  for (const pt of points) {
+    const wk = isoWeekKey(pt.data);
+    const entry = weeks.get(wk);
+    if (entry) {
+      entry.points.push(pt);
+      if (pt.data > entry.lastDate) entry.lastDate = pt.data;
+    } else {
+      weeks.set(wk, { points: [pt], lastDate: pt.data });
+    }
+  }
+
+  const result: ChartPoint[] = [];
+  for (const [, { points: wkPts, lastDate }] of weeks) {
+    const agg: ChartPoint = { data: lastDate, cardiovascular: undefined, metabolico: undefined, recuperacao: undefined };
+    for (const key of PILAR_KEYS) {
+      const vals = wkPts.map(p => p[key]).filter((v): v is number => v !== undefined);
+      if (vals.length > 0) {
+        agg[key] = Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) / 100;
+      }
+    }
+    result.push(agg);
+  }
+
+  result.sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : 0));
+  return result;
 }
 
 interface PilarConfig {
@@ -33,14 +105,16 @@ function classificarScore(valor: number): string {
   return "Risco Aumentado";
 }
 
-function MultiTooltip({ active, payload, label }: any) {
+function MultiTooltip({ active, payload, label, intervalo }: any) {
   if (!active || !payload?.length) return null;
   const validPayloads = payload.filter((p: any) => p.value != null);
   if (validPayloads.length === 0) return null;
 
+  const formatter = getTickFormatter(intervalo === "365d" ? "90d" : "30d");
+
   return (
     <div className="rounded-lg px-3 py-2 text-sm shadow-lg" style={{ background: "var(--mod-longevidade-bg)", border: "1px solid var(--mod-longevidade-border)" }}>
-      <p className="text-xs text-muted-foreground mb-1">{formatarDataCurta(label)}</p>
+      <p className="text-xs text-muted-foreground mb-1">{formatter(label)}</p>
       {validPayloads.map((entry: any) => (
         <div key={entry.dataKey} className="flex items-center gap-2">
           <span className="inline-block w-2 h-2 rounded-full" style={{ background: entry.color }} />
@@ -59,15 +133,30 @@ const PERIODOS = [
   { intervalo: "365d", label: "365 dias" },
 ];
 
+function computeTickInterval(dataLength: number, intervalo: string): number {
+  if (intervalo === "365d") {
+    return dataLength > 12 ? Math.floor(dataLength / 12) : 0;
+  }
+  if (intervalo === "90d") {
+    return dataLength > 6 ? Math.floor(dataLength / 6) : 0;
+  }
+  return dataLength > 7 ? Math.floor(dataLength / 7) : 0;
+}
+
 export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps) {
   const [intervalo, setIntervalo] = useState("30d");
 
   const { data: resposta, isLoading } = useQuery<RespostaHistoricoScores>({
-    queryKey: [`/api/painel-longevidade/clientes/${pacienteId}/historico-scores?intervalo=${intervalo}`],
+    queryKey: ["/api/painel-longevidade/clientes", pacienteId, "historico-scores", intervalo],
+    queryFn: async () => {
+      const res = await fetch(`/api/painel-longevidade/clientes/${pacienteId}/historico-scores?intervalo=${intervalo}`);
+      if (!res.ok) throw new Error("Erro ao buscar histórico");
+      return res.json();
+    },
     enabled: !!pacienteId,
   });
 
-  const chartData = useMemo(() => {
+  const rawData = useMemo<ChartPoint[]>(() => {
     if (!resposta?.historico) return [];
     return resposta.historico
       .filter(p => p.cardiovascular != null || p.metabolico != null || p.recuperacao != null)
@@ -79,14 +168,22 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
       }));
   }, [resposta]);
 
+  const chartData = useMemo(() => {
+    if (intervalo === "365d" && rawData.length > 60) {
+      return aggregateWeekly(rawData);
+    }
+    return rawData;
+  }, [rawData, intervalo]);
+
   const activePilares = useMemo(() => {
     return PILARES_CHART.filter(pc =>
-      chartData.some(d => (d as any)[pc.key] !== undefined)
+      chartData.some(d => d[pc.key] !== undefined)
     );
   }, [chartData]);
 
-  const xInterval = chartData.length > 7 ? Math.floor(chartData.length / 7) : 1;
+  const xInterval = computeTickInterval(chartData.length, intervalo);
   const showLegend = activePilares.length > 1;
+  const tickFormatter = getTickFormatter(intervalo);
 
   return (
     <div data-testid="grafico-tendencia-score">
@@ -128,7 +225,7 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis
               dataKey="data"
-              tickFormatter={formatarDataCurta}
+              tickFormatter={tickFormatter}
               tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
               axisLine={{ stroke: "hsl(var(--border))" }}
               tickLine={false}
@@ -145,7 +242,7 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
             <ReferenceArea y1={60} y2={80} fill="var(--score-good-bg)" fillOpacity={0.5} />
             <ReferenceArea y1={40} y2={60} fill="var(--score-attention-bg)" fillOpacity={0.5} />
             <ReferenceArea y1={0} y2={40} fill="var(--score-risk-bg)" fillOpacity={0.5} />
-            <Tooltip content={<MultiTooltip />} />
+            <Tooltip content={<MultiTooltip intervalo={intervalo} />} />
             <ReferenceLine y={80} stroke="var(--score-excellent-border)" strokeDasharray="4 4" strokeOpacity={0.3} />
             <ReferenceLine y={60} stroke="var(--score-good-border)" strokeDasharray="4 4" strokeOpacity={0.3} />
             <ReferenceLine y={40} stroke="var(--score-attention-border)" strokeDasharray="4 4" strokeOpacity={0.3} />
