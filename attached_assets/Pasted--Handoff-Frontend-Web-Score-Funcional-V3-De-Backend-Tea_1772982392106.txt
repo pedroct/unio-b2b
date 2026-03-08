@@ -1,0 +1,239 @@
+# 🖥️ Handoff Frontend Web — Score Funcional V3
+
+**De:** Backend Team
+**Para:** Frontend Web Team
+**Data:** 08/03/2026
+**Prioridade:** Alta
+**Backend:** ✅ Pronto e testado (9/9 testes passando)
+
+---
+
+## 🎯 Contexto
+
+O backend do Score Funcional V3 está **implementado e ativo**. O endpoint `/cockpit` já retorna o novo score. O frontend precisa:
+
+1. **Ativar o card do Score Funcional no Cockpit** (substituir o placeholder bloqueado)
+2. **Renderizar os componentes funcionais** (velocidade, força, treino, estabilidade)
+3. **Incluir o score funcional nos gráficos de tendência**
+4. **[V3.1]** Criar a aba "Performance & Funcionalidade"
+
+---
+
+## 📋 Item 1: Score Funcional no Cockpit (V3 — Imediato)
+
+### Endpoint
+
+```
+GET /api/longevidade/clientes/{cliente_id}/cockpit
+```
+
+### Contrato de Resposta — Score Funcional
+
+O score funcional agora retorna dentro do array `scores` do cockpit. **Dois cenários:**
+
+#### A) Score calculado (tem dados)
+
+```json
+{
+  "tipo": "functional",
+  "ativo": true,
+  "score": 78.5,
+  "classificacao": "good",
+  "tendencia_score": "estavel",
+  "is_partial": false,
+  "mensagem_bloqueio": null,
+  "componentes": {
+    "velocidade_caminhada": {
+      "valor": 1.32,
+      "unidade": "m/s",
+      "tendencia": null,
+      "referencia": "Média 30d"
+    },
+    "forca": {
+      "valor": 3.0,
+      "unidade": "nível",
+      "tendencia": null,
+      "referencia": "Avaliação funcional"
+    },
+    "volume_treino": {
+      "valor": 210.0,
+      "unidade": "min/semana",
+      "tendencia": null,
+      "referencia": "Soma 7d"
+    },
+    "estabilidade": {
+      "valor": 0.82,
+      "unidade": "%",
+      "tendencia": null,
+      "referencia": "Walking Steadiness"
+    }
+  }
+}
+```
+
+#### B) Sem dados suficientes (coleta em andamento)
+
+```json
+{
+  "tipo": "functional",
+  "ativo": true,
+  "score": null,
+  "classificacao": null,
+  "is_partial": false,
+  "mensagem_bloqueio": "Coleta em andamento. Faltam biomarcadores funcionais (velocidade, treino, estabilidade).",
+  "componentes": null
+}
+```
+
+#### C) Score parcial (3 de 4 métricas — sem Força)
+
+```json
+{
+  "tipo": "functional",
+  "ativo": true,
+  "score": 88.57,
+  "classificacao": "excellent",
+  "is_partial": true,
+  "mensagem_bloqueio": null,
+  "componentes": {
+    "velocidade_caminhada": {
+      "valor": 1.32,
+      "unidade": "m/s",
+      "referencia": "Média 30d"
+    },
+    "forca": null,
+    "volume_treino": {
+      "valor": 200.0,
+      "unidade": "min/semana",
+      "referencia": "Soma 7d"
+    },
+    "estabilidade": {
+      "valor": 0.8,
+      "unidade": "%",
+      "referencia": "Walking Steadiness"
+    }
+  }
+}
+```
+
+### Regras de renderização
+
+| Campo                         | Regra                                                           |
+| ----------------------------- | --------------------------------------------------------------- |
+| `ativo = true, score != null` | Exibir card com score, classificação e badge do nível           |
+| `ativo = true, score = null`  | Exibir card com `mensagem_bloqueio` e visual "em coleta"        |
+| `is_partial = true`           | Exibir indicador visual de "score parcial" (ex: badge, tooltip) |
+| `componentes.forca = null`    | Não renderizar o componente força (ele é opcional)              |
+
+### Classificações e Cores
+
+Esta é a **régua unificada para TODOS os scores** (atualizada para corresponder ao PRD):
+
+| Classificação | Range  | Cor sugerida | Ícone |
+| ------------- | ------ | ------------ | ----- |
+| `"excellent"` | 80–100 | 🟢 Verde     | ✨    |
+| `"good"`      | 60–79  | 🔵 Azul      | 👍    |
+| `"attention"` | 40–59  | 🟡 Amarelo   | ⚠️    |
+| `"risk"`      | 0–39   | 🔴 Vermelho  | 🚨    |
+
+> [!WARNING]
+> **A régua de classificação mudou!** Antes era 90/75/60, agora é **80/60/40** conforme os PRDs. O frontend deve atualizar qualquer lógica hardcoded de cores/ícones para usar os novos ranges. Isso afeta **todos os 4 scores** (CV, Metabólico, Recuperação, Funcional).
+
+---
+
+## 📋 Item 2: Gráfico de Tendência de Scores (V3 — Imediato)
+
+### Endpoint
+
+```
+GET /api/longevidade/clientes/{cliente_id}/historico-scores?intervalo=90d
+```
+
+### Contrato — Agora inclui `funcional`
+
+```json
+{
+  "cliente_id": 123,
+  "historico": [
+    {
+      "data": "2026-03-08",
+      "cardiovascular": 85.2,
+      "metabolico": 72.1,
+      "recuperacao": 68.5,
+      "funcional": 78.5
+    },
+    {
+      "data": "2026-03-07",
+      "cardiovascular": 84.0,
+      "metabolico": 71.8,
+      "recuperacao": 69.0,
+      "funcional": null
+    }
+  ]
+}
+```
+
+### Regras
+
+| Regra                 | Detalhe                                                |
+| --------------------- | ------------------------------------------------------ |
+| `funcional = null`    | Não plotar ponto no gráfico para aquele dia            |
+| Nova linha no gráfico | Adicionar série "Score Funcional" com cor distinta     |
+| Legenda               | Incluir "Funcional" na legenda do gráfico de tendência |
+
+---
+
+## 📋 Item 3: Aba Performance & Funcionalidade (V3.1 — Após Mobile Sync)
+
+> [!NOTE]
+> Este item depende do **backend V3.1** (endpoint `GET /clientes/{id}/performance-funcional` — Story S9, ainda não implementada) e dos **dados reais do Mobile**. Documentado aqui para planejamento antecipado.
+
+### Layout esperado (PRD §16)
+
+| Métrica                      | Visualização                   | Dados do           |
+| ---------------------------- | ------------------------------ | ------------------ |
+| Volume semanal de treino     | 📊 Gráfico barras (7d)         | `exercise_minutes` |
+| Zonas de frequência cardíaca | 📊 Distribuição (pizza/barras) | Apple Health       |
+| Recuperação FC               | 🃏 Card com valor + tendência  | `hr_recovery_1min` |
+| Velocidade de caminhada      | 📈 Gráfico tendência (30d)     | `walking_speed`    |
+| Estabilidade                 | 🃏 Card com indicador          | `stability`        |
+| Força                        | 🃏 Card com nível              | `strength`         |
+
+### Status
+
+- ⏳ **Backend:** Endpoint S9 pendente (será implementado quando dados fluírem)
+- ⏳ **Mobile:** Sync dos biomarcadores pendente ([HANDOFF_MOBILE](./HANDOFF_MOBILE_Score_Funcional_V3.md))
+- ⏳ **Frontend:** Aguardando contrato do endpoint
+
+---
+
+## ✅ Checklist Frontend Web
+
+### V3 — Implementação Imediata
+
+- [ ] Ativar card Score Funcional no Cockpit (remover estado "bloqueado/V3")
+- [ ] Renderizar 4 componentes funcionais (velocidade, força, volume, estabilidade)
+- [ ] Tratar cenário `score = null` (exibir mensagem de coleta)
+- [ ] Tratar cenário `is_partial = true` (badge "score parcial")
+- [ ] Tratar componente `forca = null` (não renderizar quando ausente)
+- [ ] Adicionar série "Funcional" ao gráfico de tendência
+- [ ] **Atualizar régua de classificação de 90/75/60 para 80/60/40 em TODOS os scores**
+
+### V3.1 — Após Dados Reais
+
+- [ ] Criar aba "Performance & Funcionalidade" no painel
+- [ ] Implementar 6 visualizações (gráficos + cards) conforme PRD §16
+- [ ] Consumir novo endpoint `/performance-funcional` (contrato TBD)
+
+---
+
+## 📊 Resumo de Mudanças na API
+
+| Mudança                          | Onde                                                             | Breaking?         |
+| -------------------------------- | ---------------------------------------------------------------- | ----------------- |
+| Score funcional ativo no cockpit | `GET /cockpit` → `scores[]`                                      | ❌ Não (additive) |
+| 4 novos campos em `componentes`  | `velocidade_caminhada`, `forca`, `volume_treino`, `estabilidade` | ❌ Não (nullable) |
+| Campo `funcional` no histórico   | `GET /historico-scores` → `historico[]`                          | ❌ Não (nullable) |
+| Régua de classificação           | `classificacao` values unchanged, ranges 80/60/40                | ⚠️ Frontend-only  |
+
+**Nenhuma mudança é breaking.** Todos os novos campos são nullable/opcionais.
