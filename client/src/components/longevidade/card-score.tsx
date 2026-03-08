@@ -63,7 +63,7 @@ export function CardScore({ score, classification, tendencia, is_partial = false
   if (score === null || classification === null) {
     return (
       <div
-        className="rounded-xl p-6"
+        className="rounded-xl p-6 h-full"
         style={{ background: "var(--mod-longevidade-bg)", border: "1px solid var(--mod-longevidade-border)" }}
         data-testid={`card-score-insuficiente-${pilarTipo}`}
       >
@@ -83,7 +83,7 @@ export function CardScore({ score, classification, tendencia, is_partial = false
 
   return (
     <div
-      className="rounded-xl p-6"
+      className="rounded-xl p-6 h-full"
       style={{ background: "var(--mod-longevidade-bg)", border: "1px solid var(--mod-longevidade-border)" }}
       data-testid={`card-score-${pilarTipo}`}
     >

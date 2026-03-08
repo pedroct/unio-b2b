@@ -199,7 +199,7 @@ export function AbaCockpit({ pacienteId }: AbaCockpitProps) {
           return (
             <div
               key={sf.tipo}
-              className="rounded-xl p-5 flex flex-col items-center justify-center text-center"
+              className="rounded-xl p-5 h-full flex flex-col items-center justify-center text-center"
               style={{ background: "var(--sys-bg-secondary)", border: "1px solid var(--sys-border-light)" }}
               data-testid={`card-score-futuro-${sf.tipo}`}
             >
