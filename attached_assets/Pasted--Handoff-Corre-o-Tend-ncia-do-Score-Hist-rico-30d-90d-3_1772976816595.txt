@@ -1,0 +1,156 @@
+# Handoff — Correção: Tendência do Score (Histórico 30d/90d/365d)
+
+**Data:** 2026-03-08
+**Responsável backend:** Dev Backend (Antigravity)
+**Destinatário:** LLM Frontend Web (B2B)
+**Objetivo:** Documentar as alterações no backend que impactam o gráfico "Tendência do Score" no Cockpit e exigem validação/ajuste no frontend.
+
+---
+
+## 1. Problema Corrigido
+
+O gráfico "Tendência do Score" exibia dados apenas a partir de 06/02/2026 (~30 dias), independentemente do filtro selecionado (30d, 90d, 365d). **Os três botões do filtro geravam exatamente o mesmo gráfico.**
+
+### Causa-Raiz
+
+O backend só calculava scores para a data corrente (1 por dia). Após backfill retroativo, scores desde dezembro/2025 estarão disponíveis na API.
+
+---
+
+## 2. Alteração no Endpoint `historico-scores`
+
+### Endpoint
+
+```
+GET /api/longevidade/clientes/{cliente_id}/historico-scores?intervalo=30d
+GET /api/painel-longevidade/clientes/{cliente_id}/historico-scores?intervalo=90d
+```
+
+| Parâmetro   | Tipo         | Valores Aceitos      | Default |
+| ----------- | ------------ | -------------------- | ------- |
+| `intervalo` | query string | `30d`, `90d`, `365d` | `30d`   |
+
+### Mudança no Comportamento
+
+| Aspecto                       | Antes (V1)                                  | Depois (V2 Fix)                         |
+| ----------------------------- | ------------------------------------------- | --------------------------------------- |
+| Campo de filtragem            | `calculated_at` (data da execução do motor) | `period_end` (data clínica do score)    |
+| Chave da data no payload      | `s.calculated_at.date()`                    | `s.period_end`                          |
+| Quantidade de dados para 90d  | ~30 pontos (duplicado do 30d)               | ~90 pontos reais                        |
+| Quantidade de dados para 365d | ~30 pontos (duplicado do 30d)               | ~120+ pontos (até onde há dados brutos) |
+
+### Schema de Resposta (SEM ALTERAÇÃO)
+
+```json
+{
+  "cliente_id": 42,
+  "historico": [
+    {
+      "data": "2025-12-03",
+      "cardiovascular": 83.5,
+      "metabolico": null,
+      "recuperacao": null,
+      "funcional": null
+    },
+    {
+      "data": "2025-12-04",
+      "cardiovascular": 82.1,
+      "metabolico": null,
+      "recuperacao": null,
+      "funcional": null
+    }
+  ]
+}
+```
+
+> **IMPORTANTE:** O schema de resposta permanece idêntico. Nenhuma chave foi adicionada ou removida. A diferença é apenas na **quantidade de itens** retornados e nas **datas** (que agora podem ir muito mais para o passado).
+
+---
+
+## 3. O que o Frontend Precisa Validar
+
+### 3.1. O filtro "30 dias / 90 dias / 365 dias" REALMENTE FUNCIONA agora
+
+Antes, o frontend enviava `?intervalo=90d` mas recebia os mesmos dados de `30d`. **Agora o backend retorna dados historicamente corretos.** Valide que:
+
+- [x] O botão "30 dias" envia `?intervalo=30d` (ou omite, pois é default)
+- [ ] O botão "90 dias" envia `?intervalo=90d`
+- [ ] O botão "365 dias" envia `?intervalo=365d`
+- [ ] O frontend refaz o `fetch` ao trocar de botão (não pode ser apenas zoom/pan local)
+
+### 3.2. O eixo X do gráfico se adapta ao range de dados
+
+Com 365 dias de dados, o eixo X vai mostrar datas de dezembro/2025 até março/2026. Verifique:
+
+- [ ] O eixo X formata as datas corretamente para intervalos longos (ex: "Dez 25", "Jan 26", "Fev 26")
+- [ ] O gráfico não fica "esmagado" com 365 pontos de dados — considere aggregação semanal para 365d
+
+### 3.3. Valores `null` nos pilares Metabólico e Recuperação
+
+Neste momento, os dados brutos existentes no Staging são **exclusivamente cardiovasculares** (HRV, FCR, VO2, Recuperação FC). Os pilares Metabólico e Recuperação retornarão `null`:
+
+```json
+{
+  "data": "2025-12-15",
+  "cardiovascular": 81.2,
+  "metabolico": null,
+  "recuperacao": null,
+  "funcional": null
+}
+```
+
+O frontend deve renderizar **apenas a linha cardiovascular** enquanto os demais pilares não tiverem dados.
+
+---
+
+## 4. Dados Esperados Após o Backfill
+
+| Filtro | Período Esperado          | Score Cardiovascular | Score Metabólico | Score Recuperação |
+| ------ | ------------------------- | -------------------- | ---------------- | ----------------- |
+| 30d    | 06/02/2026 → 08/03/2026   | ✅ ~80-85            | ❌ null          | ❌ null           |
+| 90d    | 08/12/2025 → 08/03/2026   | ✅ ~80-85            | ❌ null          | ❌ null           |
+| 365d   | 08/12/2025 → 08/03/2026\* | ✅ ~80-85            | ❌ null          | ❌ null           |
+
+> \*O range real de 365d será de ~120 dias porque as HealthMetrics mais antigas são de 03/12/2025. O gráfico deve mostrar o range real dos dados, não um range vazio.
+
+---
+
+## 5. Outros Endpoints — SEM ALTERAÇÃO
+
+Os seguintes endpoints **NÃO foram modificados** e continuam funcionando exatamente igual:
+
+| Endpoint                              | Descrição                                      |
+| ------------------------------------- | ---------------------------------------------- |
+| `GET /clientes/{id}/cockpit`          | 4 scores estruturais (score atual do dia)      |
+| `GET /clientes/{id}/cardiometabolica` | Detalhamento de métricas cardiovasculares      |
+| `POST /interesse`                     | Registro de interesse em funcionalidade futura |
+
+---
+
+## 6. Exemplo de Chamada cURL
+
+```bash
+# 30 dias (default)
+curl -H "Authorization: Bearer <JWT>" \
+  "https://staging.unio.tec.br/api/longevidade/clientes/42/historico-scores"
+
+# 90 dias
+curl -H "Authorization: Bearer <JWT>" \
+  "https://staging.unio.tec.br/api/longevidade/clientes/42/historico-scores?intervalo=90d"
+
+# 365 dias
+curl -H "Authorization: Bearer <JWT>" \
+  "https://staging.unio.tec.br/api/longevidade/clientes/42/historico-scores?intervalo=365d"
+```
+
+---
+
+## 7. Timeline
+
+| Etapa                                           | Status                                |
+| ----------------------------------------------- | ------------------------------------- |
+| Backend: Correção do endpoint (period_end)      | ✅ Deployado                          |
+| Backend: Management command backfill_scores     | ✅ Deployado                          |
+| Backend: Execução do backfill no Staging        | ⏳ Pendente (após deploy CI concluir) |
+| Frontend: Validar filtros 30d/90d/365d          | ⬜ Ação requerida                     |
+| Frontend: Validar renderização com dados longos | ⬜ Ação requerida                     |
