@@ -5,6 +5,7 @@ import type { TendenciaBiomarcador } from "@shared/schema";
 interface CardBiomarcadorProps {
   nome: string;
   valor: number | null;
+  valorFormatado?: string | null;
   unidade: string;
   tendencia: TendenciaBiomarcador;
   baseline?: number;
@@ -89,6 +90,7 @@ function SparklineMini({ data, cor }: { data: number[]; cor: string }) {
 export function CardBiomarcador({
   nome,
   valor,
+  valorFormatado,
   unidade,
   tendencia,
   baseline,
@@ -119,9 +121,9 @@ export function CardBiomarcador({
 
       <div className="flex items-baseline gap-1.5">
         <span className={`text-2xl font-bold ${insuficiente ? "biomarker-card__value text-muted-foreground" : ""}`}>
-          {insuficiente ? "—" : valor}
+          {insuficiente ? "—" : (valorFormatado || valor)}
         </span>
-        <span className="text-xs text-muted-foreground">{unidade}</span>
+        {!valorFormatado && <span className="text-xs text-muted-foreground">{unidade}</span>}
       </div>
 
       {insuficiente ? (
@@ -151,6 +153,7 @@ export interface BiomarcadorItem {
   key: string;
   nome: string;
   value: number | null;
+  valorFormatado?: string | null;
   unit: string;
   trend: TendenciaBiomarcador;
   baseline?: number;
@@ -172,6 +175,7 @@ export function GradeGenerica({ items, testId = "grade-biomarcadores" }: GradeGe
           key={item.key}
           nome={item.nome}
           valor={item.value}
+          valorFormatado={item.valorFormatado}
           unidade={item.unit}
           tendencia={item.trend}
           baseline={item.baseline}

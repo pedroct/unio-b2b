@@ -278,6 +278,7 @@ export type TendenciaBiomarcador = "up" | "down" | "stable" | null;
 
 export interface ComponenteScore {
   valor: number | null;
+  valor_formatado?: string | null;
   unidade: string;
   tendencia: string | null;
   referencia: string | null;

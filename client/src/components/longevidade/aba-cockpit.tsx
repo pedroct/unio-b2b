@@ -93,6 +93,7 @@ function buildBiomarcadorItems(componentes: ComponentesCockpit, pilarTipo: strin
         key: cfg.key,
         nome: cfg.nome,
         value: comp?.valor ?? null,
+        valorFormatado: comp?.valor_formatado ?? null,
         unit: comp?.unidade ?? cfg.defaultUnit,
         trend: normTrend(comp?.tendencia),
         referencia: comp?.referencia ?? cfg.defaultReferencia,
