@@ -73,7 +73,7 @@ export function CardScore({ score, classification, tendencia, is_partial = false
             {tituloExibido}
           </span>
         </div>
-        <p className="font-serif text-5xl font-bold" style={{ color: "var(--mod-longevidade-text)" }}>—</p>
+        <p className="text-5xl font-bold" style={{ color: "var(--mod-longevidade-text)" }}>—</p>
         <p className="text-sm mt-3 text-muted-foreground">Dados insuficientes para cálculo</p>
       </div>
     );
@@ -94,7 +94,7 @@ export function CardScore({ score, classification, tendencia, is_partial = false
         </span>
       </div>
 
-      <p className="font-serif text-5xl font-bold leading-none" style={{ color: "var(--mod-longevidade-text)" }} data-testid={`text-score-value-${pilarTipo}`}>
+      <p className="text-5xl font-bold leading-none" style={{ color: "var(--mod-longevidade-text)" }} data-testid={`text-score-value-${pilarTipo}`}>
         {Math.round(score)}
       </p>
 

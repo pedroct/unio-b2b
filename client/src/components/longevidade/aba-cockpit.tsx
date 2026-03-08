@@ -208,7 +208,7 @@ export function AbaCockpit({ pacienteId }: AbaCockpitProps) {
                 <Lock className="h-3 w-3 absolute -bottom-0.5 -right-0.5" style={{ color: "var(--sys-text-muted)" }} />
               </div>
               <p className="text-xs font-semibold mb-1" style={{ color: "var(--sys-text-muted)" }}>{label}</p>
-              <p className="font-serif text-2xl font-bold" style={{ color: "var(--sys-text-muted)" }}>—</p>
+              <p className="text-2xl font-bold" style={{ color: "var(--sys-text-muted)" }}>—</p>
               <p className="text-[10px] mt-1" style={{ color: "var(--sys-text-muted)" }}>
                 {sf.mensagem_bloqueio ?? "Disponível em breve"}
               </p>
