@@ -20,7 +20,7 @@ const BIOMARCADORES_CONFIG: {
 }[] = [
   { key: "exercise_minutes", nome: "Volume de Treino", invertedSemantics: false, icon: Timer },
   { key: "walking_speed", nome: "Velocidade Caminhada", invertedSemantics: false, icon: Footprints },
-  { key: "stability", nome: "Estabilidade", invertedSemantics: false, icon: Scale },
+  { key: "stability", nome: "Estabilidade ao Caminhar", invertedSemantics: false, icon: Scale },
   { key: "strength", nome: "Força", invertedSemantics: false, icon: Dumbbell },
 ];
 

@@ -68,7 +68,7 @@ const COMPONENTES_POR_PILAR: Record<string, ComponenteConfig[]> = {
     { key: "velocidade_caminhada", nome: "Velocidade de Caminhada", defaultUnit: "m/s", defaultReferencia: "Média 30d" },
     { key: "forca", nome: "Força", defaultUnit: "nível", defaultReferencia: "Avaliação funcional" },
     { key: "volume_treino", nome: "Volume de Treino", defaultUnit: "min/semana", defaultReferencia: "Soma 7d" },
-    { key: "estabilidade", nome: "Estabilidade", defaultUnit: "%", defaultReferencia: "Walking Steadiness" },
+    { key: "estabilidade", nome: "Estabilidade", defaultUnit: "%", defaultReferencia: "Estabilidade ao caminhar" },
   ],
 };
 
