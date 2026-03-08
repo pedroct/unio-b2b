@@ -1,0 +1,284 @@
+# Handoff Backend → Frontend — Painel de Longevidade V3.1
+
+**Data:** 08/03/2026  
+**Backend:** Implementado e testado (14 testes ✅)  
+**Base URL:** `/api/painel-longevidade`  
+**Autenticação:** Bearer JWT (Header `Authorization: Bearer <token>`)
+
+---
+
+## Resumo da Release
+
+A V3.1 ativa **2 novas abas** no Painel de Longevidade que detalham os biomarcadores dos scores já exibidos no Cockpit:
+
+| Aba                              | Endpoint                                   | Score relacionado |
+| -------------------------------- | ------------------------------------------ | ----------------- |
+| **Recuperação & Sono**           | `GET /clientes/{id}/recuperacao-sono`      | Recovery          |
+| **Performance & Funcionalidade** | `GET /clientes/{id}/performance-funcional` | Functional        |
+
+> **Nota:** Os scores já são calculados e exibidos no Cockpit. Essas abas mostram os **biomarcadores detalhados** que alimentam cada score.
+
+---
+
+## Endpoint 1: Recuperação & Sono
+
+### Request
+
+```
+GET /api/painel-longevidade/clientes/{cliente_id}/recuperacao-sono
+Authorization: Bearer <jwt_token>
+```
+
+### Response — 200 OK
+
+```json
+{
+  "cliente_id": 42,
+  "score": {
+    "tipo": "recovery",
+    "valor": 82.0,
+    "classificacao": "excellent",
+    "is_partial": false,
+    "tendencia_score": "estavel"
+  },
+  "biomarcadores": {
+    "sono_total": {
+      "valor": 7.2,
+      "unidade": "h",
+      "tendencia": "estavel",
+      "data_ultima_leitura": "2026-03-08T03:15:00+00:00"
+    },
+    "sono_rem": {
+      "valor": 1.8,
+      "unidade": "h",
+      "tendencia": "subindo",
+      "data_ultima_leitura": "2026-03-08T03:15:00+00:00"
+    },
+    "sono_profundo": {
+      "valor": 1.1,
+      "unidade": "h",
+      "tendencia": "estavel",
+      "data_ultima_leitura": "2026-03-08T03:15:00+00:00"
+    },
+    "hrv_noturna": {
+      "valor": 62.3,
+      "unidade": "ms",
+      "tendencia": "subindo",
+      "data_ultima_leitura": "2026-03-08T06:00:00+00:00"
+    },
+    "fc_noturna": {
+      "valor": 54.0,
+      "unidade": "bpm",
+      "tendencia": "caindo",
+      "data_ultima_leitura": "2026-03-08T06:00:00+00:00"
+    }
+  }
+}
+```
+
+### Biomarcadores — Detalhes
+
+| Chave           | Descrição                                 | Unidade     | Janela | Operação |
+| --------------- | ----------------------------------------- | ----------- | ------ | -------- |
+| `sono_total`    | Tempo total de sono (média 7d)            | `h` (horas) | 7 dias | Média    |
+| `sono_rem`      | Tempo em sono REM (média 7d)              | `h` (horas) | 7 dias | Média    |
+| `sono_profundo` | Tempo em sono profundo (média 7d)         | `h` (horas) | 7 dias | Média    |
+| `hrv_noturna`   | Variabilidade cardíaca noturna (média 7d) | `ms`        | 7 dias | Média    |
+| `fc_noturna`    | Frequência cardíaca noturna (média 7d)    | `bpm`       | 7 dias | Média    |
+
+---
+
+## Endpoint 2: Performance & Funcionalidade
+
+### Request
+
+```
+GET /api/painel-longevidade/clientes/{cliente_id}/performance-funcional
+Authorization: Bearer <jwt_token>
+```
+
+### Response — 200 OK
+
+```json
+{
+  "cliente_id": 42,
+  "score": {
+    "tipo": "functional",
+    "valor": 76.43,
+    "classificacao": "good",
+    "is_partial": true,
+    "tendencia_score": "estavel"
+  },
+  "biomarcadores": {
+    "exercise_minutes": {
+      "valor": 185,
+      "unidade": "min",
+      "tendencia": "subindo",
+      "data_ultima_leitura": "2026-03-08T18:30:00+00:00"
+    },
+    "walking_speed": {
+      "valor": 1.42,
+      "unidade": "m/s",
+      "tendencia": "estavel",
+      "data_ultima_leitura": "2026-03-08T14:00:00+00:00"
+    },
+    "stability": {
+      "valor": 0.82,
+      "unidade": "indice",
+      "tendencia": "estavel",
+      "data_ultima_leitura": "2026-03-05T10:00:00+00:00"
+    },
+    "strength": {
+      "valor": 3,
+      "unidade": "indice",
+      "tendencia": "estavel",
+      "data_ultima_leitura": "2026-02-15T09:00:00+00:00"
+    },
+    "heart_rate_zones": {
+      "zone1_minutes": 45.0,
+      "zone2_minutes": 78.0,
+      "zone3_minutes": 32.0,
+      "zone4_minutes": 10.0
+    }
+  }
+}
+```
+
+### Biomarcadores — Detalhes
+
+| Chave              | Descrição                  | Unidade        | Janela  | Operação  |
+| ------------------ | -------------------------- | -------------- | ------- | --------- |
+| `exercise_minutes` | Volume semanal de treino   | `min`          | 7 dias  | Soma      |
+| `walking_speed`    | Velocidade de caminhada    | `m/s`          | 30 dias | Média     |
+| `stability`        | Walking Steadiness (Apple) | `indice` (0-1) | 30 dias | Último    |
+| `strength`         | Nível de força             | `indice`       | 90 dias | Último    |
+| `heart_rate_zones` | Zonas de FC (derivadas)    | `min` por zona | 7 dias  | Calculado |
+
+### Zonas de FC — Referência
+
+| Campo           | Zona              | % da FC Máxima |
+| --------------- | ----------------- | -------------- |
+| `zone1_minutes` | Zona 1 (Leve)     | 50–60%         |
+| `zone2_minutes` | Zona 2 (Moderada) | 60–70%         |
+| `zone3_minutes` | Zona 3 (Intensa)  | 70–80%         |
+| `zone4_minutes` | Zona 4 (Máxima)   | 80–90%         |
+
+> `heart_rate_zones` pode ser `null` ou estar ausente do dict `biomarcadores` se o usuário não tiver dados de frequência cardíaca ou perfil cadastrado.
+
+---
+
+## Regras Importantes
+
+### 1. Campos Opcionais
+
+Todos os biomarcadores são **opcionais**. Se o usuário não tiver dados suficientes, o dict `biomarcadores` pode estar **vazio** (`{}`). Cada chave só aparece se houver dados.
+
+### 2. Score Pode Ser Null
+
+O campo `score` pode ser `null` se o score ainda não foi calculado para o usuário:
+
+```json
+{
+  "cliente_id": 42,
+  "score": null,
+  "biomarcadores": {}
+}
+```
+
+### 3. Classificação (Enum)
+
+O campo `classificacao` usa os seguintes valores em **inglês**:
+
+| Valor         | Tradução  | Faixa  | Cor sugerida |
+| ------------- | --------- | ------ | ------------ |
+| `"excellent"` | Excelente | 80–100 | 🟢 Verde     |
+| `"good"`      | Bom       | 60–79  | 🔵 Azul      |
+| `"attention"` | Atenção   | 40–59  | 🟡 Amarelo   |
+| `"risk"`      | Risco     | 0–39   | 🔴 Vermelho  |
+
+> O frontend é responsável por traduzir para pt-BR na UI.
+
+### 4. Tendência (Enum)
+
+O campo `tendencia` usa:
+
+| Valor       | Significado                           | Ícone sugerido |
+| ----------- | ------------------------------------- | -------------- |
+| `"subindo"` | Valor crescente vs período anterior   | ↑              |
+| `"caindo"`  | Valor decrescente vs período anterior | ↓              |
+| `"estavel"` | Sem variação significativa (±5%)      | →              |
+
+### 5. Score Parcial
+
+Quando `is_partial: true`, significa que nem todos os biomarcadores estavam disponíveis para o cálculo. A UI pode exibir um badge/tooltip indicando score parcial.
+
+---
+
+## Respostas de Erro
+
+| HTTP  | Body                                                                 | Cenário                               |
+| ----- | -------------------------------------------------------------------- | ------------------------------------- |
+| `401` | `{"detail": "Unauthorized"}`                                         | JWT ausente ou expirado               |
+| `403` | `{"detail": "Acesso restrito a profissionais de saude vinculados."}` | Usuário não é profissional            |
+| `403` | `{"detail": "Cliente nao vinculado ou vinculo inativo."}`            | Profissional não vinculado ao cliente |
+| `404` | `{"detail": "Cliente não encontrado."}`                              | `cliente_id` inválido                 |
+
+---
+
+## Endpoints Existentes (Referência)
+
+Estes endpoints já existem e não sofreram alterações na V3.1:
+
+| Endpoint                                            | Descrição                                      |
+| --------------------------------------------------- | ---------------------------------------------- |
+| `GET /clientes/{id}/cockpit`                        | 4 scores estruturais + componentes             |
+| `GET /clientes/{id}/cardiometabolico`               | Biomarcadores cardiovasculares detalhados      |
+| `GET /clientes/{id}/historico-scores?intervalo=30d` | Histórico de scores para gráficos de tendência |
+
+---
+
+## Sugestão de Implementação Frontend
+
+### Componentes Necessários
+
+```
+aba-recuperacao-sono.tsx
+├── ScoreHeader         → exibe score.valor + classificação
+├── BiomarcadorCard     → card para cada biomarcador (valor, unidade, tendência)
+│   ├── SonoTotalCard   → com ícone 🛏️ e formatação "7.2h"
+│   ├── SonoRemCard     → com ícone 🌙 e formatação "1.8h"
+│   ├── SonoProfundoCard→ com ícone 💤 e formatação "1.1h"
+│   ├── HrvNoturnCard   → com ícone 💓 e formatação "62.3 ms"
+│   └── FcNoturnCard    → com ícone ❤️ e formatação "54.0 bpm"
+└── TendenciaIndicator  → ↑ ↓ → com cores
+
+aba-performance-funcional.tsx
+├── ScoreHeader         → exibe score.valor + classificação
+├── BiomarcadorCard     → reutiliza componente genérico
+│   ├── ExerciseCard    → com ícone 🏃 e formatação "185 min"
+│   ├── WalkingCard     → com ícone 🚶 e formatação "1.42 m/s"
+│   ├── StabilityCard   → com ícone ⚖️ e formatação "0.82"
+│   └── StrengthCard    → com ícone 💪 e formatação "3"
+└── HeartRateZonesChart → gráfico de barras horizontais (4 zonas)
+```
+
+### Navegação
+
+As novas abas devem ser acessíveis pela **mesma navegação por tabs** já existente no Painel de Longevidade:
+
+```
+[Cockpit] [Cardiometabólico] [Recuperação & Sono] [Performance] [Nutrição 🔒]
+```
+
+---
+
+## Critérios de Aceitação
+
+- [ ] Aba Recuperação renderiza os 5 biomarcadores de sono quando disponíveis
+- [ ] Aba Performance renderiza os 4 biomarcadores funcionais quando disponíveis
+- [ ] Zonas de FC exibidas como gráfico de barras (quando `heart_rate_zones` presente)
+- [ ] Score header exibe valor, classificação com cor, e badge parcial quando `is_partial`
+- [ ] Estado vazio: mensagem "Aguardando dados do Apple Health" quando `biomarcadores` vazio
+- [ ] Indicadores de tendência (↑↓→) exibidos em cada card
+- [ ] Endpoints respondem em <300ms (validado no backend)
+- [ ] Navegação entre abas funciona corretamente
