@@ -1,0 +1,263 @@
+Aja como 
+
+aios-master.md
+
+po.md
+e 
+
+pm.md
+
+Preciso que você analise o documento abaixo e verifique se há algo a ser feito, se o que foi implementado, é necessário alterar, visto que tudo está funcionando. Gere um documento de análise e não faça nehuma alteração no projeto.
+
+
+# ROADMAP TÉCNICO — PAINEL DE LONGEVIDADE (Distribuição por Abas)
+
+Versão: 2.0  
+Data: 08/03/2026  
+Projeto: UNIO — Painel de Longevidade  
+Idioma padrão: Português Brasileiro
+
+---
+
+# 1. Objetivo
+
+Este documento define **a evolução do Painel de Longevidade organizada por abas do produto**, evitando desalinhamento entre:
+
+- Backend
+- Frontend
+- Aplicativo mobile
+- Roadmap de produto
+
+Cada versão descreve **quais métricas aparecem em cada aba**.
+
+---
+
+# 2. Estrutura das Abas do Produto
+
+| Aba | Papel |
+|----|----|
+| Cockpit | Visão de estado biológico (scores) |
+| Sistema Cardiometabólico | Biomarcadores cardiovasculares e metabólicos |
+| Recuperação & Sono | Métricas de recuperação e sono |
+| Performance & Funcionalidade | Capacidade física e desempenho |
+| Nutrição | Drivers nutricionais e correlações biológicas |
+
+---
+
+# 3. Distribuição das Métricas por Aba
+
+## Aba 1 — Cockpit
+
+Responsável por apresentar **apenas scores consolidados e seus componentes**.
+
+### Scores exibidos
+
+| Score | Versão de ativação |
+|----|----|
+Score Cardiovascular | V1 |
+Score Metabólico | V2 |
+Score Recuperação | V2 |
+Score Funcional | V4 |
+
+### Componentes exibidos
+
+| Score | Componentes |
+|----|----|
+Cardiovascular | HRV, FCR, VO2, Recuperação FC |
+Metabólico | gordura corporal, circunferência, peso, massa magra |
+Recuperação | sono total, REM/profundo, HRV noturna, FC noturna |
+Funcional | velocidade caminhada, estabilidade, força, volume treino |
+
+O Cockpit **sempre exibe apenas resumo e tendência**, nunca análise detalhada.
+
+---
+
+# 4. Aba 2 — Sistema Cardiometabólico
+
+Exibe biomarcadores cardiovasculares e metabólicos.
+
+### V1
+
+| Métrica |
+|----|
+HRV (RMSSD) |
+Frequência cardíaca de repouso |
+VO2 máximo |
+Recuperação da FC |
+
+### V2
+
+Adiciona métricas metabólicas:
+
+| Métrica |
+|----|
+% gordura corporal |
+circunferência abdominal |
+peso |
+massa magra |
+
+### V3+
+
+Futuras expansões:
+
+| Métrica |
+|----|
+glicemia contínua |
+variabilidade glicêmica |
+marcadores laboratoriais |
+
+---
+
+# 5. Aba 3 — Recuperação & Sono
+
+### V1
+
+Aba bloqueada.
+
+### V2
+
+Score Recuperação passa a existir **no Cockpit**, mas a aba ainda permanece bloqueada.
+
+### V3
+
+Aba ativada.
+
+Métricas exibidas:
+
+| Métrica |
+|----|
+tempo total de sono |
+sono REM |
+sono profundo |
+HRV noturna |
+frequência cardíaca noturna |
+carga de treino vs HRV |
+
+---
+
+# 6. Aba 4 — Performance & Funcionalidade
+
+### V1–V3
+
+Aba bloqueada.
+
+### V4
+
+Aba ativada.
+
+Métricas exibidas:
+
+| Métrica |
+|----|
+volume semanal de treino |
+zonas de frequência cardíaca |
+recuperação da frequência cardíaca |
+velocidade de caminhada |
+estabilidade |
+força |
+
+Essas métricas alimentam o **Score Funcional**.
+
+---
+
+# 7. Aba 5 — Nutrição
+
+### V1–V4
+
+Aba visível mas bloqueada.
+
+### V5
+
+Aba ativada.
+
+Métricas exibidas:
+
+| Métrica |
+|----|
+proteína relativa (g/kg) |
+carboidrato |
+calorias |
+micronutrientes |
+
+### Correlações
+
+| Nutrição | Biomarcador |
+|----|----|
+proteína | massa magra |
+carboidrato | glicemia |
+calorias | peso |
+micronutrientes | recuperação |
+
+---
+
+# 8. Pipeline de Cálculo de Scores
+
+Processo diário executado no backend:
+
+```
+calcular_score_cardiovascular()
+calcular_score_metabolico()
+calcular_score_recuperacao()
+calcular_score_funcional()
+```
+
+Todos os resultados são armazenados na tabela:
+
+```
+LongevityScore
+```
+
+---
+
+# 9. Endpoint Principal
+
+```
+GET /clientes/{cliente_id}/cockpit
+```
+
+Retorna:
+
+- scores
+- classificação
+- tendência
+- componentes
+
+---
+
+# 10. Princípio Arquitetural Importante
+
+As abas seguem esta lógica:
+
+```
+Cockpit → mostra scores
+Abas → mostram biomarcadores
+```
+
+Ou seja:
+
+- Score aparece primeiro no Cockpit
+- Detalhamento aparece apenas na aba correspondente
+
+---
+
+# 11. Estado Final do Produto (Roadmap Completo)
+
+| Aba | Conteúdo |
+|----|----|
+Cockpit | 4 scores |
+Cardiometabólico | biomarcadores CV + metabólicos |
+Recuperação & Sono | métricas de recuperação |
+Performance & Funcionalidade | métricas de desempenho |
+Nutrição | correlações nutricionais |
+
+---
+
+# 12. Evoluções Futuras
+
+Planejado:
+
+- machine learning preditivo
+- alertas clínicos automáticos
+- integração CGM
+- integração exames laboratoriais
+- análise longitudinal avançada
