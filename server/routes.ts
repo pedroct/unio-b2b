@@ -298,6 +298,38 @@ export async function registerRoutes(
     }
   });
 
+  app.get(["/api/painel-longevidade/clientes/:id/recuperacao-sono", "/api/longevidade/clientes/:id/recuperacao-sono"], async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) {
+      return res.status(401).json({ message: "Token de autenticação ausente." });
+    }
+    try {
+      const result = await stagingPassthrough(`/api/painel-longevidade/clientes/${req.params.id}/recuperacao-sono`, {
+        bearerToken: token,
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[longevidade/recuperacao-sono] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao buscar dados de recuperação e sono." });
+    }
+  });
+
+  app.get(["/api/painel-longevidade/clientes/:id/performance-funcional", "/api/longevidade/clientes/:id/performance-funcional"], async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) {
+      return res.status(401).json({ message: "Token de autenticação ausente." });
+    }
+    try {
+      const result = await stagingPassthrough(`/api/painel-longevidade/clientes/${req.params.id}/performance-funcional`, {
+        bearerToken: token,
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[longevidade/performance-funcional] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao buscar dados de performance funcional." });
+    }
+  });
+
   app.get(["/api/painel-longevidade/clientes/:id/historico-scores", "/api/longevidade/clientes/:id/historico-scores"], async (req, res) => {
     const token = extractBearerToken(req);
     if (!token) {

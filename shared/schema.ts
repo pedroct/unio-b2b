@@ -366,9 +366,56 @@ export const TENDENCIA_FROM_API: Record<string, TendenciaBiomarcador> = {
   "stable": "stable",
   "subindo": "up",
   "descendo": "down",
+  "caindo": "down",
   "estavel": "stable",
   "estável": "stable",
 };
+
+export interface BiomarcadorDetalhe {
+  valor: number | null;
+  unidade: string;
+  tendencia: string | null;
+  data_ultima_leitura: string | null;
+}
+
+export interface HeartRateZones {
+  zone1_minutes: number;
+  zone2_minutes: number;
+  zone3_minutes: number;
+  zone4_minutes: number;
+}
+
+export interface ScoreHeader {
+  tipo: string;
+  valor: number | null;
+  classificacao: string | null;
+  is_partial: boolean;
+  tendencia_score: string | null;
+}
+
+export interface RespostaRecuperacaoSono {
+  cliente_id: number | string;
+  score: ScoreHeader | null;
+  biomarcadores: {
+    sono_total?: BiomarcadorDetalhe | null;
+    sono_rem?: BiomarcadorDetalhe | null;
+    sono_profundo?: BiomarcadorDetalhe | null;
+    hrv_noturna?: BiomarcadorDetalhe | null;
+    fc_noturna?: BiomarcadorDetalhe | null;
+  };
+}
+
+export interface RespostaPerformanceFuncional {
+  cliente_id: number | string;
+  score: ScoreHeader | null;
+  biomarcadores: {
+    exercise_minutes?: BiomarcadorDetalhe | null;
+    walking_speed?: BiomarcadorDetalhe | null;
+    stability?: BiomarcadorDetalhe | null;
+    strength?: BiomarcadorDetalhe | null;
+    heart_rate_zones?: HeartRateZones | null;
+  };
+}
 
 export const LABELS_BIOMARCADOR: Record<string, string> = {
   hrv_rmssd: "HRV (RMSSD)",

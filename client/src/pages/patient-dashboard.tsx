@@ -7,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AbaCockpit } from "@/components/longevidade/aba-cockpit";
 import { AbaCardiometabolico } from "@/components/longevidade/aba-cardiometabolico";
+import { AbaRecuperacaoSono } from "@/components/longevidade/aba-recuperacao-sono";
+import { AbaPerformanceFuncional } from "@/components/longevidade/aba-performance-funcional";
 import { AbaTrancada } from "@/components/longevidade/aba-trancada";
 import { ErroAcessoPaciente } from "@/components/longevidade/erro-acesso";
 import type { Patient } from "@shared/schema";
@@ -110,15 +112,13 @@ export default function PatientDashboardPage() {
             <Activity className="h-3.5 w-3.5 mr-1.5" />
             Cardiometabólico
           </TabsTrigger>
-          <TabsTrigger value="recuperacao" data-testid="tab-trigger-recuperacao" className="tab-bloqueada gap-1">
-            <Moon className="h-3.5 w-3.5 mr-1" />
+          <TabsTrigger value="recuperacao" data-testid="tab-trigger-recuperacao">
+            <Moon className="h-3.5 w-3.5 mr-1.5" />
             Recuperação & Sono
-            <Lock className="h-3 w-3 ml-0.5" />
           </TabsTrigger>
-          <TabsTrigger value="performance" data-testid="tab-trigger-performance" className="tab-bloqueada gap-1">
-            <Dumbbell className="h-3.5 w-3.5 mr-1" />
+          <TabsTrigger value="performance" data-testid="tab-trigger-performance">
+            <Dumbbell className="h-3.5 w-3.5 mr-1.5" />
             Performance
-            <Lock className="h-3 w-3 ml-0.5" />
           </TabsTrigger>
           <TabsTrigger value="nutricao" data-testid="tab-trigger-nutricao" className="tab-bloqueada gap-1">
             <UtensilsCrossed className="h-3.5 w-3.5 mr-1" />
@@ -135,16 +135,10 @@ export default function PatientDashboardPage() {
             <AbaCardiometabolico pacienteId={patientId} />
           </TabsContent>
           <TabsContent value="recuperacao">
-            <AbaTrancada
-              titulo="Recuperação & Sono"
-              mensagem="Recuperação & Sono estará disponível em breve. Você terá acesso a indicadores de qualidade do sono, HRV noturna, estágios REM e profundo, e o equilíbrio entre carga de treino e capacidade de recuperação — dados essenciais para otimizar protocolos de treino e nutrição."
-            />
+            <AbaRecuperacaoSono pacienteId={patientId} />
           </TabsContent>
           <TabsContent value="performance">
-            <AbaTrancada
-              titulo="Performance & Funcionalidade"
-              mensagem="Performance & Funcionalidade estará disponível em breve. Você terá acesso a volume semanal de treino, zonas de frequência cardíaca, velocidade de caminhada e indicadores de força e estabilidade — dados essenciais para ajustar periodização e acompanhar capacidade funcional."
-            />
+            <AbaPerformanceFuncional pacienteId={patientId} />
           </TabsContent>
           <TabsContent value="nutricao">
             <AbaTrancada

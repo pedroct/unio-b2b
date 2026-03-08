@@ -30,7 +30,7 @@ Eu prefiro que a terminologia do frontend utilize "Cliente(s)" para telas estrut
 - **Modo Escuro:** Implementado dinamicamente via classe CSS.
 
 ### Key Features
-- **Painel de Longevidade (V2):** Substitui o dashboard antigo, organizado por sistemas fisiológicos com 5 abas: Cockpit, Sistema Cardiometabólico, Recuperação & Sono (🔒), Performance (🔒), Nutrição (🔒).
+- **Painel de Longevidade (V3.1):** Substitui o dashboard antigo, organizado por sistemas fisiológicos com 5 abas: Cockpit, Sistema Cardiometabólico, Recuperação & Sono, Performance & Funcionalidade, Nutrição (🔒).
 - **Multi-Pilar Cockpit (V2):** Cada pilar (cardiovascular, metabolic, recovery, functional) é renderizado dinamicamente: pilares com `ativo: true` mostram CardScore com score/classificação/tendência + grade de componentes; pilares com `ativo: false` mostram card bloqueado com botão "Me avise".
 - **Componentes Dinâmicos por Pilar (V2):** `ComponentesCockpit` é `Record<string, ComponenteScore>` — chaves variam por pilar:
   - Cardiovascular: `hrv`, `fcr`, `vo2`, `recuperacao`
@@ -43,6 +43,8 @@ Eu prefiro que a terminologia do frontend utilize "Cliente(s)" para telas estrut
 - **Score Funcional (V3):** Ativo quando backend envia `ativo: true`. Componentes: `velocidade_caminhada`, `forca` (opcional — omitido quando `null`), `volume_treino`, `estabilidade`. Quando `score: null`, exibe mensagem de coleta.
 - **`GradeGenerica`:** Substitui `GradeBiomarcadores` — aceita array de `BiomarcadorItem` e renderiza cards para qualquer pilar.
 - **Aba Cardiometabólico:** Análise detalhada com sparklines de 30 dias, grid 2x2 por eixo fisiológico e cópia expandida.
+- **Aba Recuperação & Sono (V3.1):** Score header de recuperação + 5 biomarcadores detalhados (sono total, sono REM, sono profundo, HRV noturna, FC noturna). Endpoint: `/clientes/:id/recuperacao-sono`. Estado vazio: "Aguardando dados do Apple Health".
+- **Aba Performance & Funcionalidade (V3.1):** Score header funcional + 4 biomarcadores (volume treino, velocidade caminhada, estabilidade, força) + gráfico de zonas de FC (4 zonas com barra empilhada). Endpoint: `/clientes/:id/performance-funcional`. `heart_rate_zones` pode ser null.
 - **Prescrição Alimentar:** Ferramenta completa para nutricionistas com múltiplos planos por cliente, edição de descrição, dias ativos, refeições e adição de alimentos de um catálogo.
 
 ## External Dependencies
@@ -62,6 +64,8 @@ Ambos os prefixos `/api/painel-longevidade/` e `/api/longevidade/` são aceitos 
   - Se `componentes` presente, cockpit exibe biomarcadores diretamente sem fetch cardiometabólico separado.
   - classificacao: EN ("good") ou PT-BR ("bom"/"Bom"). Normalizado via `CLASSIFICACAO_FROM_LABEL` e `TENDENCIA_FROM_API`.
 - `GET /api/longevidade/clientes/:id/cardiometabolico` → `RespostaCardiometabolico` { metricas_cardio, secao_metabolica_bloqueada, mensagem_bloqueio ou mensagem_bloqueio_metabolico }. Fallback para cockpit cardiovascular sem `componentes`.
+- `GET /api/longevidade/clientes/:id/recuperacao-sono` → `RespostaRecuperacaoSono` { cliente_id, score: ScoreHeader | null, biomarcadores: { sono_total, sono_rem, sono_profundo, hrv_noturna, fc_noturna } }. Biomarcadores usam `BiomarcadorDetalhe` (valor, unidade, tendencia, data_ultima_leitura). Todos opcionais.
+- `GET /api/longevidade/clientes/:id/performance-funcional` → `RespostaPerformanceFuncional` { cliente_id, score: ScoreHeader | null, biomarcadores: { exercise_minutes, walking_speed, stability, strength, heart_rate_zones: HeartRateZones | null } }. HeartRateZones: zone1-4_minutes em minutos.
 - `GET /api/longevidade/clientes/:id/historico-scores?intervalo=30d|90d|365d` → `RespostaHistoricoScores`. Frontend usa `?intervalo=`; proxy converte para `?dias=` para staging. Histórico inclui campos `cardiovascular`, `metabolico`, `recuperacao`, `funcional` por data. Gráfico plota linhas para cada pilar com dados não-nulos.
 - `POST /api/longevidade/interesse` → { componente: string }. Registra interesse do profissional em módulos inativos. Retorna 204.
 
