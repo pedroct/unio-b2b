@@ -64,6 +64,12 @@ const COMPONENTES_POR_PILAR: Record<string, ComponenteConfig[]> = {
     { key: "hrv_noturna", nome: "HRV Noturna", defaultUnit: "ms" },
     { key: "fc_noturna", nome: "FC Noturna", defaultUnit: "bpm", invertedSemantics: true },
   ],
+  functional: [
+    { key: "velocidade_caminhada", nome: "Velocidade de Caminhada", defaultUnit: "m/s", defaultReferencia: "Média 30d" },
+    { key: "forca", nome: "Força", defaultUnit: "nível", defaultReferencia: "Avaliação funcional" },
+    { key: "volume_treino", nome: "Volume de Treino", defaultUnit: "min/semana", defaultReferencia: "Soma 7d" },
+    { key: "estabilidade", nome: "Estabilidade", defaultUnit: "%", defaultReferencia: "Walking Steadiness" },
+  ],
 };
 
 function normTrend(t: string | null | undefined): TendenciaBiomarcador {
@@ -79,18 +85,20 @@ function normClassificacao(c: string | null | undefined) {
 function buildBiomarcadorItems(componentes: ComponentesCockpit, pilarTipo: string): BiomarcadorItem[] {
   const configs = COMPONENTES_POR_PILAR[pilarTipo];
   if (!configs) return [];
-  return configs.map((cfg) => {
-    const comp = componentes[cfg.key];
-    return {
-      key: cfg.key,
-      nome: cfg.nome,
-      value: comp?.valor ?? null,
-      unit: comp?.unidade ?? cfg.defaultUnit,
-      trend: normTrend(comp?.tendencia),
-      referencia: comp?.referencia ?? cfg.defaultReferencia,
-      invertedSemantics: cfg.invertedSemantics,
-    };
-  });
+  return configs
+    .filter((cfg) => componentes[cfg.key] != null)
+    .map((cfg) => {
+      const comp = componentes[cfg.key];
+      return {
+        key: cfg.key,
+        nome: cfg.nome,
+        value: comp?.valor ?? null,
+        unit: comp?.unidade ?? cfg.defaultUnit,
+        trend: normTrend(comp?.tendencia),
+        referencia: comp?.referencia ?? cfg.defaultReferencia,
+        invertedSemantics: cfg.invertedSemantics,
+      };
+    });
 }
 
 function buildCardioFromLegacy(cardio: RespostaCardiometabolico): BiomarcadorItem[] {

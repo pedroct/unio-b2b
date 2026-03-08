@@ -170,10 +170,17 @@ O frontend espera as seguintes chaves no objeto `componentes` de cada pilar:
 | `hrv_noturna` | HRV Noturna | ms | Não |
 | `fc_noturna` | FC Noturna | bpm | **Sim** (menor = melhor) |
 
-#### Funcional (`tipo: "functional"`)
-Ainda sem config de componentes no frontend. Quando ativado, será necessário definir as chaves.
+#### Funcional (`tipo: "functional"`) — V3
+| Chave | Nome exibido | Unidade default | Semântica invertida |
+|---|---|---|---|
+| `velocidade_caminhada` | Velocidade de Caminhada | m/s | Não |
+| `forca` | Força | nível | Não |
+| `volume_treino` | Volume de Treino | min/semana | Não |
+| `estabilidade` | Estabilidade | % | Não |
 
-> **Nota:** Se o backend enviar chaves não listadas acima, o frontend as ignora silenciosamente. Se enviar chaves a menos, os cards correspondentes aparecem com "—" e status "Aguardando leitura".
+> **Nota sobre `forca`:** Quando o backend envia `"forca": null` no objeto `componentes`, o frontend **não renderiza** o card de Força (componente opcional). Os demais componentes com valor aparecem normalmente.
+
+> **Nota geral:** Se o backend enviar chaves não listadas acima, o frontend as ignora silenciosamente. Se enviar chaves a menos (ou `null`), os cards correspondentes são omitidos.
 
 ---
 
@@ -240,7 +247,7 @@ O campo de filtragem foi corrigido de `calculated_at` (data de execução do mot
 
 #### Comportamento do gráfico:
 - Plota uma linha por pilar que tenha **pelo menos um valor não-nulo** na série
-- Cores: cardiovascular = `#4A5899` (indigo), metabólico = `#5B8C6F` (verde), recuperação = `#3D7A8C` (azul)
+- Cores: cardiovascular = `#4A5899` (indigo), metabólico = `#5B8C6F` (verde), recuperação = `#3D7A8C` (azul), funcional = `#D97952` (laranja)
 - Legenda aparece quando **mais de uma linha** está visível
 - Tooltip mostra todos os valores do ponto na data hover
 - `null` cria gap na linha (sem interpolação)

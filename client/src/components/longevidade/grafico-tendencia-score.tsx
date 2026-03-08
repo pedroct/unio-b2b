@@ -42,9 +42,10 @@ interface ChartPoint {
   cardiovascular: number | undefined;
   metabolico: number | undefined;
   recuperacao: number | undefined;
+  funcional: number | undefined;
 }
 
-const PILAR_KEYS: Array<"cardiovascular" | "metabolico" | "recuperacao"> = ["cardiovascular", "metabolico", "recuperacao"];
+const PILAR_KEYS: Array<"cardiovascular" | "metabolico" | "recuperacao" | "funcional"> = ["cardiovascular", "metabolico", "recuperacao", "funcional"];
 
 function isoWeekKey(dateStr: string): string {
   const [y, m, day] = dateStr.split("-").map(Number);
@@ -72,7 +73,7 @@ function aggregateWeekly(points: ChartPoint[]): ChartPoint[] {
 
   const result: ChartPoint[] = [];
   for (const [, { points: wkPts, lastDate }] of weeks) {
-    const agg: ChartPoint = { data: lastDate, cardiovascular: undefined, metabolico: undefined, recuperacao: undefined };
+    const agg: ChartPoint = { data: lastDate, cardiovascular: undefined, metabolico: undefined, recuperacao: undefined, funcional: undefined };
     for (const key of PILAR_KEYS) {
       const vals = wkPts.map(p => p[key]).filter((v): v is number => v !== undefined);
       if (vals.length > 0) {
@@ -87,7 +88,7 @@ function aggregateWeekly(points: ChartPoint[]): ChartPoint[] {
 }
 
 interface PilarConfig {
-  key: "cardiovascular" | "metabolico" | "recuperacao";
+  key: "cardiovascular" | "metabolico" | "recuperacao" | "funcional";
   label: string;
   color: string;
 }
@@ -96,6 +97,7 @@ const PILARES_CHART: PilarConfig[] = [
   { key: "cardiovascular", label: "Cardiovascular", color: "#4A5899" },
   { key: "metabolico", label: "Metabólico", color: "#5B8C6F" },
   { key: "recuperacao", label: "Recuperação", color: "#3D7A8C" },
+  { key: "funcional", label: "Funcional", color: "#D97952" },
 ];
 
 function classificarScore(valor: number): string {
@@ -154,12 +156,13 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
   const rawData = useMemo<ChartPoint[]>(() => {
     if (!resposta?.historico) return [];
     return resposta.historico
-      .filter(p => p.cardiovascular != null || p.metabolico != null || p.recuperacao != null)
+      .filter(p => p.cardiovascular != null || p.metabolico != null || p.recuperacao != null || p.funcional != null)
       .map(p => ({
         data: p.data,
         cardiovascular: p.cardiovascular ?? undefined,
         metabolico: p.metabolico ?? undefined,
         recuperacao: p.recuperacao ?? undefined,
+        funcional: p.funcional ?? undefined,
       }));
   }, [resposta]);
 

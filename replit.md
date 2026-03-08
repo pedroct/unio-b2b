@@ -36,10 +36,11 @@ Eu prefiro que a terminologia do frontend utilize "Cliente(s)" para telas estrut
   - Cardiovascular: `hrv`, `fcr`, `vo2`, `recuperacao`
   - Metabólico: `gordura`, `cintura`, `massa_magra`, `tendencia_peso`
   - Recuperação: `sono_total`, `sono_rem_profundo`, `hrv_noturna`, `fc_noturna`
+  - Funcional: `velocidade_caminhada`, `forca` (nullable/optional), `volume_treino`, `estabilidade`
 - **Score de 0–100:** Classificação dinâmica (Excelente ≥80 / Bom ≥60 / Atenção ≥40 / Risco Aumentado <40), usado por todos os pilares.
 - **Inversão Semântica de Tendência:** Controlada para biomarcadores onde o decréscimo é positivo (ex: FCR, fc_noturna, tendencia_peso).
-- **Gráfico Multi-Linha (V2):** Tendência do Score plota linhas separadas para cardiovascular (indigo #4A5899), metabólico (green #5B8C6F) e recuperação (blue #3D7A8C). Legenda aparece quando múltiplas linhas estão ativas. Formatação adaptativa do eixo X por período (DD/MM, DD Mon, Mon AA). Agregação semanal automática para 365d quando >60 pontos.
-- **Score Funcional:** Permanece bloqueado (locked card).
+- **Gráfico Multi-Linha (V3):** Tendência do Score plota linhas separadas para cardiovascular (indigo #4A5899), metabólico (green #5B8C6F), recuperação (blue #3D7A8C) e funcional (laranja #D97952). Legenda aparece quando múltiplas linhas estão ativas. Formatação adaptativa do eixo X por período (DD/MM, DD Mon, Mon AA). Agregação semanal automática para 365d quando >60 pontos.
+- **Score Funcional (V3):** Ativo quando backend envia `ativo: true`. Componentes: `velocidade_caminhada`, `forca` (opcional — omitido quando `null`), `volume_treino`, `estabilidade`. Quando `score: null`, exibe mensagem de coleta.
 - **`GradeGenerica`:** Substitui `GradeBiomarcadores` — aceita array de `BiomarcadorItem` e renderiza cards para qualquer pilar.
 - **Aba Cardiometabólico:** Análise detalhada com sparklines de 30 dias, grid 2x2 por eixo fisiológico e cópia expandida.
 - **Prescrição Alimentar:** Ferramenta completa para nutricionistas com múltiplos planos por cliente, edição de descrição, dias ativos, refeições e adição de alimentos de um catálogo.
