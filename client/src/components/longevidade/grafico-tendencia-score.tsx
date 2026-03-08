@@ -147,12 +147,7 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
   const [intervalo, setIntervalo] = useState("30d");
 
   const { data: resposta, isLoading } = useQuery<RespostaHistoricoScores>({
-    queryKey: ["/api/painel-longevidade/clientes", pacienteId, "historico-scores", intervalo],
-    queryFn: async () => {
-      const res = await fetch(`/api/painel-longevidade/clientes/${pacienteId}/historico-scores?intervalo=${intervalo}`);
-      if (!res.ok) throw new Error("Erro ao buscar histórico");
-      return res.json();
-    },
+    queryKey: [`/api/painel-longevidade/clientes/${pacienteId}/historico-scores?intervalo=${intervalo}`],
     enabled: !!pacienteId,
   });
 
