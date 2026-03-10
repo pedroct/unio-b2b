@@ -67,9 +67,9 @@ export function CardScore({ score, classification, tendencia, is_partial = false
         style={{ background: "var(--mod-longevidade-bg)", border: "1px solid var(--mod-longevidade-border)" }}
         data-testid={`card-score-insuficiente-${pilarTipo}`}
       >
-        <div className="flex items-center gap-2 mb-4">
-          <Icone className="h-5 w-5" style={{ color: "var(--mod-longevidade-icon)" }} />
-          <span className="text-sm font-semibold uppercase tracking-wider" style={{ color: "var(--mod-longevidade-text)" }}>
+        <div className="flex items-start gap-2 mb-4 min-h-[40px]">
+          <Icone className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: "var(--mod-longevidade-icon)" }} />
+          <span className="text-xs font-semibold uppercase tracking-wider leading-tight" style={{ color: "var(--mod-longevidade-text)" }}>
             {tituloExibido}
           </span>
         </div>
@@ -87,9 +87,9 @@ export function CardScore({ score, classification, tendencia, is_partial = false
       style={{ background: "var(--mod-longevidade-bg)", border: "1px solid var(--mod-longevidade-border)" }}
       data-testid={`card-score-${pilarTipo}`}
     >
-      <div className="flex items-center gap-2 mb-4">
-        <Icone className="h-5 w-5 flex-shrink-0" style={{ color: "var(--mod-longevidade-icon)" }} />
-        <span className="text-sm font-semibold uppercase tracking-wider" style={{ color: "var(--mod-longevidade-text)" }}>
+      <div className="flex items-start gap-2 mb-4 min-h-[40px]">
+        <Icone className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: "var(--mod-longevidade-icon)" }} />
+        <span className="text-xs font-semibold uppercase tracking-wider leading-tight" style={{ color: "var(--mod-longevidade-text)" }}>
           {tituloExibido}
         </span>
       </div>
