@@ -47,7 +47,7 @@ interface ComponenteConfig {
 
 const COMPONENTES_POR_PILAR: Record<string, ComponenteConfig[]> = {
   cardiovascular: [
-    { key: "hrv", nome: "HRV (RMSSD)", defaultUnit: "ms" },
+    { key: "hrv", nome: "HRV", defaultUnit: "ms" },
     { key: "fcr", nome: "FC de Repouso", defaultUnit: "bpm", invertedSemantics: true },
     { key: "vo2", nome: "VO₂ Máximo", defaultUnit: "mL/kg/min" },
     { key: "recuperacao", nome: "Recuperação da FC", defaultUnit: "bpm", defaultReferencia: "Média das últimas 5 sessões" },
@@ -124,19 +124,22 @@ function buildCardioFromLegacy(cardio: RespostaCardiometabolico): BiomarcadorIte
     vo2: "vo2_max",
     recuperacao: "hr_recovery_1min",
   };
-  return configs.map((cfg) => {
-    const m = cardio.metricas_cardio.find(mc => mc.metric_type === metricMap[cfg.key]);
-    return {
-      key: cfg.key,
-      nome: cfg.nome,
-      value: m?.valor_atual ?? null,
-      unit: m?.unidade ?? cfg.defaultUnit,
-      trend: normTrend(m?.tendencia),
-      baseline: m?.media_30d ?? undefined,
-      referencia: cfg.defaultReferencia,
-      invertedSemantics: cfg.invertedSemantics,
-    };
-  });
+  return configs
+    .map((cfg) => {
+      const m = cardio.metricas_cardio.find(mc => mc.metric_type === metricMap[cfg.key]);
+      if (!m || m.valor_atual === null) return null;
+      return {
+        key: cfg.key,
+        nome: cfg.nome,
+        value: m.valor_atual,
+        unit: m.unidade ?? cfg.defaultUnit,
+        trend: normTrend(m.tendencia),
+        baseline: m.media_30d ?? undefined,
+        referencia: cfg.defaultReferencia,
+        invertedSemantics: cfg.invertedSemantics,
+      };
+    })
+    .filter((item): item is BiomarcadorItem => item !== null);
 }
 
 export function AbaCockpit({ pacienteId }: AbaCockpitProps) {

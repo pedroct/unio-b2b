@@ -11,7 +11,7 @@ interface EstadoDiaZeroProps {
 }
 
 const checklistPadrao: ItemChecklist[] = [
-  { nome: "HRV (RMSSD)", recebido: false },
+  { nome: "HRV", recebido: false },
   { nome: "Freq. Cardíaca de Repouso", recebido: false },
   { nome: "VO₂ Máximo", recebido: false },
   { nome: "Recuperação da FC", recebido: false },

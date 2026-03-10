@@ -430,7 +430,7 @@ export interface RespostaPerformanceFuncional {
 }
 
 export const LABELS_BIOMARCADOR: Record<string, string> = {
-  hrv_rmssd: "HRV (RMSSD)",
+  hrv_rmssd: "HRV",
   resting_hr: "FC de Repouso",
   vo2_max: "VO₂ Máximo",
   hr_recovery_1min: "Recuperação da FC",
