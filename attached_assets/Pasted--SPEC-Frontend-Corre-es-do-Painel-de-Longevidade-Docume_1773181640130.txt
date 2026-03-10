@@ -1,0 +1,157 @@
+# SPEC Frontend — Correções do Painel de Longevidade
+
+## Documento Consolidado V2.0 — metric_types canônicos
+
+| Campo | Valor |
+|---|---|
+| **Versão** | 2.0 |
+| **Data** | 10 de março de 2026 |
+| **Autor** | Pedro — Product Design & UX Lead |
+| **Destinatário** | LLM Frontend |
+| **Módulo** | Painel de Longevidade — Cockpit + Abas |
+| **Substitui** | SPEC-Frontend-VO2-Label-Correcao-V1.md (incorporado + expandido) |
+
+---
+
+## 1. Correções Necessárias no Frontend
+
+### 1.1 Label do VO2 Máximo (PRIORIDADE 1)
+
+**Problema:** O card de VO2 exibe "P75 - idade/sexo" sugerindo um percentil ajustado por demografia, mas o backend usa faixas fixas absolutas sem ajuste por idade/sexo. O "75" é o score da faixa, não um percentil real.
+
+**Correção:** Substituir a lógica de label por classificação textual:
+
+| Score VO2 | Label Atual (ERRADO) | Label Corrigido |
+|---|---|---|
+| 100 | P100 - idade/sexo | Excelente |
+| 90 | P90 - idade/sexo | Muito bom |
+| 75 | P75 - idade/sexo | Bom |
+| 60 | P60 - idade/sexo | Atenção |
+| 40 | P40 - idade/sexo | Risco |
+
+**Resultado visual:**
+
+```
+Antes:                          Depois:
+VO2 Máximo                      VO2 Máximo
+37.57  ml/kg/min                37.57  ml/kg/min
+→ Estável                       → Estável
+P75 - idade/sexo                Bom
+```
+
+**Retrocompatibilidade V2:** Quando o backend implementar percentis reais, o payload incluirá campo `percentile`. Lógica de renderização:
+
+```
+SE payload contém campo "percentile" (não null):
+    label = "P{percentile} - {percentile_context}"
+SENÃO:
+    label = classificação textual baseada no score
+```
+
+### 1.2 Label do HRV (PRIORIDADE 2)
+
+**Problema:** O card exibe "HRV (RMSSD)" mas o dado do HealthKit é SDNN, não RMSSD.
+
+**Correção:** Trocar label de "HRV (RMSSD)" para "HRV" (simplesmente). Alternativa: "HRV (SDNN)".
+
+**Justificativa:** Para medições ultra-curtas (~60s do Apple Watch), SDNN e RMSSD convergem, mas o label "RMSSD" é tecnicamente impreciso. "HRV" sem qualificador é o mais seguro e legível para o profissional.
+
+### 1.3 Score Parcial Cardiovascular (PRIORIDADE 2)
+
+**Contexto:** Os dados históricos de Recovery HR (`hr_recovery_1min`) foram removidos do banco porque estavam incorretos (FC absoluta em vez de delta). O Score Cardiovascular agora é calculado com 3 componentes até que novos dados corretos entrem.
+
+**Comportamento esperado:** O card do Score Cardiovascular deve exibir badge "Score parcial" (⚠️) quando o backend retorna `is_partial: true`. O card do componente "Recuperação da FC" deve exibir "Sem dados" ou não ser renderizado.
+
+**Verificar:** Que a lógica de "Score parcial" já implementada para o Score Funcional funciona corretamente para o Score Cardiovascular.
+
+---
+
+## 2. metric_types Canônicos — Referência para o Frontend
+
+Nomes oficiais no banco de dados. Usar estes nomes ao mapear dados do payload para componentes visuais:
+
+### Score Cardiovascular
+
+| metric_type | Label no Card | Unidade | Sublabel |
+|---|---|---|---|
+| `hrv_rmssd` | HRV | ms | Comparado a 90d |
+| `resting_hr` | FC de Repouso | bpm | Estável |
+| `vo2_max` | VO2 Máximo | ml/kg/min | {classificação} |
+| `hr_recovery_1min` | Recuperação da FC | bpm | Média das últimas 5 sessões |
+
+### Score Metabólico
+
+| metric_type | Label no Card | Unidade | Sublabel |
+|---|---|---|---|
+| `body_fat_pct` | % Gordura Corporal | % | Clínico |
+| `waist_circ` | Cintura | cm | Clínico |
+| `lean_mass` | Massa Magra | kg | Clínico |
+| `weight` | Tendência Peso | kg | Últimos 30d |
+
+### Score Recuperação
+
+| metric_type | Label no Card | Unidade | Sublabel |
+|---|---|---|---|
+| `sleep_total` | Sono Total | h min | Média 7d |
+| `sleep_rem` + `sleep_deep` | REM + Profundo | h min | Média 7d |
+| `hrv_nocturnal` | HRV Noturna | ms | Média 7d |
+| `hr_nocturnal` | FC Noturna | bpm | Média 7d |
+
+### Score Funcional
+
+| metric_type | Label no Card | Unidade | Sublabel |
+|---|---|---|---|
+| `walking_speed` | Velocidade de Caminhada | m/s | Média 30d |
+| `exercise_minutes` | Volume de Treino | min/semana | Soma 7d |
+| `stability` | Estabilidade | % | Estabilidade ao caminhar |
+
+---
+
+## 3. Tokens de Design — Lembrete
+
+O Painel de Longevidade pertence ao módulo de Inteligência Biométrica. Todos os elementos estruturais devem usar tokens do módulo:
+
+| Elemento | Token | Valor |
+|---|---|---|
+| Headers de aba/seção | `--mod-longevidade-primary` | Deep Indigo `#4A5899` |
+| Ícones de módulo | `--mod-longevidade-primary` | Deep Indigo `#4A5899` |
+| Backgrounds | `--sys-bg-primary` | `#FAFBF8` |
+| Texto principal | `--sys-text-primary` | — |
+| Texto secundário | `--sys-text-secondary` | — |
+
+**Não usar** `--sys-primary` (Verde `#3B5F4A`) em elementos estruturais deste módulo. O verde é reservado para o módulo de Nutrição/Sistema. O Deep Indigo é a cor da Inteligência Biométrica.
+
+### Classificação de Scores
+
+| Score | Badge | Cor |
+|---|---|---|
+| 80–100 | Excelente | 🟢 Verde |
+| 60–79 | Bom | 🔵 Azul (Deep Indigo) |
+| 40–59 | Atenção | 🟡 Amarelo/Gold `#D9A441` |
+| 0–39 | Risco | 🔴 Vermelho |
+
+---
+
+## 4. Testes de Aceitação
+
+| # | Teste | Resultado Esperado |
+|---|---|---|
+| 1 | VO2 com score 75 | Card exibe "Bom", não "P75 - idade/sexo" |
+| 2 | VO2 com score 100 | Card exibe "Excelente" |
+| 3 | VO2 com `percentile: 70` no payload | Card exibe "P70 - Homem, 40-49 anos" |
+| 4 | HRV label | Card exibe "HRV", não "HRV (RMSSD)" |
+| 5 | Score CV parcial | Badge "Score parcial" quando `is_partial: true` |
+| 6 | Recovery HR sem dados | Card não renderizado ou exibe "Sem dados" |
+| 7 | Tokens de cor | Nenhum elemento usa `--sys-primary` (verde) |
+
+---
+
+## 5. Checklist
+
+- [ ] Substituir label VO2 "P{score} - idade/sexo" por classificação textual
+- [ ] Adicionar lógica condicional para campo `percentile` do payload V2
+- [ ] Trocar label "HRV (RMSSD)" para "HRV"
+- [ ] Verificar que Score CV parcial exibe badge corretamente
+- [ ] Verificar que card de Recovery HR trata estado "sem dados"
+- [ ] Confirmar tokens de cor do módulo (Deep Indigo, não verde)
+- [ ] Executar os 7 testes de aceitação
