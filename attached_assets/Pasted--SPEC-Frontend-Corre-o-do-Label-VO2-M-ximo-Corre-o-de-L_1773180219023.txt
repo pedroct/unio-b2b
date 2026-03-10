@@ -1,0 +1,180 @@
+# SPEC Frontend — Correção do Label VO2 Máximo
+
+## Correção de Label e Preparação para Percentis Reais (V2)
+
+| Campo | Valor |
+|---|---|
+| **Versão** | 1.0 |
+| **Data** | 10 de março de 2026 |
+| **Autor** | Pedro — Product Design & UX Lead |
+| **Destinatário** | LLM Frontend |
+| **Módulo** | Painel de Longevidade — Cockpit |
+| **Componente** | Card "VO2 Máximo" nos Componentes do Score Cardiovascular |
+| **Prioridade** | Média — Label incorreto induzindo interpretação clínica errada |
+| **Escopo** | V1: Correção de label | V2: Suporte a percentil real por idade/sexo |
+
+---
+
+## 1. Problema
+
+O card de VO2 Máximo no Cockpit exibe atualmente:
+
+```
+VO2 Máximo
+37.57  ml/kg/min
+→ Estável
+P75 - idade/sexo
+```
+
+O label **"P75 - idade/sexo"** é incorreto. O backend não calcula percentis por idade e sexo — ele usa faixas fixas absolutas. O "75" é o score da faixa (36–42 ml/kg/min → score 75), não um percentil populacional. Isso induz o profissional a acreditar que o dado é personalizado por demografia quando na realidade é uma classificação genérica.
+
+Para o indivíduo em questão (homem, 48 anos), o percentil real segundo tabelas ACSM seria **~P70**, não P75. Para um homem de 30 anos com o mesmo VO2, o percentil real seria ~P40–45 — o label "P75" estaria significativamente errado.
+
+---
+
+## 2. Correção V1 — Trocar o Label (Imediato)
+
+### 2.1 Estado Atual
+
+O frontend recebe do backend (endpoint `GET /clientes/{id}/cockpit`) o campo de VO2 com score normalizado. O label "P75 - idade/sexo" é montado no frontend a partir do score (75 → "P75") com o sufixo fixo "- idade/sexo".
+
+### 2.2 Correção
+
+Substituir a lógica de montagem do label de VO2 por uma classificação textual baseada no score, **sem referência a percentil ou ajuste demográfico**:
+
+| Score VO2 | Label Atual (ERRADO) | Label Corrigido |
+|---|---|---|
+| 100 | P100 - idade/sexo | Excelente |
+| 90 | P90 - idade/sexo | Muito bom |
+| 75 | P75 - idade/sexo | Bom |
+| 60 | P60 - idade/sexo | Atenção |
+| 40 | P40 - idade/sexo | Risco |
+
+### 2.3 Resultado Visual Esperado
+
+**Antes:**
+```
+VO2 Máximo
+37.57  ml/kg/min
+→ Estável
+P75 - idade/sexo
+```
+
+**Depois:**
+```
+VO2 Máximo
+37.57  ml/kg/min
+→ Estável
+Bom
+```
+
+### 2.4 Localização no Código
+
+O label é renderizado no componente do card de VO2 dentro da seção "Componentes — Score Cardiovascular" do Cockpit. Buscar onde o texto "P75" ou a interpolação `P${score}` é montado e substituir pelo mapa de classificação textual.
+
+### 2.5 Design System
+
+O label de classificação deve seguir o mesmo padrão visual já usado nos outros cards (ex: "Estável", "Clínico", "Média 7d"). Especificamente:
+
+- **Tipografia:** Inter, corpo, mesmo tamanho dos labels auxiliares dos outros cards
+- **Cor:** Texto secundário (`--sys-text-secondary` ou equivalente), sem cor semântica no label — a classificação de cor (se houver) vem do badge do score, não do label do componente
+- **Posição:** Mesma posição onde "P75 - idade/sexo" aparece atualmente
+
+---
+
+## 3. Preparação V2 — Suporte a Percentil Real (Roadmap)
+
+Quando o backend implementar percentis reais por idade e sexo (documentado na SPEC Backend), o payload do cockpit incluirá um campo adicional no componente de VO2:
+
+### 3.1 Payload Atual (V1)
+
+```json
+{
+  "metric_type": "vo2_max",
+  "value": 37.57,
+  "unit": "ml/kg/min",
+  "score": 75,
+  "trend": "stable"
+}
+```
+
+### 3.2 Payload Futuro (V2)
+
+```json
+{
+  "metric_type": "vo2_max",
+  "value": 37.57,
+  "unit": "ml/kg/min",
+  "score": 70,
+  "trend": "stable",
+  "percentile": 70,
+  "percentile_context": "Homem, 40-49 anos",
+  "classification": "Bom"
+}
+```
+
+### 3.3 Renderização V2
+
+Quando o campo `percentile` estiver presente no payload, o card deve exibir:
+
+```
+VO2 Máximo
+37.57  ml/kg/min
+→ Estável
+P70 - Homem, 40-49 anos
+```
+
+Nesse caso, "P70" será um percentil real calculado por tabelas ACSM, e "Homem, 40-49 anos" é o contexto demográfico usado. O label volta a usar "P" porque agora é preciso.
+
+### 3.4 Lógica de Renderização
+
+```
+SE payload contém campo "percentile":
+    label = "P{percentile} - {percentile_context}"
+SENÃO:
+    label = classificação textual baseada no score (mapa V1)
+```
+
+Isso garante retrocompatibilidade — o frontend funciona tanto com o backend V1 (sem percentil) quanto com o V2 (com percentil).
+
+---
+
+## 4. Tokens de Design
+
+O card de VO2 Máximo deve usar tokens do módulo de Longevidade, não tokens globais do sistema:
+
+| Elemento | Token |
+|---|---|
+| Header do card | `--mod-longevidade-primary` (Deep Indigo `#4A5899`) |
+| Valor numérico | `--sys-text-primary` |
+| Unidade (ml/kg/min) | `--sys-text-secondary` |
+| Label de tendência (→ Estável) | `--sys-text-secondary` |
+| Label de classificação (Bom / P70) | `--sys-text-secondary` |
+
+**Atenção:** Não usar `--sys-primary` (Verde `#3B5F4A`) em elementos estruturais deste módulo. O verde é reservado para o módulo de Nutrição. O Deep Indigo é a cor do módulo de Inteligência Biométrica (Longevidade + Exames Laboratoriais).
+
+---
+
+## 5. Testes de Aceitação
+
+### Teste 1 — Label V1 correto
+Com VO2 score = 75, o card deve exibir "Bom", não "P75 - idade/sexo".
+
+### Teste 2 — Todos os níveis de classificação
+Verificar que cada faixa de score exibe o label correto: 100 → "Excelente", 90 → "Muito bom", 75 → "Bom", 60 → "Atenção", 40 → "Risco".
+
+### Teste 3 — Retrocompatibilidade V2
+Quando o payload incluir campo `percentile`, o card deve exibir "P{percentile} - {context}" em vez da classificação textual.
+
+### Teste 4 — Tokens de cor
+Confirmar que nenhum elemento do card de VO2 usa `--sys-primary` (verde). Header deve usar Deep Indigo.
+
+---
+
+## 6. Checklist
+
+- [ ] Substituir lógica de label "P{score} - idade/sexo" por mapa de classificação textual
+- [ ] Verificar que o mapa cobre todos os scores possíveis (40, 60, 75, 90, 100)
+- [ ] Adicionar lógica condicional para suportar campo `percentile` do payload V2
+- [ ] Confirmar tokens de cor do módulo (Deep Indigo, não verde)
+- [ ] Executar os 4 testes de aceitação
