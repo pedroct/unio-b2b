@@ -12,7 +12,7 @@ interface AbaCardiometabolicoProps {
 const METRIC_CONFIG: Record<string, { invertedSemantics: boolean; labelSecundario?: string; eixo: "autonomico" | "aerobio" }> = {
   hrv_rmssd: { invertedSemantics: false, eixo: "autonomico" },
   resting_hr: { invertedSemantics: true, eixo: "autonomico" },
-  vo2_max: { invertedSemantics: false, labelSecundario: "P75 · idade/sexo", eixo: "aerobio" },
+  vo2_max: { invertedSemantics: false, eixo: "aerobio" },
   hr_recovery_1min: { invertedSemantics: false, labelSecundario: "Média das últimas 5 sessões", eixo: "aerobio" },
 };
 

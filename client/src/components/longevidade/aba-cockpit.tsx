@@ -7,7 +7,7 @@ import type { BiomarcadorItem } from "./card-biomarcador";
 import { GraficoTendenciaScore } from "./grafico-tendencia-score";
 import { EstadoDiaZero } from "./estado-dia-zero";
 import type { RespostaCockpit, RespostaCardiometabolico, ScorePilar, ComponentesCockpit } from "@shared/schema";
-import { CLASSIFICACAO_FROM_LABEL, TENDENCIA_FROM_API } from "@shared/schema";
+import { CLASSIFICACAO_FROM_LABEL, TENDENCIA_FROM_API, classificacaoVO2FromScore } from "@shared/schema";
 import type { TendenciaBiomarcador } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -82,6 +82,16 @@ function normClassificacao(c: string | null | undefined) {
   return CLASSIFICACAO_FROM_LABEL[c] ?? CLASSIFICACAO_FROM_LABEL[c.toLowerCase()] ?? null;
 }
 
+function resolveVO2Referencia(comp: NonNullable<ComponentesCockpit[string]>): string | undefined {
+  if (comp.percentile != null && comp.percentile_context) {
+    return `P${comp.percentile} - ${comp.percentile_context}`;
+  }
+  if (comp.score != null) {
+    return classificacaoVO2FromScore(comp.score);
+  }
+  return undefined;
+}
+
 function buildBiomarcadorItems(componentes: ComponentesCockpit, pilarTipo: string): BiomarcadorItem[] {
   const configs = COMPONENTES_POR_PILAR[pilarTipo];
   if (!configs) return [];
@@ -89,6 +99,10 @@ function buildBiomarcadorItems(componentes: ComponentesCockpit, pilarTipo: strin
     .filter((cfg) => componentes[cfg.key] != null)
     .map((cfg) => {
       const comp = componentes[cfg.key];
+      const isVO2 = cfg.key === "vo2";
+      const referencia = isVO2
+        ? resolveVO2Referencia(comp!)
+        : (comp?.referencia ?? cfg.defaultReferencia);
       return {
         key: cfg.key,
         nome: cfg.nome,
@@ -96,7 +110,7 @@ function buildBiomarcadorItems(componentes: ComponentesCockpit, pilarTipo: strin
         valorFormatado: comp?.valor_formatado ?? null,
         unit: comp?.unidade ?? cfg.defaultUnit,
         trend: normTrend(comp?.tendencia),
-        referencia: comp?.referencia ?? cfg.defaultReferencia,
+        referencia,
         invertedSemantics: cfg.invertedSemantics,
       };
     });

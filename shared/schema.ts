@@ -282,6 +282,18 @@ export interface ComponenteScore {
   unidade: string;
   tendencia: string | null;
   referencia: string | null;
+  score?: number | null;
+  percentile?: number | null;
+  percentile_context?: string | null;
+  classification?: string | null;
+}
+
+export function classificacaoVO2FromScore(score: number): string {
+  if (score >= 95) return "Excelente";
+  if (score >= 85) return "Muito bom";
+  if (score >= 70) return "Bom";
+  if (score >= 55) return "Atenção";
+  return "Risco";
 }
 
 export type ComponentesCockpit = Record<string, ComponenteScore | null>;
