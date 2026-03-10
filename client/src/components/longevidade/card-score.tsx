@@ -83,12 +83,12 @@ export function CardScore({ score, classification, tendencia, is_partial = false
 
   return (
     <div
-      className="rounded-xl p-6 h-full"
+      className="rounded-xl p-6 h-full flex flex-col"
       style={{ background: "var(--mod-longevidade-bg)", border: "1px solid var(--mod-longevidade-border)" }}
       data-testid={`card-score-${pilarTipo}`}
     >
       <div className="flex items-center gap-2 mb-4">
-        <Icone className="h-5 w-5" style={{ color: "var(--mod-longevidade-icon)" }} />
+        <Icone className="h-5 w-5 flex-shrink-0" style={{ color: "var(--mod-longevidade-icon)" }} />
         <span className="text-sm font-semibold uppercase tracking-wider" style={{ color: "var(--mod-longevidade-text)" }}>
           {tituloExibido}
         </span>
@@ -98,16 +98,16 @@ export function CardScore({ score, classification, tendencia, is_partial = false
         {Math.round(score)}
       </p>
 
-      <div className="flex items-center gap-3 mt-4">
+      <div className="flex items-center gap-2 mt-4 flex-wrap">
         <span
-          className={`score-badge--${classification} inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold`}
+          className={`score-badge--${classification} inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold whitespace-nowrap`}
           data-testid={`badge-classificacao-${pilarTipo}`}
         >
           {LABELS_CLASSIFICACAO[classification]}
         </span>
 
         {is_partial && (
-          <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold"
+          <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold whitespace-nowrap"
             style={{ background: "var(--score-attention-bg)", color: "var(--score-attention-icon)" }}
             data-testid={`badge-parcial-${pilarTipo}`}
           >
@@ -117,7 +117,7 @@ export function CardScore({ score, classification, tendencia, is_partial = false
         )}
 
         {TendenciaIcon && (
-          <span className="flex items-center gap-1 text-sm" style={{ color: `var(--score-${classification}-icon)` }} data-testid={`text-tendencia-${pilarTipo}`}>
+          <span className="flex items-center gap-1 text-xs whitespace-nowrap" style={{ color: `var(--score-${classification}-icon)` }} data-testid={`text-tendencia-${pilarTipo}`}>
             <TendenciaIcon className="h-3.5 w-3.5" />
             {tendencia === "up" ? "Em alta" : tendencia === "down" ? "Em queda" : "Estável"}
           </span>
@@ -125,7 +125,7 @@ export function CardScore({ score, classification, tendencia, is_partial = false
       </div>
 
       {updated_at && (
-        <p className="text-xs text-muted-foreground mt-3" data-testid={`text-atualizado-${pilarTipo}`}>
+        <p className="text-xs text-muted-foreground mt-auto pt-3" data-testid={`text-atualizado-${pilarTipo}`}>
           Atualizado {formatarData(updated_at)}
         </p>
       )}
