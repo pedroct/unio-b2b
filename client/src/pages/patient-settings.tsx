@@ -42,7 +42,7 @@ function SettingsSkeleton() {
 }
 
 export default function PatientSettingsPage() {
-  const [, params] = useRoute("/pacientes/:id/configuracoes");
+  const [, params] = useRoute("/clientes/:id/configuracoes");
   const patientId = params?.id || "";
   const { toast } = useToast();
 
@@ -103,7 +103,7 @@ export default function PatientSettingsPage() {
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6" data-testid="page-patient-settings">
       <div className="flex items-center gap-3">
-        <Link href={`/pacientes/${patientId}/dashboard`}>
+        <Link href={`/clientes/${patientId}/dashboard`}>
           <Button variant="ghost" size="icon" data-testid="button-back-settings">
             <ArrowLeft className="h-4 w-4" />
           </Button>

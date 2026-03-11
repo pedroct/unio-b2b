@@ -32,7 +32,7 @@ function PatientHeaderSkeleton() {
 }
 
 export default function PatientDashboardPage() {
-  const [, params] = useRoute("/pacientes/:id/dashboard");
+  const [, params] = useRoute("/clientes/:id/dashboard");
   const patientId = params?.id || "";
 
   const { data: patient, isLoading, error } = useQuery<Patient>({
@@ -56,7 +56,7 @@ export default function PatientDashboardPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6" data-testid="page-patient-dashboard">
       <div className="flex items-center gap-3 flex-wrap">
-        <Link href="/pacientes">
+        <Link href="/clientes">
           <Button variant="ghost" size="icon" data-testid="button-back">
             <ArrowLeft className="h-4 w-4" />
           </Button>

@@ -16,7 +16,7 @@ vi.mock("@/components/ui/skeleton", () => ({
 }));
 
 vi.mock("wouter", () => ({
-  useLocation: () => ["/pacientes", mockNavigate],
+  useLocation: () => ["/clientes", mockNavigate],
   Link: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
@@ -81,7 +81,7 @@ describe("PatientsPage", () => {
 
     fireEvent.click(screen.getByTestId("row-patient-1"));
 
-    expect(mockNavigate).toHaveBeenCalledWith("/pacientes/1/dashboard");
+    expect(mockNavigate).toHaveBeenCalledWith("/clientes/1/dashboard");
   });
 
   it("renders loading skeletons", () => {

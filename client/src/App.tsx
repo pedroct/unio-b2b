@@ -60,15 +60,15 @@ function AppRoutes() {
   }
 
   if (location === "/login" || location === "/" || location === "") {
-    return <Redirect to="/pacientes" />;
+    return <Redirect to="/clientes" />;
   }
 
   return (
     <AuthenticatedLayout>
       <Switch>
-        <Route path="/pacientes" component={PatientsPage} />
-        <Route path="/pacientes/:id/dashboard" component={PatientDashboardPage} />
-        <Route path="/pacientes/:id/configuracoes" component={PatientSettingsPage} />
+        <Route path="/clientes" component={PatientsPage} />
+        <Route path="/clientes/:id/dashboard" component={PatientDashboardPage} />
+        <Route path="/clientes/:id/configuracoes" component={PatientSettingsPage} />
         <Route path="/prescricao-alimentar/:pacienteId" component={PrescricaoAlimentarPage} />
         <Route path="/prescricao-alimentar" component={PrescricaoAlimentarListaPage} />
         <Route path="/dashboard" component={PatientsPage} />

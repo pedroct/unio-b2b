@@ -64,7 +64,7 @@ export default function LoginPage() {
     try {
       const rawRegistration = data.registrationNumber.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
       await login(rawRegistration, data.uf, data.password);
-      navigate("/pacientes");
+      navigate("/clientes");
     } catch (error: any) {
       toast({
         title: "Erro de autenticação",

@@ -134,7 +134,7 @@ describe("LoginPage", () => {
 
     await waitFor(() => {
       expect(loginMock).toHaveBeenCalledWith("CRM-12345", "SP", "12345678901");
-      expect(navigateMock).toHaveBeenCalledWith("/pacientes");
+      expect(navigateMock).toHaveBeenCalledWith("/clientes");
     });
   });
 

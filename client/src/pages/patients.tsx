@@ -335,7 +335,7 @@ export default function PatientsPage() {
                   key={patient.id}
                   className="cursor-pointer hover-elevate"
                   onClick={() =>
-                    navigate(`/pacientes/${patient.id}/dashboard`)
+                    navigate(`/clientes/${patient.id}/dashboard`)
                   }
                   data-testid={`row-patient-${patient.id}`}
                 >

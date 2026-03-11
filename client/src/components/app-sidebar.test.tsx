@@ -7,7 +7,7 @@ import { AppSidebar } from "./app-sidebar";
 const logoutMock = vi.fn();
 
 vi.mock("wouter", () => ({
-  useLocation: () => ["/pacientes"],
+  useLocation: () => ["/clientes"],
   Link: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 

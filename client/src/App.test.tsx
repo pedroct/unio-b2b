@@ -106,7 +106,7 @@ describe("App", () => {
 
   it("redirects to login when unauthenticated", () => {
     authState = { isAuthenticated: false, isLoading: false };
-    mockLocation = "/pacientes";
+    mockLocation = "/clientes";
 
     render(<App />);
 
@@ -125,7 +125,7 @@ describe("App", () => {
 
   it("renders patients page when authenticated", () => {
     authState = { isAuthenticated: true, isLoading: false };
-    mockLocation = "/pacientes";
+    mockLocation = "/clientes";
 
     render(<App />);
 

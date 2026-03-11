@@ -25,7 +25,7 @@ export function ErroAcessoPaciente({ tipo }: ErroAcessoPacienteProps) {
           ? "Você não possui acesso clínico autorizado a este paciente."
           : "O cliente solicitado não foi encontrado no sistema."}
       </p>
-      <Link href="/pacientes">
+      <Link href="/clientes">
         <Button variant="outline" data-testid="button-voltar-listagem">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Voltar para listagem
