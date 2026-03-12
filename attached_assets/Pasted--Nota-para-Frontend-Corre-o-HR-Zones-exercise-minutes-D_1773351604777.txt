@@ -1,0 +1,82 @@
+# 📋 Nota para Frontend — Correção HR Zones (exercise_minutes)
+
+**Data:** 2026-03-12  
+**Backend commit:** `fix(longevidade): corrigir exercise_minutes inflado em _calcular_hr_zones`  
+**Branch:** [staging]
+**Impacto no frontend:** 🟢 Nenhuma mudança de código necessária
+
+---
+
+## O que mudou?
+
+Uma correção no backend que afeta os **valores numéricos** retornados pelo campo `heart_rate_zones` no endpoint de Performance Funcional.
+
+### Endpoint afetado
+
+```
+GET /api/longevidade/clientes/{id}/performance-funcional
+```
+
+### Campo afetado no response
+
+```json
+{
+  "biomarcadores": {
+    "heart_rate_zones": {
+      "zone1_minutes": 150.0,
+      "zone2_minutes": 45.0,
+      "zone3_minutes": 12.0,
+      "zone4_minutes": 3.0
+    }
+  }
+}
+```
+
+### O que NÃO mudou
+
+- ✅ **Schema**: mesma estrutura, mesmos campos, mesmos tipos
+- ✅ **Endpoint**: mesma URL, mesmos parâmetros
+- ✅ **Outros biomarcadores**: `exercise_minutes`, `walking_speed`, `stability`, `strength` — inalterados
+
+---
+
+## O que mudou nos valores?
+
+Os minutos por zona agora refletem o **valor real** de exercício semanal, em vez de um valor inflado.
+
+### Exemplo concreto (dados reais)
+
+| Campo           | Antes (bug) | Depois (correto) |
+| :-------------- | :---------- | :--------------- |
+| `zone1_minutes` | ~500        | ~120             |
+| `zone2_minutes` | ~100        | ~25              |
+| `zone3_minutes` | ~35         | ~8               |
+| `zone4_minutes` | ~8          | ~2               |
+| **Total**       | **~643**    | **~155**         |
+
+> Os valores exatos dependem do usuário e período, mas a ordem de grandeza da redução é de **~4-6x** para usuários com múltiplas sincronizações diárias.
+
+---
+
+## Por que mudou?
+
+O Apple Health envia o total **acumulado** de exercise_minutes a cada sync (ex: às 17h = 108 min, às 20h = 106 min, às 21h = 106 min). O backend antigo **somava todos os registros** (SUM bruto), contando cada sync como exercício adicional.
+
+A correção agora pega o **máximo por dia** (que é o total real daquele dia) e soma apenas os máximos diários — eliminando duplicatas de sync.
+
+---
+
+## Checklist para o Frontend
+
+- [ ] **Nenhuma mudança de código** é necessária
+- [ ] Se houver **thresholds visuais** baseados em minutos (ex: barra de progresso que muda de cor em 300 min), revisar se os ranges ainda fazem sentido com os novos valores
+- [ ] Se houver **testes E2E** com valores hardcoded para HR zones, atualizar os valores esperados
+- [ ] Se usar **cache local** de HR zones, invalidar após o deploy
+
+---
+
+## Contexto Adicional
+
+O biomarcador `exercise_minutes` no mesmo endpoint **já retornava o valor correto** (usa outra função protegida). Apenas o sub-campo `heart_rate_zones` usava os dados inflados para proporcionalizar os minutos por zona.
+
+Portanto, o total de `exercise_minutes` exibido no painel continuará o mesmo — apenas a distribuição por zona de FC agora reflete a realidade.
