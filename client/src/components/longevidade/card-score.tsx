@@ -2,6 +2,7 @@ import { HeartPulse, Activity, Moon, Dumbbell, TrendingUp, TrendingDown, Minus, 
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ClassificacaoScore, TendenciaBiomarcador } from "@shared/schema";
 import { LABELS_CLASSIFICACAO } from "@shared/schema";
+import { InfoTooltip } from "./info-tooltip";
 
 interface CardScoreProps {
   score: number | null;
@@ -12,6 +13,7 @@ interface CardScoreProps {
   isLoading?: boolean;
   title?: string;
   pilarTipo?: string;
+  tooltip?: string;
 }
 
 const ICONES_PILAR: Record<string, typeof HeartPulse> = {
@@ -41,7 +43,7 @@ const ICONE_TENDENCIA = {
   stable: Minus,
 };
 
-export function CardScore({ score, classification, tendencia, is_partial = false, updated_at, isLoading, title, pilarTipo = "cardiovascular" }: CardScoreProps) {
+export function CardScore({ score, classification, tendencia, is_partial = false, updated_at, isLoading, title, pilarTipo = "cardiovascular", tooltip }: CardScoreProps) {
   const Icone = ICONES_PILAR[pilarTipo] ?? HeartPulse;
   const tituloExibido = title ?? TITULOS_PILAR[pilarTipo] ?? "Score";
 
@@ -69,9 +71,10 @@ export function CardScore({ score, classification, tendencia, is_partial = false
       >
         <div className="flex items-start gap-2 mb-4 min-h-[40px]">
           <Icone className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: "var(--mod-longevidade-icon)" }} />
-          <span className="text-xs font-semibold uppercase tracking-wider leading-tight" style={{ color: "var(--mod-longevidade-text)" }}>
+          <span className="text-xs font-semibold uppercase tracking-wider leading-tight flex-1" style={{ color: "var(--mod-longevidade-text)" }}>
             {tituloExibido}
           </span>
+          {tooltip && <InfoTooltip text={tooltip} side="top" />}
         </div>
         <p className="text-5xl font-bold" style={{ color: "var(--mod-longevidade-text)" }}>—</p>
         <p className="text-sm mt-3 text-muted-foreground">Dados insuficientes para cálculo</p>
@@ -89,9 +92,10 @@ export function CardScore({ score, classification, tendencia, is_partial = false
     >
       <div className="flex items-start gap-2 mb-4 min-h-[40px]">
         <Icone className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: "var(--mod-longevidade-icon)" }} />
-        <span className="text-xs font-semibold uppercase tracking-wider leading-tight" style={{ color: "var(--mod-longevidade-text)" }}>
+        <span className="text-xs font-semibold uppercase tracking-wider leading-tight flex-1" style={{ color: "var(--mod-longevidade-text)" }}>
           {tituloExibido}
         </span>
+        {tooltip && <InfoTooltip text={tooltip} side="top" />}
       </div>
 
       <p className="text-5xl font-bold leading-none" style={{ color: "var(--mod-longevidade-text)" }} data-testid={`text-score-value-${pilarTipo}`}>

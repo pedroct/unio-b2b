@@ -8,6 +8,7 @@ import { GraficoTendenciaScore } from "./grafico-tendencia-score";
 import { EstadoDiaZero } from "./estado-dia-zero";
 import type { RespostaCockpit, RespostaCardiometabolico, ScorePilar, ComponentesCockpit } from "@shared/schema";
 import { CLASSIFICACAO_FROM_LABEL, TENDENCIA_FROM_API, classificacaoVO2FromScore } from "@shared/schema";
+import { TOOLTIPS_SCORES, TOOLTIPS_COMPONENTES } from "./tooltips-longevidade";
 import type { TendenciaBiomarcador } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -43,32 +44,33 @@ interface ComponenteConfig {
   defaultUnit: string;
   invertedSemantics?: boolean;
   defaultReferencia?: string;
+  tooltip?: string;
 }
 
 const COMPONENTES_POR_PILAR: Record<string, ComponenteConfig[]> = {
   cardiovascular: [
-    { key: "hrv", nome: "HRV", defaultUnit: "ms" },
-    { key: "fcr", nome: "FC de Repouso", defaultUnit: "bpm", invertedSemantics: true },
-    { key: "vo2", nome: "VO₂ Máximo", defaultUnit: "mL/kg/min" },
-    { key: "recuperacao", nome: "Recuperação da FC", defaultUnit: "bpm", defaultReferencia: "Média das últimas 5 sessões" },
+    { key: "hrv", nome: "HRV", defaultUnit: "ms", tooltip: TOOLTIPS_COMPONENTES.hrv },
+    { key: "fcr", nome: "FC de Repouso", defaultUnit: "bpm", invertedSemantics: true, tooltip: TOOLTIPS_COMPONENTES.fcr },
+    { key: "vo2", nome: "VO₂ Máximo", defaultUnit: "mL/kg/min", tooltip: TOOLTIPS_COMPONENTES.vo2 },
+    { key: "recuperacao", nome: "Recuperação da FC", defaultUnit: "bpm", defaultReferencia: "Média das últimas 5 sessões", tooltip: TOOLTIPS_COMPONENTES.recuperacao },
   ],
   metabolic: [
-    { key: "gordura", nome: "% Gordura Corporal", defaultUnit: "%" },
-    { key: "cintura", nome: "Cintura", defaultUnit: "cm" },
-    { key: "massa_magra", nome: "Massa Magra", defaultUnit: "kg" },
-    { key: "tendencia_peso", nome: "Tendência Peso", defaultUnit: "kg", invertedSemantics: true },
+    { key: "gordura", nome: "% Gordura Corporal", defaultUnit: "%", tooltip: TOOLTIPS_COMPONENTES.gordura },
+    { key: "cintura", nome: "Cintura", defaultUnit: "cm", tooltip: TOOLTIPS_COMPONENTES.cintura },
+    { key: "massa_magra", nome: "Massa Magra", defaultUnit: "kg", tooltip: TOOLTIPS_COMPONENTES.massa_magra },
+    { key: "tendencia_peso", nome: "Tendência Peso", defaultUnit: "kg", invertedSemantics: true, tooltip: TOOLTIPS_COMPONENTES.tendencia_peso },
   ],
   recovery: [
-    { key: "sono_total", nome: "Sono Total", defaultUnit: "min" },
-    { key: "sono_rem_profundo", nome: "REM + Profundo", defaultUnit: "min" },
-    { key: "hrv_noturna", nome: "HRV Noturna", defaultUnit: "ms" },
-    { key: "fc_noturna", nome: "FC Noturna", defaultUnit: "bpm", invertedSemantics: true },
+    { key: "sono_total", nome: "Sono Total", defaultUnit: "min", tooltip: TOOLTIPS_COMPONENTES.sono_total },
+    { key: "sono_rem_profundo", nome: "REM + Profundo", defaultUnit: "min", tooltip: TOOLTIPS_COMPONENTES.sono_rem_profundo },
+    { key: "hrv_noturna", nome: "HRV Noturna", defaultUnit: "ms", tooltip: TOOLTIPS_COMPONENTES.hrv_noturna },
+    { key: "fc_noturna", nome: "FC Noturna", defaultUnit: "bpm", invertedSemantics: true, tooltip: TOOLTIPS_COMPONENTES.fc_noturna },
   ],
   functional: [
-    { key: "velocidade_caminhada", nome: "Velocidade de Caminhada", defaultUnit: "m/s", defaultReferencia: "Média 30d" },
-    { key: "forca", nome: "Força", defaultUnit: "nível", defaultReferencia: "Avaliação funcional" },
-    { key: "volume_treino", nome: "Volume de Treino", defaultUnit: "min/semana", defaultReferencia: "Soma 7d" },
-    { key: "estabilidade", nome: "Estabilidade", defaultUnit: "%", defaultReferencia: "Estabilidade ao caminhar" },
+    { key: "velocidade_caminhada", nome: "Velocidade de Caminhada", defaultUnit: "m/s", defaultReferencia: "Média 30d", tooltip: TOOLTIPS_COMPONENTES.velocidade_caminhada },
+    { key: "forca", nome: "Força", defaultUnit: "nível", defaultReferencia: "Avaliação funcional", tooltip: TOOLTIPS_COMPONENTES.forca },
+    { key: "volume_treino", nome: "Volume de Treino", defaultUnit: "min/semana", defaultReferencia: "Soma 7d", tooltip: TOOLTIPS_COMPONENTES.volume_treino },
+    { key: "estabilidade", nome: "Estabilidade", defaultUnit: "%", defaultReferencia: "Estabilidade ao caminhar", tooltip: TOOLTIPS_COMPONENTES.estabilidade },
   ],
 };
 
@@ -112,6 +114,7 @@ function buildBiomarcadorItems(componentes: ComponentesCockpit, pilarTipo: strin
         trend: normTrend(comp?.tendencia),
         referencia,
         invertedSemantics: cfg.invertedSemantics,
+        tooltip: cfg.tooltip,
       };
     });
 }
@@ -137,6 +140,7 @@ function buildCardioFromLegacy(cardio: RespostaCardiometabolico): BiomarcadorIte
         baseline: m.media_30d ?? undefined,
         referencia: cfg.defaultReferencia,
         invertedSemantics: cfg.invertedSemantics,
+        tooltip: cfg.tooltip,
       };
     })
     .filter((item): item is BiomarcadorItem => item !== null);
@@ -212,6 +216,7 @@ export function AbaCockpit({ pacienteId }: AbaCockpitProps) {
                 updated_at={cockpit?.data_atualizacao ?? null}
                 isLoading={isLoading}
                 pilarTipo={pilar.tipo}
+                tooltip={TOOLTIPS_SCORES[pilar.tipo]}
               />
             </div>
           );

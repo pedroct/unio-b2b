@@ -1,6 +1,7 @@
 import { TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import type { TendenciaBiomarcador } from "@shared/schema";
+import { InfoTooltip } from "./info-tooltip";
 
 interface CardBiomarcadorProps {
   nome: string;
@@ -13,6 +14,7 @@ interface CardBiomarcadorProps {
   labelSecundario?: string;
   sparklineData?: number[];
   aguardandoLeitura?: boolean;
+  tooltip?: string;
 }
 
 const ICONE_TENDENCIA = {
@@ -28,63 +30,41 @@ function calcularDiff(valor: number | null, baseline: number | undefined): numbe
 
 function corTendencia(tendencia: TendenciaBiomarcador, invertedSemantics: boolean): string {
   if (!tendencia || tendencia === "stable") return "var(--sys-text-muted)";
-  const positivo = invertedSemantics
-    ? tendencia === "down"
-    : tendencia === "up";
-  return positivo ? "var(--score-excellent-icon)" : "var(--score-attention-icon)";
+  const positivo = invertedSemantics ? tendencia === "down" : tendencia === "up";
+  return positivo ? "var(--score-excellent-icon)" : "var(--score-risk-icon)";
 }
 
-function copyTendencia(
-  tendencia: TendenciaBiomarcador,
-  diff: number | null,
-  unidade: string,
-  invertedSemantics: boolean,
-): string {
-  if (!tendencia) return "";
-  if (tendencia === "stable") return "Estável";
-  if (diff !== null) {
-    const sinal = diff > 0 ? "+" : "";
-    return `${sinal}${diff} ${unidade} vs referência 90d`;
-  }
-  const positivo = invertedSemantics
-    ? tendencia === "down"
-    : tendencia === "up";
-  return positivo ? "Tendência positiva" : "Tendência negativa";
-}
-
-function corSparkline(tendencia: TendenciaBiomarcador, invertedSemantics: boolean): string {
-  if (!tendencia || tendencia === "stable") return "#4A5899";
-  const positivo = invertedSemantics
-    ? tendencia === "down"
-    : tendencia === "up";
-  return positivo ? "#4A5899" : "#D4A843";
+function copyTendencia(tendencia: TendenciaBiomarcador, diff: number | null, unidade: string, invertedSemantics: boolean): string {
+  if (!tendencia || tendencia === "stable") return "Estável";
+  const sinal = diff !== null && diff > 0 ? "+" : "";
+  const diffStr = diff !== null ? ` ${sinal}${diff} ${unidade}` : "";
+  if (tendencia === "up") return invertedSemantics ? `Em alta${diffStr}` : `Em alta${diffStr}`;
+  return invertedSemantics ? `Em queda${diffStr}` : `Em queda${diffStr}`;
 }
 
 function SparklineMini({ data, cor }: { data: number[]; cor: string }) {
-  const pontos = data.map((v, i) => ({ i, v }));
+  const pts = data.map((v, i) => ({ v, i }));
   return (
-    <div className="mt-2" style={{ height: 36 }}>
+    <div className="mt-2 h-8">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={pontos} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
+        <AreaChart data={pts} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
           <defs>
-            <linearGradient id={`spark-${cor.replace("#", "")}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={cor} stopOpacity={0.3} />
-              <stop offset="100%" stopColor={cor} stopOpacity={0.05} />
+            <linearGradient id={`sg-${cor.replace(/[^a-z]/gi, "")}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={cor} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={cor} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <Area
-            type="monotone"
-            dataKey="v"
-            stroke={cor}
-            strokeWidth={1.5}
-            fill={`url(#spark-${cor.replace("#", "")})`}
-            dot={false}
-            isAnimationActive={false}
-          />
+          <Area type="monotone" dataKey="v" stroke={cor} strokeWidth={1.5} dot={false} fill={`url(#sg-${cor.replace(/[^a-z]/gi, "")})`} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
   );
+}
+
+function corSparkline(tendencia: TendenciaBiomarcador, invertedSemantics: boolean): string {
+  if (!tendencia || tendencia === "stable") return "var(--sys-text-muted)";
+  const positivo = invertedSemantics ? tendencia === "down" : tendencia === "up";
+  return positivo ? "var(--score-excellent-icon)" : "var(--score-risk-icon)";
 }
 
 export function CardBiomarcador({
@@ -98,6 +78,7 @@ export function CardBiomarcador({
   labelSecundario,
   sparklineData,
   aguardandoLeitura = false,
+  tooltip,
 }: CardBiomarcadorProps) {
   const insuficiente = valor === null || aguardandoLeitura;
   const IconeTendencia = tendencia ? ICONE_TENDENCIA[tendencia] : null;
@@ -115,9 +96,12 @@ export function CardBiomarcador({
       }}
       data-testid={`card-biomarcador-${nome.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
     >
-      <p className="text-sm font-semibold mb-2" style={{ color: "var(--mod-longevidade-text)" }}>
-        {nome}
-      </p>
+      <div className="flex items-center gap-1 mb-2">
+        <p className="text-sm font-semibold flex-1" style={{ color: "var(--mod-longevidade-text)" }}>
+          {nome}
+        </p>
+        {tooltip && <InfoTooltip text={tooltip} side="top" />}
+      </div>
 
       <div className="flex items-baseline gap-1.5">
         <span className={`text-2xl font-bold ${insuficiente ? "biomarker-card__value text-muted-foreground" : ""}`}>
@@ -160,6 +144,7 @@ export interface BiomarcadorItem {
   referencia?: string;
   invertedSemantics?: boolean;
   formatValue?: (v: number) => string;
+  tooltip?: string;
 }
 
 interface GradeGenericaProps {
@@ -182,6 +167,7 @@ export function GradeGenerica({ items, testId = "grade-biomarcadores" }: GradeGe
           invertedSemantics={item.invertedSemantics}
           labelSecundario={item.referencia}
           aguardandoLeitura={item.value === null}
+          tooltip={item.tooltip}
         />
       ))}
     </div>

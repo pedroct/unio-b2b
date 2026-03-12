@@ -5,6 +5,7 @@ import { CardScore } from "./card-score";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { RespostaPerformanceFuncional, BiomarcadorDetalhe, ClassificacaoScore, TendenciaBiomarcador, HeartRateZones } from "@shared/schema";
 import { TENDENCIA_FROM_API, CLASSIFICACAO_FROM_LABEL } from "@shared/schema";
+import { TOOLTIPS_COMPONENTES, TOOLTIPS_SCORES } from "./tooltips-longevidade";
 
 interface AbaPerformanceFuncionalProps {
   pacienteId: string;
@@ -17,11 +18,12 @@ const BIOMARCADORES_CONFIG: {
   nome: string;
   invertedSemantics: boolean;
   icon: typeof Timer;
+  tooltip?: string;
 }[] = [
-  { key: "exercise_minutes", nome: "Volume de Treino", invertedSemantics: false, icon: Timer },
-  { key: "walking_speed", nome: "Velocidade Caminhada", invertedSemantics: false, icon: Footprints },
-  { key: "stability", nome: "Estabilidade ao Caminhar", invertedSemantics: false, icon: Scale },
-  { key: "strength", nome: "Força", invertedSemantics: false, icon: Dumbbell },
+  { key: "exercise_minutes", nome: "Volume de Treino", invertedSemantics: false, icon: Timer, tooltip: TOOLTIPS_COMPONENTES.volume_treino },
+  { key: "walking_speed", nome: "Velocidade Caminhada", invertedSemantics: false, icon: Footprints, tooltip: TOOLTIPS_COMPONENTES.velocidade_caminhada },
+  { key: "stability", nome: "Estabilidade ao Caminhar", invertedSemantics: false, icon: Scale, tooltip: TOOLTIPS_COMPONENTES.estabilidade },
+  { key: "strength", nome: "Força", invertedSemantics: false, icon: Dumbbell, tooltip: TOOLTIPS_COMPONENTES.forca },
 ];
 
 const ZONE_CONFIG = [
@@ -130,6 +132,7 @@ export function AbaPerformanceFuncional({ pacienteId }: AbaPerformanceFuncionalP
               is_partial={score?.is_partial ?? false}
               updated_at={null}
               pilarTipo="functional"
+              tooltip={TOOLTIPS_SCORES.functional}
             />
           </div>
         )}
@@ -167,6 +170,7 @@ export function AbaPerformanceFuncional({ pacienteId }: AbaPerformanceFuncionalP
                       tendencia={normTrend(bio.tendencia)}
                       invertedSemantics={cfg.invertedSemantics}
                       labelSecundario={leitura ? `Última leitura: ${leitura}` : undefined}
+                      tooltip={cfg.tooltip}
                     />
                   );
                 })}

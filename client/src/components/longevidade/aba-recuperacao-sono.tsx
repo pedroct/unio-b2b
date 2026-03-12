@@ -5,6 +5,7 @@ import { CardScore } from "./card-score";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { RespostaRecuperacaoSono, BiomarcadorDetalhe, ClassificacaoScore, TendenciaBiomarcador } from "@shared/schema";
 import { TENDENCIA_FROM_API, CLASSIFICACAO_FROM_LABEL } from "@shared/schema";
+import { TOOLTIPS_COMPONENTES, TOOLTIPS_SCORES } from "./tooltips-longevidade";
 
 interface AbaRecuperacaoSonoProps {
   pacienteId: string;
@@ -15,12 +16,13 @@ const BIOMARCADORES_CONFIG: {
   nome: string;
   invertedSemantics: boolean;
   icon: typeof Bed;
+  tooltip?: string;
 }[] = [
-  { key: "sono_total", nome: "Sono Total", invertedSemantics: false, icon: Bed },
-  { key: "sono_rem", nome: "Sono REM", invertedSemantics: false, icon: MoonIcon },
-  { key: "sono_profundo", nome: "Sono Profundo", invertedSemantics: false, icon: Brain },
-  { key: "hrv_noturna", nome: "HRV Noturna", invertedSemantics: false, icon: HeartPulse },
-  { key: "fc_noturna", nome: "FC Noturna", invertedSemantics: true, icon: Heart },
+  { key: "sono_total", nome: "Sono Total", invertedSemantics: false, icon: Bed, tooltip: TOOLTIPS_COMPONENTES.sono_total },
+  { key: "sono_rem", nome: "Sono REM", invertedSemantics: false, icon: MoonIcon, tooltip: TOOLTIPS_COMPONENTES.sono_rem_profundo },
+  { key: "sono_profundo", nome: "Sono Profundo", invertedSemantics: false, icon: Brain, tooltip: TOOLTIPS_COMPONENTES.sono_rem_profundo },
+  { key: "hrv_noturna", nome: "HRV Noturna", invertedSemantics: false, icon: HeartPulse, tooltip: TOOLTIPS_COMPONENTES.hrv_noturna },
+  { key: "fc_noturna", nome: "FC Noturna", invertedSemantics: true, icon: Heart, tooltip: TOOLTIPS_COMPONENTES.fc_noturna },
 ];
 
 function normTrend(t: string | null | undefined): TendenciaBiomarcador {
@@ -67,6 +69,7 @@ export function AbaRecuperacaoSono({ pacienteId }: AbaRecuperacaoSonoProps) {
               is_partial={score?.is_partial ?? false}
               updated_at={null}
               pilarTipo="recovery"
+              tooltip={TOOLTIPS_SCORES.recovery}
             />
           </div>
         )}
@@ -102,6 +105,7 @@ export function AbaRecuperacaoSono({ pacienteId }: AbaRecuperacaoSonoProps) {
                   tendencia={normTrend(bio.tendencia)}
                   invertedSemantics={cfg.invertedSemantics}
                   labelSecundario={leitura ? `Última leitura: ${leitura}` : "Média 7d"}
+                  tooltip={cfg.tooltip}
                 />
               );
             })}
