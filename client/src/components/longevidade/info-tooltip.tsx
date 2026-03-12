@@ -23,15 +23,7 @@ export function InfoTooltip({ text, side = "top" }: InfoTooltipProps) {
       <TooltipContent
         side={side}
         role="tooltip"
-        className="max-w-[280px] text-[13px] leading-relaxed font-normal"
-        style={{
-          background: "var(--sys-bg-surface)",
-          border: "1px solid var(--sys-border-subtle)",
-          borderRadius: "8px",
-          padding: "12px 16px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-          color: "var(--sys-text-primary)",
-        }}
+        className="max-w-[280px] text-[13px] leading-relaxed font-normal !bg-white dark:!bg-gray-900 !border !border-gray-200 dark:!border-gray-700 !rounded-lg !shadow-md ![padding:12px_16px] !text-gray-800 dark:!text-gray-100"
       >
         {text}
       </TooltipContent>
