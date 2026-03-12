@@ -1,0 +1,188 @@
+# SPEC — Tooltips Explicativos do Painel de Longevidade
+
+## Textos para Tooltips de Scores e Componentes
+
+| Campo | Valor |
+|---|---|
+| **Versão** | 1.0 |
+| **Data** | 12 de março de 2026 |
+| **Autor** | Pedro — Product Design & UX Lead |
+| **Destinatário** | LLM Frontend |
+| **Módulo** | Painel de Longevidade — Cockpit |
+| **Tom** | Amigo especialista — claro, direto, sem jargão excessivo |
+| **Idioma** | Português brasileiro, sentence case |
+
+---
+
+## 1. Diretrizes de UX Writing
+
+- **Tom:** Amigo especialista. Informativo sem ser clínico. Sem distância médica, sem simplificação excessiva.
+- **Tamanho:** 2 a 3 frases por tooltip. Máximo de 180 caracteres quando possível.
+- **Estrutura:** Primeira frase explica o que é. Segunda frase explica por que importa. Terceira (opcional) contextualiza a fonte do dado.
+- **Evitar:** Termos como "paciente", "diagnóstico", "doença". Usar "cliente", "acompanhamento", "saúde".
+- **Formato:** Texto corrido, sem bullets, sem markdown. O tooltip é uma caixa flutuante pequena.
+
+---
+
+## 2. Tooltips dos 4 Scores Principais
+
+### Score Cardiovascular
+
+> Avalia a eficiência do seu coração e do sistema nervoso autônomo. Combina capacidade aeróbia, variabilidade cardíaca, frequência de repouso e recuperação pós-exercício.
+
+### Score Metabólico
+
+> Reflete a composição corporal e a tendência metabólica do cliente. Considera gordura corporal, massa magra, circunferência abdominal e variação de peso.
+
+### Score Recuperação
+
+> Mede a qualidade da recuperação diária com base no sono e na regulação autonômica noturna. Sono insuficiente ou superficial impacta diretamente o desempenho e a longevidade.
+
+### Score Funcional
+
+> Avalia a capacidade física aplicada ao dia a dia. Combina velocidade de caminhada, volume de treino, força e estabilidade ao caminhar.
+
+---
+
+## 3. Tooltips dos Componentes — Score Cardiovascular
+
+### HRV
+
+> Variabilidade da frequência cardíaca medida pelo Apple Watch durante o sono. Reflete a capacidade do sistema nervoso de se adaptar a estímulos. Valores mais altos indicam melhor regulação autonômica. Comparado com sua própria média de 90 dias.
+
+### FC de Repouso
+
+> Frequência cardíaca mais baixa registrada em momentos de repouso ao longo do dia. Uma FC de repouso menor geralmente indica melhor condicionamento cardiovascular.
+
+### VO2 Máximo
+
+> Estimativa da capacidade máxima de consumo de oxigênio, calculada pelo Apple Watch durante caminhadas e corridas ao ar livre. É o preditor isolado mais forte de longevidade cardiovascular.
+
+### Recuperação da FC
+
+> Queda da frequência cardíaca no primeiro minuto após parar de se exercitar. Quanto maior a queda, melhor a capacidade de recuperação do coração. Média das últimas 5 sessões de exercício.
+
+---
+
+## 4. Tooltips dos Componentes — Score Metabólico
+
+### % Gordura Corporal
+
+> Percentual de gordura em relação ao peso total, medido pela balança inteligente. Valores entre 15% e 20% são considerados ótimos para homens; 20% a 25% para mulheres.
+
+### Cintura
+
+> Circunferência abdominal em centímetros. É um dos melhores indicadores de gordura visceral e risco cardiometabólico, independente do peso total.
+
+### Massa Magra
+
+> Peso de tudo que não é gordura: músculos, ossos, órgãos e água. Manter ou aumentar a massa magra é um dos pilares da longevidade funcional.
+
+### Tendência Peso
+
+> Variação do peso corporal nos últimos 30 dias. Valores positivos indicam ganho, negativos indicam perda. Pequenas oscilações são normais.
+
+---
+
+## 5. Tooltips dos Componentes — Score Recuperação
+
+### Sono Total
+
+> Média de horas dormidas por noite nos últimos 7 dias, medida pelo Apple Watch. A recomendação para adultos é de 7 a 9 horas por noite.
+
+### REM + Profundo
+
+> Soma das fases de sono REM e sono profundo (média 7 dias). São as fases mais restauradoras — essenciais para consolidação de memória, reparo muscular e regulação hormonal.
+
+### HRV Noturna
+
+> Variabilidade cardíaca medida exclusivamente durante o sono. É o indicador mais puro de recuperação autonômica, livre da influência de atividade, estresse e estimulantes.
+
+### FC Noturna
+
+> Frequência cardíaca média durante o sono nos últimos 7 dias. Valores mais baixos indicam melhor recuperação. Aumentos persistentes podem sinalizar fadiga acumulada ou overtraining.
+
+---
+
+## 6. Tooltips dos Componentes — Score Funcional
+
+### Velocidade de Caminhada
+
+> Velocidade média ao caminhar nos últimos 30 dias, estimada pelo iPhone via GPS e acelerômetro. Estudos associam velocidade de caminhada a expectativa de vida e capacidade funcional.
+
+### Volume de Treino
+
+> Total de minutos em que a frequência cardíaca esteve elevada por atividade física nos últimos 7 dias. Inclui treinos formais, deslocamento ativo e caminhadas.
+
+### Força
+
+> Avaliação de força muscular registrada manualmente pelo profissional. Quando disponível, contribui para uma visão mais completa da capacidade funcional.
+
+### Estabilidade
+
+> Estimativa de estabilidade ao caminhar, medida pelo iPhone. Avalia o equilíbrio e a consistência da marcha. Valores altos indicam baixo risco de quedas.
+
+---
+
+## 7. Tooltips de Estados Especiais
+
+### Score parcial
+
+> Este score foi calculado com menos componentes do que o ideal porque alguns dados ainda não estão disponíveis. O valor é confiável, mas pode mudar quando todos os componentes forem preenchidos.
+
+### Estável (tendência)
+
+> O valor está dentro da variação normal comparado com o período anterior. Sem mudanças significativas.
+
+### Baseline em formação
+
+> O sistema precisa de pelo menos 14 dias de dados para estabelecer sua referência individual. Continue usando o Apple Watch normalmente.
+
+---
+
+## 8. Especificação de Implementação
+
+### Comportamento do Tooltip
+
+- **Trigger:** Hover (desktop) / tap (mobile) no ícone de informação (ⓘ) ao lado do título do card
+- **Posição:** Acima do card, centralizado. Se não houver espaço, abaixo.
+- **Largura máxima:** 280px
+- **Delay de abertura:** 200ms (hover) / instantâneo (tap)
+- **Delay de fechamento:** 300ms após mouse sair / tap fora do tooltip
+- **Acessibilidade:** `role="tooltip"`, `aria-describedby` vinculado ao card
+
+### Tipografia
+
+- **Font:** Inter
+- **Tamanho:** 13px / 0.8125rem
+- **Peso:** 400 (regular)
+- **Cor:** `--sys-text-primary`
+- **Line-height:** 1.5
+
+### Fundo e Borda
+
+- **Background:** `--sys-bg-surface` (branco ou off-white)
+- **Borda:** 1px solid `--sys-border-subtle`
+- **Border-radius:** 8px
+- **Sombra:** `0 4px 12px rgba(0, 0, 0, 0.08)`
+- **Padding:** 12px 16px
+
+### Ícone Trigger (ⓘ)
+
+- **Tamanho:** 16px
+- **Cor:** `--sys-text-tertiary`
+- **Posição:** À direita do título do card, alinhado verticalmente ao centro
+- **Hover state:** Cor muda para `--sys-text-secondary`
+
+---
+
+## 9. Checklist
+
+- [ ] Implementar componente de tooltip reutilizável (se não existir)
+- [ ] Adicionar ícone ⓘ em cada card de score e componente
+- [ ] Mapear cada card ao texto correspondente (Seções 2–7)
+- [ ] Implementar comportamento hover/tap conforme Seção 8
+- [ ] Verificar acessibilidade (`role="tooltip"`, `aria-describedby`)
+- [ ] Testar em mobile (tap) e desktop (hover)
+- [ ] Verificar que tooltips não sobrepõem outros elementos
+- [ ] Confirmar tipografia Inter 13px com tokens corretos
