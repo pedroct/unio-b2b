@@ -46,4 +46,9 @@ export const TOOLTIPS_COMPONENTES: Record<string, string> = {
     "Avaliação de força muscular registrada manualmente pelo profissional. Quando disponível, contribui para uma visão mais completa da capacidade funcional.",
   estabilidade:
     "Estimativa de estabilidade ao caminhar, medida pelo iPhone. Avalia o equilíbrio e a consistência da marcha. Valores altos indicam baixo risco de quedas.",
+
+  proteina_relativa:
+    "Gramas de proteína ingeridas por quilo de peso corporal por dia. Reflete a qualidade da ingestão proteica em relação às necessidades individuais. Faixa ideal: 1,6 a 2,2 g/kg para manutenção e hipertrofia.",
+  aderencia_calorica:
+    "Percentual de adesão à meta calórica diária no período selecionado. Alta aderência está associada a melhores resultados de composição corporal e energia.",
 };

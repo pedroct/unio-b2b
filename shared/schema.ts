@@ -444,6 +444,81 @@ export const LABELS_BIOMARCADOR: Record<string, string> = {
   hr_recovery_1min: "Recuperação da FC",
 };
 
+export interface NutricaoMacros {
+  proteina_g: number;
+  carboidrato_g: number;
+  gordura_g: number;
+}
+
+export interface NutricaoRegistroDia {
+  data: string;
+  refeicoes_registradas: number;
+  calorias_consumidas: number;
+  meta_calorica: number | null;
+  aderencia_calorica_pct: number | null;
+  macros: NutricaoMacros;
+  proteina_relativa_g_kg: number | null;
+  peso_kg_referencia: number | null;
+}
+
+export interface NutricaoMedias {
+  calorias_consumidas: number | null;
+  proteina_relativa_g_kg: number | null;
+  aderencia_calorica_pct: number | null;
+  refeicoes_por_dia: number | null;
+  proteina_g: number | null;
+  carboidrato_g: number | null;
+  gordura_g: number | null;
+}
+
+export interface NutricaoHistorico {
+  periodo_dias: number;
+  data_inicio: string;
+  data_fim: string;
+  registros: NutricaoRegistroDia[];
+  medias: NutricaoMedias;
+  cobertura_dias: number;
+  cobertura_pct: number;
+}
+
+export interface NutricaoResumo {
+  proteina_relativa_g_kg_7d: number | null;
+  proteina_relativa_g_kg_30d: number | null;
+  aderencia_calorica_pct_7d: number | null;
+  aderencia_calorica_pct_30d: number | null;
+  cobertura_registros_pct_7d: number | null;
+  cobertura_registros_pct_30d: number | null;
+  refeicoes_por_dia_7d: number | null;
+  macros_distribuicao_30d: {
+    proteina_pct: number | null;
+    carboidrato_pct: number | null;
+    gordura_pct: number | null;
+  } | null;
+}
+
+export interface NutricaoAlerta {
+  tipo: string;
+  urgencia: "alta" | "media" | "informativo";
+  mensagem: string;
+  dias_consecutivos?: number | null;
+}
+
+export interface SeriePontoProteina {
+  data: string;
+  valor: number | null;
+}
+
+export interface RespostaNutricao {
+  cliente_id: number | string;
+  periodo_solicitado: number;
+  sem_dados: boolean;
+  mensagem_sem_dados: string | null;
+  resumo: NutricaoResumo;
+  alertas: NutricaoAlerta[];
+  serie_proteina_relativa_30d: SeriePontoProteina[];
+  historico: NutricaoHistorico;
+}
+
 export const BRAZILIAN_STATES = [
   "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO",
   "MA", "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR",

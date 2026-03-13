@@ -276,6 +276,24 @@ export async function registerRoutes(
     }
   });
 
+  app.get(["/api/painel-longevidade/clientes/:id/nutricao", "/api/longevidade/clientes/:id/nutricao"], async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) {
+      return res.status(401).json({ message: "Token de autenticação ausente." });
+    }
+    try {
+      const periodo = req.query.periodo ? String(req.query.periodo) : "7";
+      const result = await stagingPassthrough(`/api/painel-longevidade/clientes/${req.params.id}/nutricao`, {
+        bearerToken: token,
+        params: { periodo },
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[longevidade/nutricao] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao buscar dados nutricionais." });
+    }
+  });
+
   app.post(["/api/painel-longevidade/interesse", "/api/longevidade/interesse"], async (req, res) => {
     const token = extractBearerToken(req);
     if (!token) {

@@ -1,0 +1,230 @@
+# Contrato de API — Aba Nutrição (Aba 5)
+## Painel de Longevidade — v1.0
+
+> **Gerado em:** 2026-03-13
+> **PRD de referência:** [docs/painel_longevidade/PRD-Painel-Longevidade-Aba-Nutricao-V1.0.md](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/docs/painel_longevidade/PRD-Painel-Longevidade-Aba-Nutricao-V1.0.md)
+> **Backend:** [apps/nutricao/api.py](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nutricao/api.py) e [apps/painel_longevidade/api.py](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/painel_longevidade/api.py)
+
+---
+
+## Decisões de Design Implementadas
+
+| DN | Decisão | Implementação |
+|---|---|---|
+| DN1 | Endpoint `/historico` — criar | ✅ Criado em [apps/nutricao/api.py](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nutricao/api.py) |
+| DN2 | `proteina_relativa_g_kg` — backend | ✅ Calculado no serviço |
+| DN3 | Período padrão ao abrir | ✅ `7d` |
+| DN4 | Correlações — inline | ✅ Dados disponíveis no payload |
+| DN5 | Alertas RF05 apenas na Aba 5 | ✅ Não aparecem no Cockpit |
+| DN6 | Faixas de proteína — fixas | ✅ Fixas em V2 |
+
+---
+
+## Endpoint 1 — Histórico Nutricional (B2B e B2C)
+
+```
+GET /api/nutricao/historico?periodo={7|30|90}
+Authorization: Bearer {jwt_token}
+```
+
+### Parâmetros
+
+| Parâmetro | Tipo | Padrão | Descrição |
+|---|---|---|---|
+| [periodo](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nutricao/services.py#1183-1200) | [int](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/painel_longevidade/api.py#1254-1266) | `7` | Número de dias: `7`, `30` ou `90` |
+
+### Resposta 200
+
+```json
+{
+  "periodo_dias": 7,
+  "data_inicio": "2026-03-07",
+  "data_fim": "2026-03-13",
+  "registros": [
+    {
+      "data": "2026-03-13",
+      "refeicoes_registradas": 4,
+      "calorias_consumidas": 2340.5,
+      "meta_calorica": 2900.0,
+      "aderencia_calorica_pct": 80.7,
+      "macros": {
+        "proteina_g": 148.2,
+        "carboidrato_g": 220.0,
+        "gordura_g": 89.3
+      },
+      "proteina_relativa_g_kg": 1.74,
+      "peso_kg_referencia": 85.0
+    },
+    {
+      "data": "2026-03-12",
+      "refeicoes_registradas": 0,
+      "calorias_consumidas": 0.0,
+      "meta_calorica": 2900.0,
+      "aderencia_calorica_pct": null,
+      "macros": { "proteina_g": 0.0, "carboidrato_g": 0.0, "gordura_g": 0.0 },
+      "proteina_relativa_g_kg": null,
+      "peso_kg_referencia": 85.0
+    }
+  ],
+  "medias": {
+    "calorias_consumidas": 2356.7,
+    "proteina_relativa_g_kg": 1.61,
+    "aderencia_calorica_pct": 81.3,
+    "refeicoes_por_dia": 3.7,
+    "proteina_g": 137.0,
+    "carboidrato_g": 198.0,
+    "gordura_g": 82.0
+  },
+  "cobertura_dias": 5,
+  "cobertura_pct": 71.4
+}
+```
+
+### Erros
+
+| Status | Condição |
+|---|---|
+| `400` | [periodo](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nutricao/services.py#1183-1200) inválido (não é 7, 30 ou 90) |
+
+---
+
+## Endpoint 2 — Aba Nutrição (B2B Painel Longevidade)
+
+```
+GET /api/painel-longevidade/clientes/{cliente_id}/nutricao?periodo={7|30|90}
+Authorization: Bearer {jwt_token}   ← token do PROFISSIONAL
+```
+
+### Parâmetros
+
+| Parâmetro | Tipo | Padrão | Descrição |
+|---|---|---|---|
+| `cliente_id` | [int](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/painel_longevidade/api.py#1254-1266) | — | ID do cliente |
+| [periodo](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nutricao/services.py#1183-1200) | [int](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/painel_longevidade/api.py#1254-1266) | `7` | Período de exibição padrão: `7`, `30` ou `90` |
+
+### Resposta 200
+
+```json
+{
+  "cliente_id": 42,
+  "periodo_solicitado": 7,
+  "sem_dados": false,
+  "mensagem_sem_dados": null,
+
+  "resumo": {
+    "proteina_relativa_g_kg_7d": 1.61,
+    "proteina_relativa_g_kg_30d": 1.58,
+    "aderencia_calorica_pct_7d": 81.3,
+    "aderencia_calorica_pct_30d": 79.1,
+    "cobertura_registros_pct_7d": 71.4,
+    "cobertura_registros_pct_30d": 73.3,
+    "refeicoes_por_dia_7d": 3.7,
+    "macros_distribuicao_30d": {
+      "proteina_pct": 22.1,
+      "carboidrato_pct": 47.3,
+      "gordura_pct": 30.6
+    }
+  },
+
+  "alertas": [
+    {
+      "tipo": "proteina_baixa",
+      "urgencia": "alta",
+      "mensagem": "Proteína abaixo do mínimo por 7+ dias — avaliar risco de catabolismo",
+      "dias_consecutivos": 8
+    }
+  ],
+
+  "serie_proteina_relativa_30d": [
+    { "data": "2026-02-11", "valor": 1.42 },
+    { "data": "2026-02-12", "valor": null }
+  ],
+
+  "historico": { }
+}
+```
+
+> `"historico"` contém o objeto completo idêntico à resposta do Endpoint 1 para o `periodo_solicitado`.
+
+### Resposta 200 — Estado vazio (sem registros)
+
+```json
+{
+  "cliente_id": 42,
+  "periodo_solicitado": 7,
+  "sem_dados": true,
+  "mensagem_sem_dados": "Sem registros nutricionais neste período. O cliente precisa registrar refeições no app UNIO para que os dados apareçam aqui.",
+  "resumo": { "proteina_relativa_g_kg_7d": null, "..." : "null" },
+  "alertas": [],
+  "serie_proteina_relativa_30d": [],
+  "historico": { "cobertura_dias": 0, "cobertura_pct": 0.0, "registros": [ ... ] }
+}
+```
+
+### Erros
+
+| Status | Condição |
+|---|---|
+| `403` | Profissional não tem vínculo ativo com o cliente |
+| `404` | Cliente não encontrado |
+
+---
+
+## Alertas RF05 — Tipos e Condições
+
+| [tipo](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nutricao/api.py#1675-1685) | `urgencia` | Condição de disparo |
+|---|---|---|
+| `proteina_baixa` | `alta` | `proteina_relativa_g_kg < 1.2` por ≥ 7 dias consecutivos |
+| `aderencia_baixa` | [media](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/painel_longevidade/api.py#882-906) | `aderencia_calorica_pct < 70%` em ≥ 5 dos últimos 7 dias |
+| `sem_registros` | `informativo` | Zero registros nos últimos 7 dias |
+| `proteina_excessiva` | [media](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/painel_longevidade/api.py#882-906) | `proteina_relativa_g_kg > 3.0` em ≥ 5 dos últimos 7 dias |
+
+> **Comportamento:** Alertas aparecem apenas na Aba 5. O frontend pode dispensar o alerta por sessão (estado local, sem chamada de API).
+
+---
+
+## Faixas de Classificação — Proteína Relativa
+
+| Faixa (g/kg) | Classificação | Badge |
+|---|---|---|
+| < 1,2 | Insuficiente — risco de catabolismo | `vermelho` |
+| 1,2–1,6 | Subótimo — manutenção sem otimização | `amarelo` |
+| 1,6–2,2 | Adequado — otimização e hipertrofia | `verde` |
+| > 2,2 | Elevado — monitorar função renal | `amarelo` |
+| > 3,0 | Excessivo | `vermelho` |
+
+---
+
+## Edge Cases
+
+### Sem peso corporal registrado
+- `proteina_relativa_g_kg` retorna `null` nos registros e médias
+- O card exibe kcal absoluta com nota:
+  > "Peso corporal não atualizado — registre o peso no app para ver g/kg."
+- Badge de classificação **não é exibido** sem o valor relativo
+
+### Meta calórica não configurada
+- `aderencia_calorica_pct` retorna `null`
+- Card exibe apenas kcal absoluto com nota:
+  > "Configure a meta calórica do cliente para ver a aderência."
+
+### Cobertura < 50% dos dias
+- `cobertura_pct < 50` → banner amarelo:
+  > "Cobertura de dados limitada: X de Y dias. As médias podem não refletir o comportamento real."
+
+### Cobertura < 30%
+- O frontend **não exibe alertas RF05** quando `cobertura_pct < 30` (falsos positivos)
+- O backend sempre retorna os alertas calculados; o frontend filtra
+
+### Gráfico com ≤ 3 dias de dados
+- Substituir gráfico de linha por cards individuais por dia disponível
+
+---
+
+## Fontes de Dados
+
+| Dado | Fonte |
+|---|---|
+| Calorias, proteína, carboidrato, gordura | [RegistroAlimentar](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nutricao/models.py#1357-1465) (diário alimentar UNIO iOS) |
+| Peso corporal para g/kg | `HealthMetric[WEIGHT]` (Apple Health) → fallback `LeituraBiometrica` (Xiaomi) |
+| Meta calórica | Cálculo dinâmico via `NutricaoService.calcular_meta_calorica()` |

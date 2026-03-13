@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
-import { ArrowLeft, HeartPulse, Activity, Moon, Dumbbell, UtensilsCrossed, Lock } from "lucide-react";
+import { ArrowLeft, HeartPulse, Activity, Moon, Dumbbell, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,7 +9,7 @@ import { AbaCockpit } from "@/components/longevidade/aba-cockpit";
 import { AbaCardiometabolico } from "@/components/longevidade/aba-cardiometabolico";
 import { AbaRecuperacaoSono } from "@/components/longevidade/aba-recuperacao-sono";
 import { AbaPerformanceFuncional } from "@/components/longevidade/aba-performance-funcional";
-import { AbaTrancada } from "@/components/longevidade/aba-trancada";
+import { AbaNutricao } from "@/components/longevidade/aba-nutricao";
 import { ErroAcessoPaciente } from "@/components/longevidade/erro-acesso";
 import type { Patient } from "@shared/schema";
 
@@ -120,10 +120,9 @@ export default function PatientDashboardPage() {
             <Dumbbell className="h-3.5 w-3.5 mr-1.5" />
             Performance
           </TabsTrigger>
-          <TabsTrigger value="nutricao" data-testid="tab-trigger-nutricao" className="tab-bloqueada gap-1">
-            <UtensilsCrossed className="h-3.5 w-3.5 mr-1" />
+          <TabsTrigger value="nutricao" data-testid="tab-trigger-nutricao">
+            <UtensilsCrossed className="h-3.5 w-3.5 mr-1.5" />
             Nutrição
-            <Lock className="h-3 w-3 ml-0.5" />
           </TabsTrigger>
         </TabsList>
 
@@ -141,10 +140,7 @@ export default function PatientDashboardPage() {
             <AbaPerformanceFuncional pacienteId={patientId} />
           </TabsContent>
           <TabsContent value="nutricao">
-            <AbaTrancada
-              titulo="Nutrição"
-              mensagem="Nutrição estará disponível em breve. Você terá acesso a correlações entre ingestão alimentar e biomarcadores: proteína relativa versus massa magra, carga glicêmica e variabilidade da glicose, e balanço calórico versus tendência de peso — dados que transformam nutrição em motor de saúde."
-            />
+            <AbaNutricao pacienteId={patientId} />
           </TabsContent>
         </div>
       </Tabs>
