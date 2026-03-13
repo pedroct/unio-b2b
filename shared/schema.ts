@@ -327,12 +327,20 @@ export interface MetricaCardio {
   _sparkline_mock?: number[];
 }
 
+export interface MetricaMetabolica {
+  metric_type: string;
+  valor: number | null;
+  unidade: string;
+  referencia: string | null;
+}
+
 export interface RespostaCardiometabolico {
   cliente_id: number | string;
   metricas_cardio: MetricaCardio[];
   secao_metabolica_bloqueada: boolean;
   mensagem_bloqueio?: string | null;
   mensagem_bloqueio_metabolico?: string | null;
+  metricas_metabolicas?: MetricaMetabolica[] | null;
 }
 
 export interface PontoHistoricoScore {

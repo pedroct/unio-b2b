@@ -1,0 +1,285 @@
+# Contrato de Integração Frontend — Aba Cardiometabólico
+
+**Versão:** v1.2 (seção metabólica desbloqueada)
+**Atualizado em:** 2026-03-13
+**Módulo:** Painel de Longevidade — Aba 2
+
+Este documento descreve o contrato de API da **Aba Cardiometabólico** do Painel de Longevidade.
+Todas as requisições requerem autenticação via JWT no header: `Authorization: Bearer <token>`.
+
+---
+
+## Visão Geral da Aba
+
+A aba exibe dois blocos:
+
+1. **CARDIOVASCULAR** — Cards ativos com 4 biomarcadores, organizados em subseções:
+   - **CONTROLE AUTONÔMICO**: HRV e FC de Repouso
+   - **CAPACIDADE AERÓBIA**: VO₂ Máximo e Recuperação da FC
+
+2. **METABÓLICO** — Cards ativos (quando dados disponíveis) com 4 biomarcadores, ou estado bloqueado
+
+---
+
+## Endpoint
+
+### `GET /api/painel-longevidade/clientes/{cliente_id}/cardiometabolico`
+
+**Path Params:**
+- `cliente_id` (int, obrigatório): ID do usuário/cliente
+
+**Headers:**
+- `Authorization: Bearer <token>` (obrigatório)
+
+**Códigos de Resposta:**
+
+| Código | Significado |
+|--------|-------------|
+| `200` | Sucesso |
+| `403` | Sem acesso ao cliente |
+| `404` | Cliente não encontrado |
+
+---
+
+## Response `200 OK` — Seção Metabólica DESBLOQUEADA
+
+Quando há dados metabólicos disponíveis (`secao_metabolica_bloqueada: false`):
+
+```json
+{
+  "cliente_id": 42,
+  "metricas_cardio": [
+    {
+      "metric_type": "hrv_rmssd",
+      "valor_atual": 29.5,
+      "unidade": "ms",
+      "media_30d": 29.5,
+      "tendencia": "estavel",
+      "data_ultima_leitura": "2026-03-13T05:25:00+00:00"
+    },
+    {
+      "metric_type": "resting_hr",
+      "valor_atual": 54.0,
+      "unidade": "bpm",
+      "media_30d": 57.3,
+      "tendencia": "estavel",
+      "data_ultima_leitura": "2026-03-13T05:25:00+00:00"
+    },
+    {
+      "metric_type": "vo2_max",
+      "valor_atual": 37.57,
+      "unidade": "mL/kg/min",
+      "media_30d": 37.20,
+      "tendencia": "estavel",
+      "data_ultima_leitura": "2026-03-10T08:00:00+00:00"
+    },
+    {
+      "metric_type": "hr_recovery_1min",
+      "valor_atual": null,
+      "unidade": "bpm",
+      "media_30d": null,
+      "tendencia": null,
+      "data_ultima_leitura": null
+    }
+  ],
+  "secao_metabolica_bloqueada": false,
+  "mensagem_bloqueio_metabolico": "",
+  "metricas_metabolicas": [
+    {
+      "metric_type": "body_fat_pct",
+      "valor": 21.7,
+      "unidade": "%",
+      "referencia": "Clínico"
+    },
+    {
+      "metric_type": "waist_circ",
+      "valor": 80.2,
+      "unidade": "cm",
+      "referencia": "Clínico"
+    },
+    {
+      "metric_type": "lean_mass",
+      "valor": 61.2,
+      "unidade": "kg",
+      "referencia": "Clínico"
+    },
+    {
+      "metric_type": "tendencia_peso",
+      "valor": -0.89,
+      "unidade": "kg",
+      "referencia": "Últimos 30d"
+    }
+  ]
+}
+```
+
+---
+
+## Response `200 OK` — Seção Metabólica BLOQUEADA
+
+Quando não há dados metabólicos (`secao_metabolica_bloqueada: true`):
+
+```json
+{
+  "cliente_id": 42,
+  "metricas_cardio": [ ... ],
+  "secao_metabolica_bloqueada": true,
+  "mensagem_bloqueio_metabolico": "A análise metabólica completa e composição corporal estarão disponíveis em breve.",
+  "metricas_metabolicas": null
+}
+```
+
+---
+
+## Descrição dos Campos
+
+### Raiz da resposta
+
+| Campo | Tipo | Nullable | Descrição |
+|-------|------|----------|-----------|
+| `cliente_id` | `int` | não | ID do cliente |
+| `metricas_cardio` | `array` | não | 4 biomarcadores cardiovasculares (ordem fixa) |
+| `secao_metabolica_bloqueada` | `boolean` | não | `false` quando há dados. `true` quando bloqueado |
+| `mensagem_bloqueio_metabolico` | `string` | não | Texto de bloqueio. Vazio `""` quando desbloqueado |
+| `metricas_metabolicas` | `array \| null` | sim | Cards metabólicos. `null` quando sem dados |
+
+---
+
+## Seção Cardiovascular — `metricas_cardio`
+
+Lista sempre com **4 itens** nesta ordem:
+
+| Posição | `metric_type` | Label no UI | Subseção | Unidade | Precisão |
+|---------|--------------|-------------|----------|---------|----------|
+| 0 | `hrv_rmssd` | HRV | CONTROLE AUTONÔMICO | `ms` | 1 decimal |
+| 1 | `resting_hr` | FC de Repouso | CONTROLE AUTONÔMICO | `bpm` | 1 decimal |
+| 2 | `vo2_max` | VO₂ Máximo | CAPACIDADE AERÓBIA | `mL/kg/min` | 2 decimais |
+| 3 | `hr_recovery_1min` | Recuperação da FC | CAPACIDADE AERÓBIA | `bpm` | 1 decimal |
+
+### Cada item de `metricas_cardio`
+
+| Campo | Tipo | Nullable | Descrição |
+|-------|------|----------|-----------|
+| `metric_type` | `string` | não | Identificador da métrica |
+| `valor_atual` | `float` | sim | Valor principal do card. `null` se sem dados |
+| `unidade` | `string` | não | Unidade de medida |
+| `media_30d` | `float` | sim | Contexto histórico (média 30d). Para `resting_hr`: média (distinto do valor_atual que é o mínimo) |
+| `tendencia` | `string` | sim | `"estavel"` \| `"subindo"` \| `"caindo"` \| `null` |
+| `data_ultima_leitura` | `string` | sim | ISO 8601 da última leitura |
+
+---
+
+## Seção Metabólica — `metricas_metabolicas`
+
+Quando `secao_metabolica_bloqueada === false`, `metricas_metabolicas` é uma lista com **até 4 itens**.
+
+| `metric_type` | Label no UI | Unidade | Precisão | Nota |
+|--------------|-------------|---------|----------|------|
+| `body_fat_pct` | % Gordura Corporal | `%` | 1 decimal | Último registro ≤ 90 dias |
+| `waist_circ` | Cintura | `cm` | 1 decimal | Último registro ≤ 90 dias |
+| `lean_mass` | Massa Magra | `kg` | 1 decimal | Último registro ≤ 90 dias |
+| `tendencia_peso` | Tendência de Peso | `kg` | 2 decimais | Peso atual − peso 30d atrás. Negativo = perda |
+
+### Cada item de `metricas_metabolicas`
+
+| Campo | Tipo | Nullable | Descrição |
+|-------|------|----------|-----------|
+| `metric_type` | `string` | não | Identificador da métrica |
+| `valor` | `float` | sim | Valor numérico. `null` = sem dado |
+| `unidade` | `string` | não | Unidade de medida |
+| `referencia` | `string` | sim | Contexto clínico: `"Clínico"` ou `"Últimos 30d"` |
+
+> ⚠️ Iterar por `metric_type`, não por posição. Um item pode estar ausente se não houver dado para aquela métrica específica.
+
+---
+
+## Lógica de Renderização por Estado
+
+### Estado: `secao_metabolica_bloqueada === false` (dados disponíveis)
+
+Renderizar os cards ativos com valores de `metricas_metabolicas`:
+
+```
+METABÓLICO
+┌────────────────────┐ ┌────────────────────┐ ┌────────────────────┐ ┌────────────────────┐
+│ % Gordura Corporal │ │      Cintura       │ │    Massa Magra     │ │ Tendência de Peso  │
+│  21.7 %            │ │  80.2 cm           │ │  61.2 kg           │ │  -0.89 kg          │
+└────────────────────┘ └────────────────────┘ └────────────────────┘ └────────────────────┘
+```
+
+### Estado: `secao_metabolica_bloqueada === true` (sem dados)
+
+Renderizar com cadeado + `mensagem_bloqueio_metabolico` + cards bloqueados:
+
+```
+METABÓLICO 🔒  [mensagem_bloqueio_metabolico]
+┌─────────────┐ ┌──────────────────────────┐ ┌──────────────┐ ┌──────────────┐
+│🔒 % Gordura │ │🔒 Circunferência abdominal│ │🔒 Tend. peso │ │🔒 Glicemia   │
+│     —        │ │           —              │ │      —       │ │     —        │
+│ Em breve     │ │        Em breve          │ │   Em breve   │ │   Em breve   │
+└─────────────┘ └──────────────────────────┘ └──────────────┘ └──────────────┘
+
+🔔 Me avise quando disponível
+```
+
+---
+
+## Tendência de Peso — Exibição
+
+`tendencia_peso` é uma **diferença** (delta), não um valor absoluto. Sugestão de formatação:
+
+| Valor | Exibir como | Cor sugerida |
+|-------|-------------|--------------|
+| `< 0` | `-0.89 kg` | Verde (perda de peso) |
+| `> 0` | `+0.52 kg` | Vermelho (ganho de peso) |
+| `= 0` | `0.00 kg` | Neutro |
+| `null` | `—` | Cinza |
+
+---
+
+## Consistência com o Cockpit
+
+Os valores metabólicos são lidos do **mesmo campo `raw` do Score Metabólico** que o Cockpit usa. Não há recálculo — os valores são idênticos:
+
+| Card | `metric_type` | Fonte |
+|------|--------------|-------|
+| % Gordura Corporal | `body_fat_pct` | `LongevityScore.components.raw.body_fat_pct` |
+| Cintura | `waist_circ` | `LongevityScore.components.raw.waist_circ` |
+| Massa Magra | `lean_mass` | `LongevityScore.components.raw.lean_mass` |
+| Tendência de Peso | `tendencia_peso` | `LongevityScore.components.raw.tendencia_peso` |
+
+---
+
+## Comportamento de Card Cardiovascular sem Dados
+
+Quando `valor_atual === null` em `metricas_cardio`:
+
+```
+Recuperação da FC
+— bpm
+Aguardando leitura
+```
+
+---
+
+## Erros
+
+### `403 Forbidden`
+```json
+{ "detail": "Acesso negado. Profissional não possui vínculo ativo com este cliente." }
+```
+
+### `404 Not Found`
+```json
+{ "detail": "Cliente não encontrado." }
+```
+
+---
+
+## Notas de Implementação
+
+1. **Cardiovascular**: mapear por `metric_type`, renderizar sempre 4 cards (com `null` state para ausentes)
+2. **Metabólico**: renderizar pelo flag `secao_metabolica_bloqueada` — não pela presença/ausência de `metricas_metabolicas`
+3. **Tendência de Peso**: formatar com sinal (`+` se positivo), não é uma FC ou HRV — é um delta
+4. **`referencia`**: exibir como label contextual abaixo do valor (ex: `"Clínico"` ou `"Últimos 30d"`)
+5. **Precisão**: valores chegam pré-arredondados do backend — não arredondar no frontend

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Lock, Bell } from "lucide-react";
 import { CardBiomarcador } from "./card-biomarcador";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { RespostaCardiometabolico, RespostaCockpit, MetricaCardio, ComponenteScore } from "@shared/schema";
+import type { RespostaCardiometabolico, MetricaMetabolica } from "@shared/schema";
 import { TENDENCIA_FROM_API } from "@shared/schema";
 import { TOOLTIPS_COMPONENTES } from "./tooltips-longevidade";
 
@@ -11,7 +11,6 @@ interface AbaCardiometabolicoProps {
 }
 
 const CARDIO_CONFIGS: {
-  key: string;
   metricType: string;
   nome: string;
   defaultUnit: string;
@@ -20,23 +19,23 @@ const CARDIO_CONFIGS: {
   eixo: "autonomico" | "aerobio";
   tooltip?: string;
 }[] = [
-  { key: "hrv",        metricType: "hrv_rmssd",       nome: "HRV",               defaultUnit: "ms",         invertedSemantics: false, eixo: "autonomico", tooltip: TOOLTIPS_COMPONENTES.hrv },
-  { key: "fcr",        metricType: "resting_hr",       nome: "FC de Repouso",     defaultUnit: "bpm",        invertedSemantics: true,  eixo: "autonomico", tooltip: TOOLTIPS_COMPONENTES.fcr },
-  { key: "vo2",        metricType: "vo2_max",          nome: "VO₂ Máximo",        defaultUnit: "mL/kg/min",  invertedSemantics: false, eixo: "aerobio",    tooltip: TOOLTIPS_COMPONENTES.vo2 },
-  { key: "recuperacao",metricType: "hr_recovery_1min", nome: "Recuperação da FC", defaultUnit: "bpm",        invertedSemantics: false, labelSecundario: "Média das últimas 5 sessões", eixo: "aerobio", tooltip: TOOLTIPS_COMPONENTES.recuperacao },
+  { metricType: "hrv_rmssd",       nome: "HRV",               defaultUnit: "ms",        invertedSemantics: false, eixo: "autonomico", tooltip: TOOLTIPS_COMPONENTES.hrv },
+  { metricType: "resting_hr",      nome: "FC de Repouso",     defaultUnit: "bpm",       invertedSemantics: true,  eixo: "autonomico", tooltip: TOOLTIPS_COMPONENTES.fcr },
+  { metricType: "vo2_max",         nome: "VO₂ Máximo",        defaultUnit: "mL/kg/min", invertedSemantics: false, eixo: "aerobio",    tooltip: TOOLTIPS_COMPONENTES.vo2 },
+  { metricType: "hr_recovery_1min",nome: "Recuperação da FC", defaultUnit: "bpm",       invertedSemantics: false, labelSecundario: "Média das últimas 5 sessões", eixo: "aerobio", tooltip: TOOLTIPS_COMPONENTES.recuperacao },
 ];
 
 const METABOLICO_CONFIGS: {
-  key: string;
+  metricType: string;
   nome: string;
   defaultUnit: string;
   invertedSemantics: boolean;
   tooltip?: string;
 }[] = [
-  { key: "gordura",        nome: "% Gordura Corporal", defaultUnit: "%",  invertedSemantics: true,  tooltip: TOOLTIPS_COMPONENTES.gordura },
-  { key: "cintura",        nome: "Cintura",             defaultUnit: "cm", invertedSemantics: true,  tooltip: TOOLTIPS_COMPONENTES.cintura },
-  { key: "massa_magra",    nome: "Massa Magra",         defaultUnit: "kg", invertedSemantics: false, tooltip: TOOLTIPS_COMPONENTES.massa_magra },
-  { key: "tendencia_peso", nome: "Tendência de Peso",   defaultUnit: "kg", invertedSemantics: true,  tooltip: TOOLTIPS_COMPONENTES.tendencia_peso },
+  { metricType: "body_fat_pct",   nome: "% Gordura Corporal", defaultUnit: "%",  invertedSemantics: true,  tooltip: TOOLTIPS_COMPONENTES.gordura },
+  { metricType: "waist_circ",     nome: "Cintura",             defaultUnit: "cm", invertedSemantics: true,  tooltip: TOOLTIPS_COMPONENTES.cintura },
+  { metricType: "lean_mass",      nome: "Massa Magra",         defaultUnit: "kg", invertedSemantics: false, tooltip: TOOLTIPS_COMPONENTES.massa_magra },
+  { metricType: "tendencia_peso", nome: "Tendência de Peso",   defaultUnit: "kg", invertedSemantics: true,  tooltip: TOOLTIPS_COMPONENTES.tendencia_peso },
 ];
 
 const METABOLICO_LOCKED_LABELS = [
@@ -51,94 +50,68 @@ function normTrend(t: string | null | undefined) {
   return TENDENCIA_FROM_API[t] ?? TENDENCIA_FROM_API[t.toLowerCase()] ?? null;
 }
 
-interface CardioCardData {
-  key: string;
-  nome: string;
-  valor: number | null;
-  valorFormatado?: string | null;
-  unidade: string;
-  tendencia: ReturnType<typeof normTrend>;
-  baseline?: number;
-  sparklineData?: number[];
-  invertedSemantics: boolean;
-  labelSecundario?: string;
-  aguardandoLeitura: boolean;
-  tooltip?: string;
-}
-
-function buildCardioCards(
-  cockpitCV: Record<string, ComponenteScore | null> | null | undefined,
-  metricas: MetricaCardio[],
-): CardioCardData[] {
-  return CARDIO_CONFIGS.map((cfg) => {
-    const fromCockpit = cockpitCV?.[cfg.key];
-    const fromCardio = metricas.find(m => m.metric_type === cfg.metricType);
-    const valor = fromCockpit != null ? fromCockpit.valor : (fromCardio?.valor_atual ?? null);
-    const valorFormatado = fromCockpit?.valor_formatado ?? null;
-    const unidade = fromCockpit?.unidade ?? fromCardio?.unidade ?? cfg.defaultUnit;
-    const tendencia = normTrend(fromCockpit?.tendencia ?? fromCardio?.tendencia);
-    const baseline = fromCardio?.media_30d ?? undefined;
-    const sparklineData = fromCardio?._sparkline_mock;
-    if (valor === null && !fromCardio) return null;
-    return {
-      key: cfg.key,
-      nome: cfg.nome,
-      valor,
-      valorFormatado,
-      unidade,
-      tendencia,
-      baseline,
-      sparklineData,
-      invertedSemantics: cfg.invertedSemantics,
-      labelSecundario: cfg.labelSecundario,
-      aguardandoLeitura: valor === null,
-      tooltip: cfg.tooltip,
-    };
-  }).filter((c): c is CardioCardData => c !== null);
-}
-
-function buildMetabolicoCards(
-  cockpitMeta: Record<string, ComponenteScore | null> | null | undefined,
-): CardioCardData[] {
-  if (!cockpitMeta) return [];
-  return METABOLICO_CONFIGS.map((cfg) => {
-    const comp = cockpitMeta[cfg.key];
-    if (!comp || comp.valor === null) return null;
-    return {
-      key: cfg.key,
-      nome: cfg.nome,
-      valor: comp.valor,
-      valorFormatado: comp.valor_formatado ?? null,
-      unidade: comp.unidade ?? cfg.defaultUnit,
-      tendencia: normTrend(comp.tendencia),
-      invertedSemantics: cfg.invertedSemantics,
-      aguardandoLeitura: false,
-      tooltip: cfg.tooltip,
-    };
-  }).filter((c): c is CardioCardData => c !== null);
+function formatTendenciaPeso(valor: number | null): string | null {
+  if (valor === null) return null;
+  if (valor > 0) return `+${valor.toFixed(2)} kg`;
+  if (valor < 0) return `${valor.toFixed(2)} kg`;
+  return `0.00 kg`;
 }
 
 export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
-  const { data: cockpit, isLoading: loadingCockpit } = useQuery<RespostaCockpit>({
-    queryKey: ["/api/painel-longevidade/clientes", pacienteId, "cockpit"],
-  });
-
-  const cockpitCV   = cockpit?.scores?.find(s => s.tipo === "cardiovascular")?.componentes;
-  const cockpitMeta = cockpit?.scores?.find(s => s.tipo === "metabolic")?.componentes;
-
-  const { data: cardio, isLoading: loadingCardio } = useQuery<RespostaCardiometabolico>({
+  const { data, isLoading } = useQuery<RespostaCardiometabolico>({
     queryKey: ["/api/painel-longevidade/clientes", pacienteId, "cardiometabolico"],
-    enabled: !loadingCockpit,
   });
 
-  const isLoading = loadingCockpit || loadingCardio;
+  const metricas = data?.metricas_cardio ?? [];
+  const metabolicas = data?.metricas_metabolicas ?? [];
+  const bloqueado = data ? data.secao_metabolica_bloqueada : true;
 
-  const cardioCards    = buildCardioCards(cockpitCV, cardio?.metricas_cardio ?? []);
-  const metabolicoCards = buildMetabolicoCards(cockpitMeta);
-  const temMetabolico  = metabolicoCards.length > 0;
+  const autonomico = CARDIO_CONFIGS.filter(c => c.eixo === "autonomico");
+  const aerobio    = CARDIO_CONFIGS.filter(c => c.eixo === "aerobio");
 
-  const autonomico = cardioCards.filter(c => CARDIO_CONFIGS.find(cfg => cfg.key === c.key)?.eixo === "autonomico");
-  const aerobio    = cardioCards.filter(c => CARDIO_CONFIGS.find(cfg => cfg.key === c.key)?.eixo === "aerobio");
+  function renderCardioCard(cfg: typeof CARDIO_CONFIGS[0]) {
+    const m = metricas.find(mc => mc.metric_type === cfg.metricType);
+    const valor     = m?.valor_atual ?? null;
+    const unidade   = m?.unidade ?? cfg.defaultUnit;
+    const tendencia = normTrend(m?.tendencia);
+    const baseline  = m?.media_30d ?? undefined;
+    const label     = cfg.labelSecundario ?? (baseline != null ? "Média 30d" : undefined);
+    return (
+      <CardBiomarcador
+        key={cfg.metricType}
+        nome={cfg.nome}
+        valor={valor}
+        unidade={unidade}
+        tendencia={tendencia}
+        baseline={baseline}
+        invertedSemantics={cfg.invertedSemantics}
+        labelSecundario={label}
+        aguardandoLeitura={valor === null}
+        tooltip={cfg.tooltip}
+      />
+    );
+  }
+
+  function renderMetabolicoCard(cfg: typeof METABOLICO_CONFIGS[0]) {
+    const m = metabolicas.find(mc => mc.metric_type === cfg.metricType);
+    if (!m) return null;
+    const isPeso = cfg.metricType === "tendencia_peso";
+    const valorFormatado = isPeso ? (formatTendenciaPeso(m.valor) ?? undefined) : undefined;
+    return (
+      <CardBiomarcador
+        key={cfg.metricType}
+        nome={cfg.nome}
+        valor={isPeso ? null : m.valor}
+        valorFormatado={valorFormatado}
+        unidade={m.unidade ?? cfg.defaultUnit}
+        tendencia={null}
+        invertedSemantics={cfg.invertedSemantics}
+        labelSecundario={m.referencia ?? undefined}
+        aguardandoLeitura={m.valor === null}
+        tooltip={cfg.tooltip}
+      />
+    );
+  }
 
   return (
     <div className="space-y-8" data-testid="aba-cardiometabolico">
@@ -158,57 +131,21 @@ export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
               {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-44 rounded-lg" />)}
             </div>
           </div>
-        ) : cardioCards.length > 0 ? (
-          <div className="space-y-6">
-            {autonomico.length > 0 && (
-              <div>
-                <p className="axis-sublabel mb-3" data-testid="label-eixo-autonomico">Controle autonômico</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {autonomico.map((c) => (
-                    <CardBiomarcador
-                      key={c.key}
-                      nome={c.nome}
-                      valor={c.valor}
-                      valorFormatado={c.valorFormatado ?? undefined}
-                      unidade={c.unidade}
-                      tendencia={c.tendencia}
-                      baseline={c.baseline}
-                      invertedSemantics={c.invertedSemantics}
-                      labelSecundario={c.labelSecundario}
-                      sparklineData={c.sparklineData}
-                      aguardandoLeitura={c.aguardandoLeitura}
-                      tooltip={c.tooltip}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-            {aerobio.length > 0 && (
-              <div>
-                <p className="axis-sublabel mb-3" data-testid="label-eixo-aerobio">Capacidade aeróbia</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {aerobio.map((c) => (
-                    <CardBiomarcador
-                      key={c.key}
-                      nome={c.nome}
-                      valor={c.valor}
-                      valorFormatado={c.valorFormatado ?? undefined}
-                      unidade={c.unidade}
-                      tendencia={c.tendencia}
-                      baseline={c.baseline}
-                      invertedSemantics={c.invertedSemantics}
-                      labelSecundario={c.labelSecundario}
-                      sparklineData={c.sparklineData}
-                      aguardandoLeitura={c.aguardandoLeitura}
-                      tooltip={c.tooltip}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Dados cardiovasculares não disponíveis.</p>
+          <div className="space-y-6">
+            <div>
+              <p className="axis-sublabel mb-3" data-testid="label-eixo-autonomico">Controle autonômico</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {autonomico.map(renderCardioCard)}
+              </div>
+            </div>
+            <div>
+              <p className="axis-sublabel mb-3" data-testid="label-eixo-aerobio">Capacidade aeróbia</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {aerobio.map(renderCardioCard)}
+              </div>
+            </div>
+          </div>
         )}
       </section>
 
@@ -218,11 +155,11 @@ export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
           <h3 className="section-label-longevidade" data-testid="label-metabolico">
             Metabólico
           </h3>
-          {!temMetabolico && (
+          {bloqueado && (
             <>
               <Lock className="h-3.5 w-3.5" style={{ color: "var(--mod-longevidade-disabled)" }} />
               <span className="text-[10px] font-medium" style={{ color: "var(--sys-text-muted)" }}>
-                {cardio?.mensagem_bloqueio_metabolico ?? cardio?.mensagem_bloqueio ?? "A análise metabólica completa e composição corporal estarão disponíveis em breve."}
+                {data?.mensagem_bloqueio_metabolico ?? data?.mensagem_bloqueio ?? "A análise metabólica completa e composição corporal estarão disponíveis em breve."}
               </span>
             </>
           )}
@@ -232,21 +169,9 @@ export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-36 rounded-lg" />)}
           </div>
-        ) : temMetabolico ? (
+        ) : !bloqueado ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {metabolicoCards.map((c) => (
-              <CardBiomarcador
-                key={c.key}
-                nome={c.nome}
-                valor={c.valor}
-                valorFormatado={c.valorFormatado ?? undefined}
-                unidade={c.unidade}
-                tendencia={c.tendencia}
-                invertedSemantics={c.invertedSemantics}
-                aguardandoLeitura={c.aguardandoLeitura}
-                tooltip={c.tooltip}
-              />
-            ))}
+            {METABOLICO_CONFIGS.map(renderMetabolicoCard)}
           </div>
         ) : (
           <>
