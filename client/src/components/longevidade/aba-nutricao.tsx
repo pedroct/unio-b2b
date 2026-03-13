@@ -207,11 +207,16 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
   });
 
   if (isLoading) return <SkelNutricao />;
-  if (isError || !data) {
+  if (isError) {
     return (
       <div className="py-12 text-center text-sm" style={{ color: "var(--sys-text-muted)" }}>
         Erro ao carregar dados nutricionais.
       </div>
+    );
+  }
+  if (!data) {
+    return (
+      <EmptyState mensagem="Dados nutricionais não disponíveis para este cliente no momento." />
     );
   }
 
