@@ -1,0 +1,244 @@
+# Frontend — Pendências e Correções: Aba Nutrição
+## Painel de Longevidade — Aba 5
+
+> **Gerado em:** 13 de março de 2026
+> **Referência:** PRD-Painel-Longevidade-Aba-Nutricao-V1.0.md
+> **Contrato de API:** contrato_aba_nutricao.md
+> **Endpoint base:** `GET /api/painel-longevidade/clientes/{cliente_id}/nutricao?periodo={7|30|90}`
+
+---
+
+## 🔴 CRÍTICO — Corrigir Imediatamente
+
+### BUG-01 — `Refeições / dia` exibindo valor impossível (15.3)
+
+**Componente:** Card "Refeições / dia"
+
+**Problema observado:** O card exibe `15.3 média 7d`. Esse valor é biologicamente impossível para refeições diárias e indica que o frontend está somando **registros alimentares individuais** (itens/alimentos) em vez de **refeições agrupadas por dia**.
+
+**Causa provável:** O campo `refeicoes_registradas` no endpoint retorna a contagem de entradas no modelo `RegistroAlimentar` — cada alimento individual conta como 1. O frontend pode estar somando esses valores sem dividir corretamente, ou usando o campo errado.
+
+**O que deve exibir:**
+- O card deve mostrar a **média de refeições por dia** no período selecionado
+- Fonte: `response.resumo.refeicoes_por_dia_7d` (já calculado pelo backend)
+- Valor esperado para a maioria dos clientes: entre **2 e 6 refeições/dia**
+
+**Campos corretos da API:**
+```json
+// response do endpoint /nutricao
+{
+  "resumo": {
+    "refeicoes_por_dia_7d": 3.7   // ← usar este campo
+  },
+  "historico": {
+    "medias": {
+      "refeicoes_por_dia": 3.7    // ← ou este (equivalente)
+    }
+  }
+}
+```
+
+**Nota:** O campo `refeicoes_registradas` em cada registro diário dentro de `historico.registros[]` representa o número de itens alimentares naquele dia, não de refeições distintas. Não deve ser usado para calcular a média do card de cabeçalho.
+
+---
+
+## 🟠 ALTO — Features Obrigatórias no PRD (RF03 e RF04 ausentes)
+
+### FEAT-01 — RF03: Painel de Correlações Visuais (ausente)
+
+**Componente:** Seção abaixo do gráfico de Proteína Relativa
+
+**O que está faltando:** O PRD define (RF03) que a aba deve exibir correlações side-by-side entre dados nutricionais e biomarcadores das outras abas. Em V2, são obrigatórias duas correlações:
+
+#### Correlação 1: Proteína Relativa ↔ Massa Magra
+
+- **Tipo:** Gráfico de linha duplo (dual-axis)
+- **Eixo Y esquerdo:** Proteína relativa (g/kg)
+- **Eixo Y direito:** Massa magra (kg)
+- **Período:** Últimos 90 dias ou histórico disponível, o que for menor
+- **Fonte nutricional:** `serie_proteina_relativa_30d` do endpoint `/nutricao` (expandir para 90d se necessário)
+- **Fonte de massa magra:** Endpoint existente das abas anteriores (Aba 2 — Cardiometabólico / dados de composição corporal)
+- **Estado sem dados:** Exibir apenas o lado com dados + nota: _"Dados de [biomarcador] insuficientes para exibir correlação."_
+
+#### Correlação 2: Calorias vs. Meta ↔ Tendência de Peso
+
+- **Tipo:** Area chart com linha sobreposta
+- **Área:** Superávit calórico (verde, acima do eixo) ou déficit calórico (vermelho, abaixo do eixo) — calculado como `calorias_consumidas - meta_calorica` por dia
+- **Linha:** Evolução do peso corporal (kg) no mesmo período
+- **Período:** 30 dias
+- **Fonte calórica:** `historico.registros[].calorias_consumidas` e `historico.registros[].meta_calorica`
+- **Fonte de peso:** Endpoint de HealthMetric / biometria (já usado em outras abas)
+
+#### Correlação 3: Carboidrato ↔ Glicemia (placeholder V3)
+
+- Exibir bloco desabilitado com texto: _"Disponível com integração de glicemia contínua."_
+- Não conectar endpoint — é apenas UI de placeholder
+
+---
+
+### FEAT-02 — RF04: Linha do Tempo de Refeições (ausente)
+
+**Componente:** Tabela/lista abaixo da seção de correlações
+
+**O que está faltando:** Lista compacta de dias do período com dados nutricionais por dia, clicável para ver detalhes.
+
+**Campos por linha (por dia):**
+
+| Campo | Fonte na API |
+|---|---|
+| Data | `historico.registros[].data` |
+| Nº refeições registradas | `historico.registros[].refeicoes_registradas` |
+| Calorias totais | `historico.registros[].calorias_consumidas` |
+| Meta calórica | `historico.registros[].meta_calorica` |
+| Proteína (g) | `historico.registros[].macros.proteina_g` |
+| Proteína (g/kg) | `historico.registros[].proteina_relativa_g_kg` |
+| Aderência | `historico.registros[].aderencia_calorica_pct` |
+| Badge de status | Calcular via `aderencia_calorica_pct`: ≥90% verde, 70–90% amarelo, <70% vermelho |
+
+**Interação:**
+- Clicar em uma linha expande os detalhes **inline** (não em modal)
+- Profissional não edita — apenas leitura
+- Dias sem registro (`refeicoes_registradas == 0`) devem aparecer com estilo desabilitado e label _"Sem registros"_
+
+**Filtro:** O seletor de período 7d / 30d / 90d do topo já controla esta seção (não precisa de filtro próprio)
+
+---
+
+## 🟡 MÉDIO — Correções de Conformidade com PRD
+
+### FIX-01 — RF01: Sparkline ausente no Card Aderência Calórica
+
+**Componente:** Card "Aderência Calórica"
+
+**Problema:** O PRD (RF01.2) especifica *"Mini-sparkline com os últimos 14 dias"*. A implementação atual exibe apenas uma barra de progresso estática com o percentual médio.
+
+**Correção:** Adicionar mini-gráfico de linha (sparkline) com os valores diários de `aderencia_calorica_pct` dos últimos 14 dias, exibido abaixo ou acima da barra de progresso atual.
+
+**Dados disponíveis:**
+```json
+// Usar historico.registros[] filtrado para os últimos 14 dias
+// Campo: aderencia_calorica_pct (null para dias sem registro)
+```
+
+**Comportamento com null:** Dias sem registro (`aderencia_calorica_pct: null`) = gap na sparkline (não exibir zero).
+
+---
+
+### FIX-02 — RF01: Distribuição de Macros em Donut, não em Barra
+
+**Componente:** Card "Distribuição de Macros"
+
+**Problema:** O PRD (RF01.3) especifica *"Gráfico de rosca (donut)"*. A implementação usa uma barra segmentada horizontal (stacked bar).
+
+**Correção:** Substituir por um donut chart com:
+- 3 segmentos: Proteína, Carboidrato, Gordura
+- Cores: Manter as atuais (azul, laranja/amarelo, vermelho)
+- Legenda: Exibida ao lado ou abaixo do donut (como está, apenas apontando para o donut)
+- Subtítulo: _"Média 30d"_ (mantendo como está)
+
+**Observação:** Se a barra segmentada for uma decisão intencional de design divergindo do PRD, comunicar ao Product Design para validação e atualizar o PRD.
+
+---
+
+### FIX-03 — RF02: Verificar dias sem registro no gráfico de Proteína Relativa
+
+**Componente:** Gráfico "Proteína Relativa — Evolução 30d"
+
+**Verificar:** O PRD (RF02) especifica que dias sem registro devem aparecer como **gap na linha** (dado ausente ≠ zero). A linha atual parece contínua — verificar se pontos com `proteina_relativa_g_kg: null` estão gerando gap ou sendo interpolados/zerados.
+
+**Comportamento correto:**
+```
+Dado null → ponto omitido → linha com gap visual
+Dado 0.0  → ponto no zero → linha vai para zero (ERRADO para dias sem registro)
+```
+
+**Verificação:** Inspecionar `serie_proteina_relativa_30d` no payload — se dias sem registro retornam `{"data": "2026-02-12", "valor": null}`, o gráfico deve quebrar a linha nesses pontos.
+
+---
+
+## ⚪ INFORMATIVO — Validações Para Cenários Específicos
+
+### INFO-01 — RF05: Alertas de Risco (não visível neste cliente)
+
+O sistema de alertas RF05 não aparece na screenshot porque o cliente atual não atinge nenhuma das condições de disparo (`proteina: 1.61 g/kg` está na faixa adequada; `aderência: 73%` está acima de 70%).
+
+**Validar com cliente de teste que tenha:**
+- Proteína relativa < 1,2 g/kg por 7+ dias → deve aparecer banner vermelho
+- Aderência < 70% em 5+ dos últimos 7 dias → banner amarelo
+- Zero registros nos últimos 7 dias → banner cinza informativo
+
+**Fonte dos alertas:** `response.alertas[]` — array já calculado pelo backend. O frontend apenas renderiza; não recalcula.
+
+```json
+// Exemplo de payload com alerta
+"alertas": [
+  {
+    "tipo": "proteina_baixa",
+    "urgencia": "alta",
+    "mensagem": "Proteína abaixo do mínimo por 7+ dias — avaliar risco de catabolismo",
+    "dias_consecutivos": 8
+  }
+]
+```
+
+**Comportamento do banner:** Dispensável por sessão (persistir no `sessionStorage`, não fazer chamada de API para dispensar). Reaparece na próxima abertura se condição persistir.
+
+---
+
+### INFO-02 — RF01: Estado vazio (sem dados)
+
+Validar que quando `response.sem_dados === true`, a aba exibe:
+- Mensagem: _"Sem registros nutricionais neste período. O cliente precisa registrar refeições no app UNIO para que os dados apareçam aqui."_
+- Nenhum CTA de ação (profissional não registra dados)
+- Cards com `--` ou `N/A`, não com `0` ou `null` bruto
+
+---
+
+### INFO-03 — Edge case: cobertura < 50% dos dias
+
+Quando `response.historico.cobertura_pct < 50`, exibir banner amarelo no topo da aba:
+> _"Cobertura de dados limitada: registros em X de Y dias. As médias podem não refletir o comportamento real."_
+
+Fonte: `response.historico.cobertura_dias` e `response.historico.periodo_dias`
+
+---
+
+### INFO-04 — Edge case: sem peso corporal registrado
+
+Quando `proteina_relativa_g_kg` retornar `null` (peso não disponível no backend), o card de Proteína Relativa deve exibir:
+- Valor absoluto em g/dia (disponível em `historico.medias.proteina_g`)
+- Nota abaixo: _"Peso corporal não atualizado — registre o peso no app para ver g/kg."_
+- Badge de classificação **não deve ser exibido**
+
+---
+
+## Resumo de Prioridades
+
+| # | ID | Tipo | Severidade | Esforço estimado |
+|---|---|---|---|---|
+| 1 | BUG-01 | Bug de dados | 🔴 Crítico | Pequeno (trocar campo da API) |
+| 2 | FEAT-01 | Feature faltando | 🟠 Alto | Grande (2 novos gráficos) |
+| 3 | FEAT-02 | Feature faltando | 🟠 Alto | Médio (tabela com expand) |
+| 4 | FIX-01 | Desvio do PRD | 🟡 Médio | Pequeno (adicionar sparkline) |
+| 5 | FIX-02 | Desvio do PRD | 🟡 Médio | Pequeno (trocar barra por donut) |
+| 6 | FIX-03 | Verificação | 🟡 Médio | Pequeno (verificar config do gráfico) |
+| 7 | INFO-01 a 04 | Edge cases | ⚪ Baixo | Pequeno cada |
+
+---
+
+## Endpoints de Referência
+
+Todos os dados necessários estão disponíveis nos endpoints já implementados:
+
+```
+# Dados da aba (principal)
+GET /api/painel-longevidade/clientes/{cliente_id}/nutricao?periodo={7|30|90}
+
+# Dados de composição corporal (para correlação Proteína ↔ Massa Magra)
+GET /api/painel-longevidade/clientes/{cliente_id}/cardiometabolico
+
+# Dados de peso e biometria (para correlação Calorias ↔ Peso)
+GET /api/biometria/estado-atual  (via token do profissional com cliente_id)
+```
+
+O contrato completo da API de Nutrição está em `contrato_aba_nutricao.md`.

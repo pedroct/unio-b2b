@@ -1,15 +1,16 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Info, X, Utensils, TrendingUp } from "lucide-react";
+import { AlertTriangle, Info, X, Utensils, TrendingUp, ChevronDown, ChevronRight, GitBranch } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceLine, ReferenceArea, Tooltip as RechartsTooltip,
+  LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceLine, ReferenceArea,
+  Tooltip as RechartsTooltip, PieChart, Pie, Cell, BarChart, Bar,
 } from "recharts";
 import { InfoTooltip } from "./info-tooltip";
 import { TOOLTIPS_COMPONENTES } from "./tooltips-longevidade";
 import type { ReactNode } from "react";
 import { apiRequest } from "@/lib/queryClient";
-import type { RespostaNutricao, NutricaoAlerta } from "@shared/schema";
+import type { RespostaNutricao, NutricaoAlerta, NutricaoRegistroDia } from "@shared/schema";
 
 interface AbaNutricaoProps {
   pacienteId: string;
@@ -28,6 +29,17 @@ const BADGE_PROTEINA: { min: number; max: number; label: string; bg: string; tex
 function classifyProteina(valor: number | null) {
   if (valor === null) return null;
   return BADGE_PROTEINA.find(b => valor >= b.min && valor < b.max) ?? BADGE_PROTEINA[BADGE_PROTEINA.length - 1];
+}
+
+function statusAderencia(pct: number | null): { label: string; bg: string; text: string } | null {
+  if (pct === null) return null;
+  if (pct >= 90) return { label: "Alta",    bg: "bg-green-100 dark:bg-green-950",  text: "text-green-700 dark:text-green-300" };
+  if (pct >= 70) return { label: "Moderada", bg: "bg-yellow-100 dark:bg-yellow-950", text: "text-yellow-700 dark:text-yellow-300" };
+  return              { label: "Baixa",   bg: "bg-red-100 dark:bg-red-950",    text: "text-red-700 dark:text-red-300" };
+}
+
+function fmtDate(iso: string) {
+  return iso.slice(8, 10) + "/" + iso.slice(5, 7);
 }
 
 const URGENCIA_STYLE: Record<NutricaoAlerta["urgencia"], { icon: typeof AlertTriangle; border: string; bg: string; iconColor: string }> = {
@@ -57,35 +69,219 @@ function CardResumo({ title, children, tooltip }: { title: string; children: Rea
   );
 }
 
-function MacroBar({ proteina, carbo, gordura }: { proteina: number | null; carbo: number | null; gordura: number | null }) {
-  if (proteina === null && carbo === null && gordura === null) {
-    return <p className="text-xs" style={{ color: "var(--sys-text-muted)" }}>Sem dados no período</p>;
-  }
+const MACRO_COLORS = { proteina: "#3b82f6", carbo: "#f59e0b", gordura: "#ef4444" };
+
+function MacroDonut({ proteina, carbo, gordura }: { proteina: number | null; carbo: number | null; gordura: number | null }) {
   const p = proteina ?? 0;
   const c = carbo ?? 0;
   const g = gordura ?? 0;
   const total = p + c + g;
-  if (total === 0) return <p className="text-xs" style={{ color: "var(--sys-text-muted)" }}>Sem dados no período</p>;
-
+  if (total === 0) {
+    return <p className="text-xs" style={{ color: "var(--sys-text-muted)" }}>Sem dados no período</p>;
+  }
+  const segments = [
+    { name: "Proteína", value: p, color: MACRO_COLORS.proteina },
+    { name: "Carbo",    value: c, color: MACRO_COLORS.carbo },
+    { name: "Gordura",  value: g, color: MACRO_COLORS.gordura },
+  ];
   return (
-    <div className="space-y-2">
-      <div className="flex rounded-full overflow-hidden h-2.5" style={{ gap: "1px" }}>
-        <div style={{ width: `${(p / total) * 100}%`, background: "#3b82f6" }} />
-        <div style={{ width: `${(c / total) * 100}%`, background: "#f59e0b" }} />
-        <div style={{ width: `${(g / total) * 100}%`, background: "#ef4444" }} />
+    <div className="flex items-center gap-3">
+      <div style={{ width: 64, height: 64, flex: "0 0 64px" }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={segments}
+              cx="50%"
+              cy="50%"
+              innerRadius={18}
+              outerRadius={30}
+              dataKey="value"
+              strokeWidth={0}
+              startAngle={90}
+              endAngle={-270}
+            >
+              {segments.map((s, i) => <Cell key={i} fill={s.color} />)}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
       </div>
-      <div className="flex gap-3 flex-wrap">
-        {[
-          { label: "Proteína", pct: p, color: "#3b82f6" },
-          { label: "Carbo",    pct: c, color: "#f59e0b" },
-          { label: "Gordura",  pct: g, color: "#ef4444" },
-        ].map(m => (
-          <span key={m.label} className="flex items-center gap-1 text-[10px]" style={{ color: "var(--sys-text-secondary)" }}>
-            <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: m.color }} />
-            {m.label} {Math.round(m.pct)}%
+      <div className="space-y-0.5 flex-1 min-w-0">
+        {segments.map(s => (
+          <span key={s.name} className="flex items-center gap-1 text-[10px]" style={{ color: "var(--sys-text-secondary)" }}>
+            <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color }} />
+            {s.name} {Math.round(s.value)}%
           </span>
         ))}
       </div>
+    </div>
+  );
+}
+
+function MiniSparkline({ registros }: { registros: NutricaoRegistroDia[] }) {
+  const dados = registros.slice(-14).map(r => ({ v: r.aderencia_calorica_pct }));
+  if (dados.length === 0) return null;
+  return (
+    <div style={{ height: 32, marginTop: 6 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={dados} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+          <ReferenceLine y={70} stroke="rgba(245,158,11,0.45)" strokeDasharray="2 2" />
+          <ReferenceLine y={90} stroke="rgba(34,197,94,0.3)" strokeDasharray="2 2" />
+          <Line
+            type="monotone"
+            dataKey="v"
+            stroke="var(--mod-longevidade-base)"
+            strokeWidth={1.5}
+            dot={false}
+            connectNulls={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function TabelaRegistros({ registros }: { registros: NutricaoRegistroDia[] }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const ordenado = [...registros].reverse();
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--mod-longevidade-border)" }}>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs min-w-[600px]">
+          <thead>
+            <tr style={{ background: "var(--mod-longevidade-bg-subtle)", borderBottom: "1px solid var(--mod-longevidade-border)" }}>
+              {["Data", "Calorias", "Proteína g", "g/kg", "Aderência", "Status"].map(h => (
+                <th
+                  key={h}
+                  className={`px-3 py-2 font-semibold ${h === "Data" ? "text-left" : "text-right last:text-center"}`}
+                  style={{ color: "var(--sys-text-secondary)", whiteSpace: "nowrap" }}
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {ordenado.map(r => {
+              const semRegistros = r.refeicoes_registradas === 0;
+              const badge = statusAderencia(r.aderencia_calorica_pct);
+              const isOpen = expanded === r.data;
+
+              return (
+                <Fragment key={r.data}>
+                  <tr
+                    onClick={() => !semRegistros && setExpanded(isOpen ? null : r.data)}
+                    className={`border-t transition-colors ${
+                      semRegistros
+                        ? "opacity-40 cursor-default"
+                        : "cursor-pointer hover:bg-[rgba(0,0,0,0.02)] dark:hover:bg-[rgba(255,255,255,0.02)]"
+                    }`}
+                    style={{ borderColor: "var(--mod-longevidade-border)" }}
+                    data-testid={`row-registro-${r.data}`}
+                  >
+                    <td className="px-3 py-2 font-medium flex items-center gap-1" style={{ color: "var(--sys-text-primary)" }}>
+                      {!semRegistros && (
+                        isOpen
+                          ? <ChevronDown className="h-3 w-3 flex-shrink-0" style={{ color: "var(--sys-text-muted)" }} />
+                          : <ChevronRight className="h-3 w-3 flex-shrink-0" style={{ color: "var(--sys-text-muted)" }} />
+                      )}
+                      {fmtDate(r.data)}
+                      {semRegistros && (
+                        <span className="ml-1 text-[10px]" style={{ color: "var(--sys-text-muted)" }}>Sem registros</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: "var(--sys-text-secondary)" }}>
+                      {semRegistros ? "—" : `${Math.round(r.calorias_consumidas)} kcal`}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: "var(--sys-text-secondary)" }}>
+                      {semRegistros ? "—" : `${Math.round(r.macros.proteina_g)} g`}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: "var(--sys-text-secondary)" }}>
+                      {r.proteina_relativa_g_kg !== null ? `${r.proteina_relativa_g_kg.toFixed(2)}` : "—"}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: "var(--sys-text-secondary)" }}>
+                      {r.aderencia_calorica_pct !== null ? `${Math.round(r.aderencia_calorica_pct)}%` : "—"}
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      {badge ? (
+                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${badge.bg} ${badge.text}`}>
+                          {badge.label}
+                        </span>
+                      ) : "—"}
+                    </td>
+                  </tr>
+                  {isOpen && !semRegistros && (
+                    <tr
+                      style={{
+                        background: "var(--mod-longevidade-bg-subtle)",
+                        borderColor: "var(--mod-longevidade-border)",
+                      }}
+                      className="border-t"
+                    >
+                      <td colSpan={6} className="px-4 py-3">
+                        <div className="flex gap-6 flex-wrap" style={{ color: "var(--sys-text-secondary)" }}>
+                          <span><span style={{ color: "var(--sys-text-muted)" }}>Registros alimentares:</span> {r.refeicoes_registradas}</span>
+                          {r.meta_calorica !== null && (
+                            <span><span style={{ color: "var(--sys-text-muted)" }}>Meta calórica:</span> {Math.round(r.meta_calorica)} kcal</span>
+                          )}
+                          <span><span style={{ color: "var(--sys-text-muted)" }}>Carbo:</span> {Math.round(r.macros.carboidrato_g)} g</span>
+                          <span><span style={{ color: "var(--sys-text-muted)" }}>Gordura:</span> {Math.round(r.macros.gordura_g)} g</span>
+                          {r.peso_kg_referencia !== null && (
+                            <span><span style={{ color: "var(--sys-text-muted)" }}>Peso ref.:</span> {r.peso_kg_referencia.toFixed(1)} kg</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function CorrelacaoCaloriasVsMeta({ registros }: { registros: NutricaoRegistroDia[] }) {
+  const comMeta = registros.filter(r => r.meta_calorica !== null && r.calorias_consumidas > 0);
+  if (comMeta.length === 0) {
+    return (
+      <p className="text-xs text-center py-6" style={{ color: "var(--sys-text-muted)" }}>
+        Sem dados suficientes para exibir a correlação.
+      </p>
+    );
+  }
+  const dados = comMeta.map(r => ({
+    data: fmtDate(r.data),
+    aderencia: r.aderencia_calorica_pct !== null ? Math.round(r.aderencia_calorica_pct) : null,
+    cor: (r.aderencia_calorica_pct ?? 0) >= 90 ? "#22c55e" : (r.aderencia_calorica_pct ?? 0) >= 70 ? "#f59e0b" : "#ef4444",
+  }));
+  return (
+    <div style={{ height: 130 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={dados} margin={{ top: 4, right: 4, left: -24, bottom: 0 }} barSize={12}>
+          <XAxis dataKey="data" tick={{ fontSize: 9, fill: "var(--sys-text-muted)" }} interval="preserveStartEnd" />
+          <YAxis domain={[0, 100]} tick={{ fontSize: 9, fill: "var(--sys-text-muted)" }} unit="%" />
+          <ReferenceLine y={70} stroke="rgba(245,158,11,0.5)" strokeDasharray="3 3" />
+          <ReferenceLine y={90} stroke="rgba(34,197,94,0.4)" strokeDasharray="3 3" />
+          <RechartsTooltip
+            formatter={(v: number) => [`${v}%`, "Aderência calórica"]}
+            labelStyle={{ color: "var(--sys-text-primary)", fontSize: 11, fontWeight: 600 }}
+            contentStyle={{
+              background: "var(--sys-bg-primary)",
+              border: "1px solid var(--mod-longevidade-border)",
+              borderRadius: 6,
+              fontSize: 11,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+            }}
+            itemStyle={{ color: "var(--sys-text-secondary)" }}
+          />
+          <Bar dataKey="aderencia" radius={[2, 2, 0, 0]}>
+            {dados.map((d, i) => <Cell key={i} fill={d.cor} />)}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
@@ -112,7 +308,7 @@ function ProteinaChart({ serie }: { serie: { data: string; valor: number | null 
               style={{ background: "var(--mod-longevidade-bg-subtle)", border: "1px solid var(--mod-longevidade-border)" }}
               data-testid={`card-proteina-${p.data}`}
             >
-              <p className="text-[10px] mb-1" style={{ color: "var(--sys-text-muted)" }}>{p.data.slice(5)}</p>
+              <p className="text-[10px] mb-1" style={{ color: "var(--sys-text-muted)" }}>{fmtDate(p.data)}</p>
               <p className="text-lg font-bold" style={{ color: "var(--mod-longevidade-text)" }}>
                 {p.valor?.toFixed(2)}
               </p>
@@ -130,7 +326,7 @@ function ProteinaChart({ serie }: { serie: { data: string; valor: number | null 
   }
 
   const dados = serie.map(p => ({
-    data: p.data.slice(8, 10) + "/" + p.data.slice(5, 7),
+    data: fmtDate(p.data),
     valor: p.valor,
   }));
   const maxY = Math.max(4, ...pontos.map(p => p.valor!)) + 0.5;
@@ -227,6 +423,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
   }
 
   const { resumo, alertas, serie_proteina_relativa_30d, historico, sem_dados, mensagem_sem_dados } = data;
+  const registros: NutricaoRegistroDia[] = historico?.registros ?? [];
   const coberturaPct = historico?.cobertura_pct ?? 0;
   const coberturaDias = historico?.cobertura_dias ?? 0;
   const periodoNDias = historico?.periodo_dias ?? Number(periodo);
@@ -251,7 +448,6 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
 
   const proteinaClass = classifyProteina(proteinaValor ?? null);
   const macros = resumo?.macros_distribuicao_30d;
-
   const semPeso = proteinaValor === null && (historico?.medias?.calorias_consumidas ?? 0) > 0;
   const semMeta = aderenciaValor === null && (historico?.medias?.calorias_consumidas ?? 0) > 0;
 
@@ -381,6 +577,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
                       }}
                     />
                   </div>
+                  <MiniSparkline registros={registros} />
                 </>
               ) : (
                 <div>
@@ -408,7 +605,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
             </CardResumo>
 
             <CardResumo title="Distribuição de Macros" tooltip={TOOLTIPS_COMPONENTES.macros_distribuicao}>
-              <MacroBar
+              <MacroDonut
                 proteina={macros?.proteina_pct ?? null}
                 carbo={macros?.carboidrato_pct ?? null}
                 gordura={macros?.gordura_pct ?? null}
@@ -456,6 +653,100 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
               </>
             )}
           </div>
+
+          <div
+            className="rounded-xl p-4 space-y-4"
+            style={{
+              background: "var(--mod-longevidade-bg-subtle)",
+              border: "1px solid var(--mod-longevidade-border)",
+            }}
+            data-testid="secao-correlacoes"
+          >
+            <div className="flex items-center gap-2">
+              <GitBranch className="h-4 w-4" style={{ color: "var(--sys-text-muted)" }} />
+              <p className="text-sm font-semibold" style={{ color: "var(--mod-longevidade-text)" }}>
+                Correlações
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div
+                className="rounded-lg p-3 space-y-2"
+                style={{ background: "var(--sys-bg-primary)", border: "1px solid var(--mod-longevidade-border)" }}
+                data-testid="correlacao-calorias-meta"
+              >
+                <p className="text-xs font-semibold" style={{ color: "var(--sys-text-secondary)" }}>
+                  Aderência Calórica — evolução diária
+                </p>
+                <CorrelacaoCaloriasVsMeta registros={registros} />
+                <div className="flex gap-3 flex-wrap">
+                  {[
+                    { color: "#22c55e", label: "≥ 90%" },
+                    { color: "#f59e0b", label: "70–89%" },
+                    { color: "#ef4444", label: "< 70%" },
+                  ].map(l => (
+                    <span key={l.label} className="flex items-center gap-1 text-[9px]" style={{ color: "var(--sys-text-muted)" }}>
+                      <span className="inline-block w-2 h-2 rounded-sm" style={{ background: l.color }} />
+                      {l.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                className="rounded-lg p-3 flex flex-col items-center justify-center gap-2 min-h-[140px]"
+                style={{
+                  background: "var(--sys-bg-primary)",
+                  border: "1px dashed var(--mod-longevidade-border)",
+                  opacity: 0.65,
+                }}
+                data-testid="correlacao-proteina-massa-magra"
+              >
+                <TrendingUp className="h-5 w-5" style={{ color: "var(--sys-text-muted)" }} />
+                <p className="text-xs font-semibold text-center" style={{ color: "var(--sys-text-secondary)" }}>
+                  Proteína Relativa ↔ Massa Magra
+                </p>
+                <p className="text-[10px] text-center" style={{ color: "var(--sys-text-muted)" }}>
+                  Disponível quando dados de composição corporal estiverem sincronizados.
+                </p>
+              </div>
+
+              <div
+                className="rounded-lg p-3 flex flex-col items-center justify-center gap-2 min-h-[140px]"
+                style={{
+                  background: "var(--sys-bg-primary)",
+                  border: "1px dashed var(--mod-longevidade-border)",
+                  opacity: 0.5,
+                }}
+                data-testid="correlacao-carboidrato-glicemia"
+              >
+                <GitBranch className="h-5 w-5" style={{ color: "var(--sys-text-muted)" }} />
+                <p className="text-xs font-semibold text-center" style={{ color: "var(--sys-text-secondary)" }}>
+                  Carboidrato ↔ Glicemia
+                </p>
+                <p className="text-[10px] text-center" style={{ color: "var(--sys-text-muted)" }}>
+                  Disponível com integração de glicemia contínua.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {registros.length > 0 && (
+            <div className="space-y-3" data-testid="secao-linha-do-tempo">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold" style={{ color: "var(--mod-longevidade-text)" }}>
+                  Linha do Tempo de Registros
+                </p>
+                <span
+                  className="text-[10px] px-2 py-0.5 rounded-full"
+                  style={{ background: "var(--mod-longevidade-bg-subtle)", color: "var(--sys-text-muted)", border: "1px solid var(--mod-longevidade-border)" }}
+                >
+                  {registros.length} dias
+                </span>
+              </div>
+              <TabelaRegistros registros={registros} />
+            </div>
+          )}
         </>
       )}
     </div>
