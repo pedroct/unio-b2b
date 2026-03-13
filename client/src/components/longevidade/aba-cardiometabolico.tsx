@@ -101,7 +101,7 @@ export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
       <CardBiomarcador
         key={cfg.metricType}
         nome={cfg.nome}
-        valor={isPeso ? null : m.valor}
+        valor={m.valor}
         valorFormatado={valorFormatado}
         unidade={m.unidade ?? cfg.defaultUnit}
         tendencia={null}
