@@ -263,7 +263,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
             className="px-3 py-1.5 text-xs font-medium rounded-md transition-all disabled:cursor-wait"
             style={
               periodo === p
-                ? { background: "var(--mod-longevidade-accent)", color: "#fff", opacity: isFetching ? 0.75 : 1 }
+                ? { background: "var(--mod-longevidade-base)", color: "#fff", opacity: isFetching ? 0.75 : 1 }
                 : { background: "var(--mod-longevidade-bg-subtle)", color: "var(--sys-text-secondary)", border: "1px solid var(--mod-longevidade-border)" }
             }
           >
