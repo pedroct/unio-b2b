@@ -51,4 +51,8 @@ export const TOOLTIPS_COMPONENTES: Record<string, string> = {
     "Gramas de proteína ingeridas por quilo de peso corporal por dia. Reflete a qualidade da ingestão proteica em relação às necessidades individuais. Faixa ideal: 1,6 a 2,2 g/kg para manutenção e hipertrofia.",
   aderencia_calorica:
     "Percentual de adesão à meta calórica diária no período selecionado. Alta aderência está associada a melhores resultados de composição corporal e energia.",
+  refeicoes_por_dia:
+    "Média de refeições registradas por dia no período selecionado. Inclui qualquer registro alimentar feito no app, independente do tamanho. Frequência elevada pode indicar maior consistência no acompanhamento ou hábito de alimentação fracionada.",
+  macros_distribuicao:
+    "Distribuição percentual dos macronutrientes (proteína, carboidrato e gordura) com base nas calorias consumidas nos últimos 30 dias. Serve como referência do padrão alimentar predominante, independente do período selecionado.",
 };

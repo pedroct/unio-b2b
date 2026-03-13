@@ -394,7 +394,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
               )}
             </CardResumo>
 
-            <CardResumo title="Refeições / dia">
+            <CardResumo title="Refeições / dia" tooltip={TOOLTIPS_COMPONENTES.refeicoes_por_dia}>
               {resumo?.refeicoes_por_dia_7d !== null && resumo?.refeicoes_por_dia_7d !== undefined ? (
                 <div className="flex items-baseline gap-1">
                   <span className="text-2xl font-bold" style={{ color: "var(--mod-longevidade-text)" }}>
@@ -407,7 +407,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
               )}
             </CardResumo>
 
-            <CardResumo title="Distribuição de Macros">
+            <CardResumo title="Distribuição de Macros" tooltip={TOOLTIPS_COMPONENTES.macros_distribuicao}>
               <MacroBar
                 proteina={macros?.proteina_pct ?? null}
                 carbo={macros?.carboidrato_pct ?? null}
