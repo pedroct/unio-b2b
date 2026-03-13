@@ -2,19 +2,29 @@ import { useQuery } from "@tanstack/react-query";
 import { Lock, Bell } from "lucide-react";
 import { CardBiomarcador } from "./card-biomarcador";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { RespostaCardiometabolico, MetricaCardio } from "@shared/schema";
+import type { RespostaCardiometabolico, RespostaCockpit, MetricaCardio, ComponenteScore } from "@shared/schema";
 import { LABELS_BIOMARCADOR, TENDENCIA_FROM_API } from "@shared/schema";
+import { TOOLTIPS_COMPONENTES } from "./tooltips-longevidade";
 
 interface AbaCardiometabolicoProps {
   pacienteId: string;
 }
 
-const METRIC_CONFIG: Record<string, { invertedSemantics: boolean; labelSecundario?: string; eixo: "autonomico" | "aerobio" }> = {
-  hrv_rmssd: { invertedSemantics: false, eixo: "autonomico" },
-  resting_hr: { invertedSemantics: true, eixo: "autonomico" },
-  vo2_max: { invertedSemantics: false, eixo: "aerobio" },
-  hr_recovery_1min: { invertedSemantics: false, labelSecundario: "Média das últimas 5 sessões", eixo: "aerobio" },
-};
+const CARDIO_CONFIGS: {
+  key: string;
+  metricType: string;
+  nome: string;
+  defaultUnit: string;
+  invertedSemantics: boolean;
+  labelSecundario?: string;
+  eixo: "autonomico" | "aerobio";
+  tooltip?: string;
+}[] = [
+  { key: "hrv", metricType: "hrv_rmssd", nome: "HRV", defaultUnit: "ms", invertedSemantics: false, eixo: "autonomico", tooltip: TOOLTIPS_COMPONENTES.hrv },
+  { key: "fcr", metricType: "resting_hr", nome: "FC de Repouso", defaultUnit: "bpm", invertedSemantics: true, eixo: "autonomico", tooltip: TOOLTIPS_COMPONENTES.fcr },
+  { key: "vo2", metricType: "vo2_max", nome: "VO₂ Máximo", defaultUnit: "mL/kg/min", invertedSemantics: false, eixo: "aerobio", tooltip: TOOLTIPS_COMPONENTES.vo2 },
+  { key: "recuperacao", metricType: "hr_recovery_1min", nome: "Recuperação da FC", defaultUnit: "bpm", invertedSemantics: false, labelSecundario: "Média das últimas 5 sessões", eixo: "aerobio", tooltip: TOOLTIPS_COMPONENTES.recuperacao },
+];
 
 const biomarcadoresMetabolicos = [
   { nome: "% Gordura corporal" },
@@ -23,33 +33,80 @@ const biomarcadoresMetabolicos = [
   { nome: "Glicemia (CGM)" },
 ];
 
-function renderMetrica(m: MetricaCardio) {
-  const config = METRIC_CONFIG[m.metric_type];
-  if (!config) return null;
-  const nome = LABELS_BIOMARCADOR[m.metric_type] ?? m.metric_type;
-  return (
-    <CardBiomarcador
-      key={m.metric_type}
-      nome={nome}
-      valor={m.valor_atual}
-      unidade={m.unidade}
-      tendencia={m.tendencia ? (TENDENCIA_FROM_API[m.tendencia] ?? TENDENCIA_FROM_API[m.tendencia.toLowerCase()] ?? null) : null}
-      baseline={m.media_30d ?? undefined}
-      invertedSemantics={config.invertedSemantics}
-      labelSecundario={config.labelSecundario}
-      sparklineData={m._sparkline_mock}
-      aguardandoLeitura={m.valor_atual === null}
-    />
-  );
+function normTrend(t: string | null | undefined) {
+  if (!t) return null;
+  return TENDENCIA_FROM_API[t] ?? TENDENCIA_FROM_API[t.toLowerCase()] ?? null;
+}
+
+interface CardioCardData {
+  key: string;
+  metricType: string;
+  nome: string;
+  valor: number | null;
+  valorFormatado?: string | null;
+  unidade: string;
+  tendencia: ReturnType<typeof normTrend>;
+  baseline?: number;
+  sparklineData?: number[];
+  invertedSemantics: boolean;
+  labelSecundario?: string;
+  aguardandoLeitura: boolean;
+  tooltip?: string;
+}
+
+function buildCardioCards(
+  cockpitCV: Record<string, ComponenteScore | null> | null | undefined,
+  metricas: MetricaCardio[],
+): CardioCardData[] {
+  return CARDIO_CONFIGS.map((cfg) => {
+    const fromCockpit = cockpitCV?.[cfg.key];
+    const fromCardio = metricas.find(m => m.metric_type === cfg.metricType);
+
+    const valor = fromCockpit != null ? fromCockpit.valor : (fromCardio?.valor_atual ?? null);
+    const valorFormatado = fromCockpit?.valor_formatado ?? null;
+    const unidade = fromCockpit?.unidade ?? fromCardio?.unidade ?? cfg.defaultUnit;
+    const tendencia = normTrend(fromCockpit?.tendencia ?? fromCardio?.tendencia);
+    const baseline = fromCardio?.media_30d ?? undefined;
+    const sparklineData = fromCardio?._sparkline_mock;
+
+    if (valor === null && !fromCardio) return null;
+
+    return {
+      key: cfg.key,
+      metricType: cfg.metricType,
+      nome: cfg.nome,
+      valor,
+      valorFormatado,
+      unidade,
+      tendencia,
+      baseline,
+      sparklineData,
+      invertedSemantics: cfg.invertedSemantics,
+      labelSecundario: cfg.labelSecundario,
+      aguardandoLeitura: valor === null,
+      tooltip: cfg.tooltip,
+    };
+  }).filter((c): c is CardioCardData => c !== null);
 }
 
 export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
-  const { data, isLoading } = useQuery<RespostaCardiometabolico>({
-    queryKey: ["/api/painel-longevidade/clientes", pacienteId, "cardiometabolico"],
+  const { data: cockpit, isLoading: loadingCockpit } = useQuery<RespostaCockpit>({
+    queryKey: ["/api/painel-longevidade/clientes", pacienteId, "cockpit"],
   });
 
-  const metricasAutonomico = data?.metricas_cardio.filter(m => METRIC_CONFIG[m.metric_type]?.eixo === "autonomico") ?? [];
-  const metricasAerobio = data?.metricas_cardio.filter(m => METRIC_CONFIG[m.metric_type]?.eixo === "aerobio") ?? [];
+  const cockpitCV = cockpit?.scores?.find(s => s.tipo === "cardiovascular")?.componentes;
+  const temComponentesCockpit = !!cockpitCV;
+
+  const { data: cardio, isLoading: loadingCardio } = useQuery<RespostaCardiometabolico>({
+    queryKey: ["/api/painel-longevidade/clientes", pacienteId, "cardiometabolico"],
+    enabled: !loadingCockpit,
+  });
+
+  const isLoading = loadingCockpit || loadingCardio;
+
+  const cardioCards = buildCardioCards(cockpitCV, cardio?.metricas_cardio ?? []);
+  const autonomico = cardioCards.filter(c => CARDIO_CONFIGS.find(cfg => cfg.key === c.key)?.eixo === "autonomico");
+  const aerobio = cardioCards.filter(c => CARDIO_CONFIGS.find(cfg => cfg.key === c.key)?.eixo === "aerobio");
 
   return (
     <div className="space-y-8" data-testid="aba-cardiometabolico">
@@ -71,21 +128,55 @@ export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
               ))}
             </div>
           </div>
-        ) : data?.metricas_cardio ? (
+        ) : cardioCards.length > 0 ? (
           <div className="space-y-6">
-            <div>
-              <p className="axis-sublabel mb-3" data-testid="label-eixo-autonomico">Controle autonômico</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {metricasAutonomico.map(renderMetrica)}
+            {autonomico.length > 0 && (
+              <div>
+                <p className="axis-sublabel mb-3" data-testid="label-eixo-autonomico">Controle autonômico</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {autonomico.map((c) => (
+                    <CardBiomarcador
+                      key={c.key}
+                      nome={c.nome}
+                      valor={c.valor}
+                      valorFormatado={c.valorFormatado ?? undefined}
+                      unidade={c.unidade}
+                      tendencia={c.tendencia}
+                      baseline={c.baseline}
+                      invertedSemantics={c.invertedSemantics}
+                      labelSecundario={c.labelSecundario}
+                      sparklineData={c.sparklineData}
+                      aguardandoLeitura={c.aguardandoLeitura}
+                      tooltip={c.tooltip}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div>
-              <p className="axis-sublabel mb-3" data-testid="label-eixo-aerobio">Capacidade aeróbia</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {metricasAerobio.map(renderMetrica)}
+            {aerobio.length > 0 && (
+              <div>
+                <p className="axis-sublabel mb-3" data-testid="label-eixo-aerobio">Capacidade aeróbia</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {aerobio.map((c) => (
+                    <CardBiomarcador
+                      key={c.key}
+                      nome={c.nome}
+                      valor={c.valor}
+                      valorFormatado={c.valorFormatado ?? undefined}
+                      unidade={c.unidade}
+                      tendencia={c.tendencia}
+                      baseline={c.baseline}
+                      invertedSemantics={c.invertedSemantics}
+                      labelSecundario={c.labelSecundario}
+                      sparklineData={c.sparklineData}
+                      aguardandoLeitura={c.aguardandoLeitura}
+                      tooltip={c.tooltip}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">Dados cardiovasculares não disponíveis.</p>
@@ -99,7 +190,9 @@ export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
           </h3>
           <Lock className="h-3.5 w-3.5" style={{ color: "var(--mod-longevidade-disabled)" }} />
           <span className="text-[10px] font-medium" style={{ color: "var(--sys-text-muted)" }}>
-            {data?.secao_metabolica_bloqueada ? (data.mensagem_bloqueio_metabolico ?? data.mensagem_bloqueio ?? "Em breve") : "Em breve"}
+            {cardio?.secao_metabolica_bloqueada
+              ? (cardio.mensagem_bloqueio_metabolico ?? cardio.mensagem_bloqueio ?? "Em breve")
+              : "A análise metabólica completa e composição corporal estarão disponíveis em breve."}
           </span>
         </div>
 
