@@ -129,7 +129,10 @@ function ProteinaChart({ serie }: { serie: { data: string; valor: number | null 
     );
   }
 
-  const dados = serie.map(p => ({ data: p.data.slice(5), valor: p.valor }));
+  const dados = serie.map(p => ({
+    data: p.data.slice(8, 10) + "/" + p.data.slice(5, 7),
+    valor: p.valor,
+  }));
   const maxY = Math.max(4, ...pontos.map(p => p.valor!)) + 0.5;
 
   return (
@@ -144,14 +147,16 @@ function ProteinaChart({ serie }: { serie: { data: string; valor: number | null 
           <XAxis dataKey="data" tick={{ fontSize: 9, fill: "var(--sys-text-muted)" }} interval="preserveStartEnd" />
           <YAxis domain={[0, maxY]} tick={{ fontSize: 9, fill: "var(--sys-text-muted)" }} />
           <RechartsTooltip
-            formatter={(v: number) => [`${v?.toFixed(2)} g/kg`, "Proteína relativa"]}
-            labelStyle={{ color: "var(--sys-text-primary)", fontSize: 11 }}
+            formatter={(v: number) => [v != null ? `${v.toFixed(2)} g/kg` : "—", "Proteína relativa"]}
+            labelStyle={{ color: "var(--sys-text-primary)", fontSize: 11, fontWeight: 600, marginBottom: 2 }}
             contentStyle={{
-              background: "var(--sys-bg-surface)",
+              background: "var(--sys-bg-primary)",
               border: "1px solid var(--mod-longevidade-border)",
               borderRadius: 6,
               fontSize: 11,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
             }}
+            itemStyle={{ color: "var(--sys-text-secondary)" }}
           />
           <Line
             type="monotone"
