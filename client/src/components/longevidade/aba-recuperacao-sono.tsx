@@ -18,11 +18,11 @@ const BIOMARCADORES_CONFIG: {
   icon: typeof Bed;
   tooltip?: string;
 }[] = [
-  { key: "sono_total", nome: "Sono Total", invertedSemantics: false, icon: Bed, tooltip: TOOLTIPS_COMPONENTES.sono_total },
-  { key: "sono_rem", nome: "Sono REM", invertedSemantics: false, icon: MoonIcon, tooltip: TOOLTIPS_COMPONENTES.sono_rem_profundo },
-  { key: "sono_profundo", nome: "Sono Profundo", invertedSemantics: false, icon: Brain, tooltip: TOOLTIPS_COMPONENTES.sono_rem_profundo },
-  { key: "hrv_noturna", nome: "HRV Noturna", invertedSemantics: false, icon: HeartPulse, tooltip: TOOLTIPS_COMPONENTES.hrv_noturna },
-  { key: "fc_noturna", nome: "FC Noturna", invertedSemantics: true, icon: Heart, tooltip: TOOLTIPS_COMPONENTES.fc_noturna },
+  { key: "sono_total",   nome: "Sono Total",    invertedSemantics: false, icon: Bed,        tooltip: TOOLTIPS_COMPONENTES.sono_total },
+  { key: "sono_rem",     nome: "Sono REM",       invertedSemantics: false, icon: MoonIcon,   tooltip: TOOLTIPS_COMPONENTES.sono_rem },
+  { key: "sono_profundo",nome: "Sono Profundo",  invertedSemantics: false, icon: Brain,      tooltip: TOOLTIPS_COMPONENTES.sono_profundo },
+  { key: "hrv_noturna",  nome: "HRV Noturna",   invertedSemantics: false, icon: HeartPulse, tooltip: TOOLTIPS_COMPONENTES.hrv_noturna },
+  { key: "fc_noturna",   nome: "FC Noturna",    invertedSemantics: true,  icon: Heart,      tooltip: TOOLTIPS_COMPONENTES.fc_noturna },
 ];
 
 function normTrend(t: string | null | undefined): TendenciaBiomarcador {
@@ -33,13 +33,6 @@ function normTrend(t: string | null | undefined): TendenciaBiomarcador {
 function normClassificacao(c: string | null | undefined): ClassificacaoScore | null {
   if (!c) return null;
   return CLASSIFICACAO_FROM_LABEL[c] ?? CLASSIFICACAO_FROM_LABEL[c.toLowerCase()] ?? null;
-}
-
-function formatDataLeitura(iso: string | null): string | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) + " às " +
-    d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
 export function AbaRecuperacaoSono({ pacienteId }: AbaRecuperacaoSonoProps) {
@@ -95,7 +88,6 @@ export function AbaRecuperacaoSono({ pacienteId }: AbaRecuperacaoSonoProps) {
             {BIOMARCADORES_CONFIG.map(cfg => {
               const bio = biomarcadores[cfg.key] as BiomarcadorDetalhe | null | undefined;
               if (!bio) return null;
-              const leitura = formatDataLeitura(bio.data_ultima_leitura);
               return (
                 <CardBiomarcador
                   key={cfg.key}
@@ -104,7 +96,7 @@ export function AbaRecuperacaoSono({ pacienteId }: AbaRecuperacaoSonoProps) {
                   unidade={bio.unidade}
                   tendencia={normTrend(bio.tendencia)}
                   invertedSemantics={cfg.invertedSemantics}
-                  labelSecundario={leitura ? `Última leitura: ${leitura}` : "Média 7d"}
+                  labelSecundario="Média 7d"
                   tooltip={cfg.tooltip}
                 />
               );

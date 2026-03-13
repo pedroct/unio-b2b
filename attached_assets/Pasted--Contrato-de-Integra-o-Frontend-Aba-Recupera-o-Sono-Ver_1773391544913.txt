@@ -1,0 +1,277 @@
+# Contrato de Integração Frontend — Aba Recuperação & Sono
+
+**Versão:** v3.1  
+**Atualizado em:** 2026-03-13  
+**Módulo:** Painel de Longevidade — Aba 3
+
+Este documento descreve o contrato de API da **Aba Recuperação & Sono** do Painel de Longevidade.  
+Todas as requisições requerem autenticação via JWT no header: `Authorization: Bearer <token>`.
+
+---
+
+## Visão Geral da Aba
+
+A aba exibe:
+1. **Bloco de Score** — Score de Recuperação (0–100) com classificação e tendência
+2. **Biomarcadores** — 5 cards individuais com métricas de sono e recuperação cardíaca noturna
+
+---
+
+## Endpoint Principal
+
+### `GET /api/painel-longevidade/clientes/{cliente_id}/recuperacao-sono`
+
+Retorna o Score de Recuperação e todos os biomarcadores detalhados da aba.
+
+**Path Params:**
+- `cliente_id` (int, obrigatório): ID do usuário/cliente
+
+**Headers:**
+- `Authorization: Bearer <token>` (obrigatório)
+
+**Códigos de Resposta:**
+| Código | Significado |
+|--------|-------------|
+| `200` | Sucesso |
+| `403` | Sem acesso ao cliente (profissional não vinculado) |
+| `404` | Cliente não encontrado |
+
+---
+
+## Response `200 OK`
+
+```json
+{
+  "cliente_id": 42,
+  "score": {
+    "tipo": "recovery",
+    "valor": 85.0,
+    "classificacao": "excellent",
+    "is_partial": false,
+    "tendencia_score": "estavel"
+  },
+  "biomarcadores": {
+    "sono_total": {
+      "valor": 6.5,
+      "unidade": "h",
+      "tendencia": "estavel",
+      "data_ultima_leitura": "2026-03-13T04:51:00+00:00"
+    },
+    "sono_rem": {
+      "valor": 1.8,
+      "unidade": "h",
+      "tendencia": "caindo",
+      "data_ultima_leitura": "2026-03-13T04:51:00+00:00"
+    },
+    "sono_profundo": {
+      "valor": 0.8,
+      "unidade": "h",
+      "tendencia": "estavel",
+      "data_ultima_leitura": "2026-03-13T04:51:00+00:00"
+    },
+    "hrv_noturna": {
+      "valor": 35.6,
+      "unidade": "ms",
+      "tendencia": "subindo",
+      "data_ultima_leitura": "2026-03-13T04:51:00+00:00"
+    },
+    "fc_noturna": {
+      "valor": 61.2,
+      "unidade": "bpm",
+      "tendencia": "estavel",
+      "data_ultima_leitura": "2026-03-13T04:51:00+00:00"
+    }
+  }
+}
+```
+
+---
+
+## Descrição dos Campos
+
+### Bloco `score`
+
+| Campo | Tipo | Nullable | Descrição |
+|-------|------|----------|-----------|
+| `tipo` | `string` | não | Sempre `"recovery"` |
+| `valor` | `float` | sim | Nota de 0 a 100. `null` se dados insuficientes |
+| `classificacao` | `string` | sim | Classificação clínica (ver tabela abaixo) |
+| `is_partial` | `boolean` | não | `true` se calculado com menos de 4 biomarcadores (3 de 4) |
+| `tendencia_score` | `string` | sim | Tendência do score (ver tabela abaixo) |
+
+> ⚠️ O objeto `score` inteiro pode ser `null` se o score ainda não foi calculado para este cliente.
+
+#### Valores de `classificacao`
+
+| Valor | Exibição | Faixa de Score |
+|-------|----------|----------------|
+| `"excellent"` | Excelente | ≥ 80 |
+| `"good"` | Bom | 60–79 |
+| `"attention"` | Atenção | 40–59 |
+| `"risk"` | Risco Aumentado | < 40 |
+
+#### Valores de `tendencia_score`
+
+| Valor | Exibição |
+|-------|----------|
+| `"estavel"` | → Estável |
+| `"subindo"` | ↑ Em alta |
+| `"caindo"` | ↓ Em queda |
+
+---
+
+### Bloco `biomarcadores`
+
+O campo `biomarcadores` é um **objeto dinâmico** — cada chave only existe se houver dados disponíveis para aquele cliente. O frontend **deve renderizar apenas as chaves presentes**.
+
+Estrutura de cada card de biomarcador:
+
+| Campo | Tipo | Nullable | Descrição |
+|-------|------|----------|-----------|
+| `valor` | `float` | sim | Valor numérico do biomarcador |
+| `unidade` | `string` | não | Unidade de medida |
+| `tendencia` | `string` | sim | Direção da tendência (ver tabela acima) |
+| `data_ultima_leitura` | `string` | sim | ISO 8601 datetime da última leitura sincronizada |
+
+---
+
+### Detalhamento de Cada Biomarcador
+
+#### `sono_total` — Sono Total
+
+| Atributo | Valor |
+|----------|-------|
+| Unidade exibida | `h` (horas) |
+| Janela de cálculo | Média 7 dias |
+| Método de agregação | Soma por noite → média das noites (exclui cochilos < 3h se ≥ 3 noites válidas) |
+| Fonte | Apple Health (`sleep_total`, armazenado em minutos; convertido para horas na API) |
+| Precisão | 1 casa decimal (ex: `6.5`) |
+
+#### `sono_rem` — Sono REM
+
+| Atributo | Valor |
+|----------|-------|
+| Unidade exibida | `h` (horas) |
+| Janela de cálculo | Média 7 dias |
+| Método de agregação | Soma por noite → média das noites |
+| Fonte | Apple Health (`sleep_rem`, em minutos; convertido para horas na API) |
+| Precisão | 1 casa decimal |
+
+#### `sono_profundo` — Sono Profundo
+
+| Atributo | Valor |
+|----------|-------|
+| Unidade exibida | `h` (horas) |
+| Janela de cálculo | Média 7 dias |
+| Método de agregação | Soma por noite → média das noites |
+| Fonte | Apple Health (`sleep_deep`, em minutos; convertido para horas na API) |
+| Precisão | 1 casa decimal |
+
+#### `hrv_noturna` — HRV Noturna
+
+| Atributo | Valor |
+|----------|-------|
+| Unidade exibida | `ms` (milissegundos) |
+| Janela de cálculo | Média simples 7 dias |
+| Filtro temporal | Registros de 7 dias atrás (inclusive) até hoje |
+| Fonte | Apple Health (`hrv_nocturnal`) |
+| Precisão | 1 casa decimal (ex: `35.6`) |
+
+#### `fc_noturna` — FC Noturna
+
+| Atributo | Valor |
+|----------|-------|
+| Unidade exibida | `bpm` |
+| Janela de cálculo | Média simples 7 dias |
+| Filtro temporal | Registros de 7 dias atrás (inclusive) até hoje |
+| Fonte | Apple Health (`hr_nocturnal`) |
+| Precisão | 1 casa decimal (ex: `61.2`) |
+
+---
+
+## Consistência com o Cockpit
+
+Os valores exibidos nesta aba são **idênticos** aos exibidos nos cards de componentes do Score Recuperação no Cockpit (`/cockpit`):
+
+| Biomarcador | Cockpit (componente raw) | Aba Recuperação & Sono |
+|-------------|--------------------------|------------------------|
+| Sono Total | `sleep_total` (minutos, via agregação noturna) | `sono_total.valor` (÷60, em horas) |
+| REM + Profundo | `sleep_rem_deep` (sum REM+Deep) | `sono_rem.valor` + `sono_profundo.valor` |
+| HRV Noturna | `hrv_nocturnal` (média 7d) | `hrv_noturna.valor` |
+| FC Noturna | `hr_nocturnal` (média 7d) | `fc_noturna.valor` |
+
+> **Nota importante:** A conversão de minutos para horas é feita no backend. O frontend **nunca** deve receber valores de sono em minutos neste endpoint — sempre em horas (`h`).
+
+---
+
+## Comportamento de Ausência de Dados
+
+### `score` ausente ou `null`
+
+Quando `score` é `null` (cliente sem dados suficientes para cálculo):
+
+```json
+{
+  "cliente_id": 42,
+  "score": null,
+  "biomarcadores": {}
+}
+```
+
+→ Exibir estado vazio/placeholder para o bloco de score.
+
+### Biomarcador ausente
+
+Quando uma chave não está presente em `biomarcadores`, significa que não há dados para aquela métrica nos últimos 7 dias.
+
+```json
+{
+  "biomarcadores": {
+    "sono_total": { "valor": 6.5, "unidade": "h", "tendencia": "estavel", "data_ultima_leitura": "..." }
+    // "sono_rem" e "sono_profundo" ausentes — sem dados
+  }
+}
+```
+
+→ Exibir card em estado desabilitado com `"—"` ou `"Aguardando leitura"`.
+
+### `tendencia` ausente ou `null`
+
+O campo `tendencia` pode ser `null` caso não haja dados históricos suficientes para calcular a direção. Neste caso, não exibir indicador de tendência.
+
+---
+
+## Erros
+
+### `403 Forbidden`
+
+```json
+{ "detail": "Acesso negado. Profissional não possui vínculo ativo com este cliente." }
+```
+
+### `404 Not Found`
+
+```json
+{ "detail": "Cliente não encontrado." }
+```
+
+---
+
+## Notas de Implementação para o Frontend
+
+1. **Renderização condicional**: Iterar apenas sobre as chaves presentes em `biomarcadores`. Não assumir que todas as 5 chaves existem.
+
+2. **Ordem de exibição recomendada**: `sono_total` → `sono_rem` → `sono_profundo` → `hrv_noturna` → `fc_noturna`
+
+3. **Formatação de data**: `data_ultima_leitura` é ISO 8601. Exibir como `"DD/MM às HH:mm"` (ex: `"13/03 às 04:51"`).
+
+4. **Label de referência temporal**: Exibir `"Média 7d"` abaixo de todos os valores, conforme design system.
+
+5. **Ícone de tendência**:
+   - `"estavel"` → `→` (seta direita, cinza)
+   - `"subindo"` → `↑` (seta para cima, verde)
+   - `"caindo"` → `↓` (seta para baixo, vermelho/laranja)
+
+6. **Score parcial**: Quando `score.is_partial === true`, exibir badge `"Score parcial"` próximo à nota (mesmo padrão visual do Cockpit).
+
+7. **Precisão numérica**: Todos os valores já chegam com a precisão correta do backend. Não arredondar no frontend.

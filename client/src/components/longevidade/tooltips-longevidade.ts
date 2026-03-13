@@ -29,6 +29,10 @@ export const TOOLTIPS_COMPONENTES: Record<string, string> = {
     "Média de horas dormidas por noite nos últimos 7 dias, medida pelo Apple Watch. A recomendação para adultos é de 7 a 9 horas por noite.",
   sono_rem_profundo:
     "Soma das fases de sono REM e sono profundo (média 7 dias). São as fases mais restauradoras — essenciais para consolidação de memória, reparo muscular e regulação hormonal.",
+  sono_rem:
+    "Fase de sono associada à consolidação da memória e à regulação emocional. Medida pelo Apple Watch como média dos últimos 7 dias. Adultos saudáveis passam cerca de 20–25% do sono nessa fase.",
+  sono_profundo:
+    "Fase de sono de ondas lentas, essencial para reparo muscular, liberação de GH e recuperação física. Medida pelo Apple Watch como média dos últimos 7 dias. Declina naturalmente com a idade.",
   hrv_noturna:
     "Variabilidade cardíaca medida exclusivamente durante o sono. É o indicador mais puro de recuperação autonômica, livre da influência de atividade, estresse e estimulantes.",
   fc_noturna:
