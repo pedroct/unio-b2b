@@ -287,7 +287,6 @@ export async function registerRoutes(
         bearerToken: token,
         params: { periodo },
       });
-      console.log(`[longevidade/nutricao] staging status=${result.status} data=${JSON.stringify(result.data)?.slice(0, 200)}`);
       return res.status(result.status).json(result.data);
     } catch (err: any) {
       console.error("[longevidade/nutricao] proxy error:", err.message);

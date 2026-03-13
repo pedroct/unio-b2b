@@ -197,16 +197,17 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
   const [periodo, setPeriodo] = useState<Periodo>("7");
   const [alertasDismissed, setAlertasDismissed] = useState<Set<string>>(new Set());
 
-  const { data, isLoading, isError } = useQuery<RespostaNutricao>({
+  const { data, isLoading, isFetching, isError } = useQuery<RespostaNutricao>({
     queryKey: ["/api/painel-longevidade/clientes", pacienteId, "nutricao", periodo],
     queryFn: async () => {
       const res = await apiRequest("GET", `/api/painel-longevidade/clientes/${pacienteId}/nutricao?periodo=${periodo}`);
       return res.json();
     },
     enabled: !!pacienteId,
+    placeholderData: (prev) => prev,
   });
 
-  if (isLoading) return <SkelNutricao />;
+  if (isLoading && !data) return <SkelNutricao />;
   if (isError) {
     return (
       <div className="py-12 text-center text-sm" style={{ color: "var(--sys-text-muted)" }}>
@@ -257,17 +258,21 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
           <button
             key={p}
             onClick={() => setPeriodo(p)}
+            disabled={isFetching}
             data-testid={`btn-periodo-${p}`}
-            className="px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
+            className="px-3 py-1.5 text-xs font-medium rounded-md transition-all disabled:cursor-wait"
             style={
               periodo === p
-                ? { background: "var(--mod-longevidade-accent)", color: "#fff" }
+                ? { background: "var(--mod-longevidade-accent)", color: "#fff", opacity: isFetching ? 0.75 : 1 }
                 : { background: "var(--mod-longevidade-bg-subtle)", color: "var(--sys-text-secondary)", border: "1px solid var(--mod-longevidade-border)" }
             }
           >
             {p}d
           </button>
         ))}
+        {isFetching && (
+          <span className="text-xs" style={{ color: "var(--sys-text-muted)" }}>Atualizando…</span>
+        )}
       </div>
 
       {baixaCobertura && (
