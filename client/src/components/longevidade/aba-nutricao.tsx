@@ -11,7 +11,7 @@ import { InfoTooltip } from "./info-tooltip";
 import { TOOLTIPS_COMPONENTES } from "./tooltips-longevidade";
 import type { ReactNode } from "react";
 import { apiRequest } from "@/lib/queryClient";
-import type { RespostaNutricao, NutricaoAlerta, NutricaoRegistroDia, NutricaoGlicemia } from "@shared/schema";
+import type { RespostaNutricao, NutricaoAlerta, NutricaoRegistroDia, NutricaoGlicemia, NutricaoComposicaoCorporal } from "@shared/schema";
 
 interface AbaNutricaoProps {
   pacienteId: string;
@@ -435,6 +435,134 @@ function GlicemiaCorrelacaoChart({ glicemia }: { glicemia: NutricaoGlicemia }) {
   );
 }
 
+function ComposicaoCorporalChart({ cc }: { cc: NutricaoComposicaoCorporal }) {
+  if (!cc.disponivel || (cc.massa_magra_serie.length === 0 && cc.proteina_por_massa_magra_serie.length === 0)) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 py-6">
+        <TrendingUp className="h-5 w-5" style={{ color: "var(--sys-text-muted)" }} />
+        <p className="text-[10px] text-center" style={{ color: "var(--sys-text-muted)" }}>
+          Disponível quando dados de composição corporal estiverem sincronizados.
+        </p>
+      </div>
+    );
+  }
+
+  const porData: Record<string, { proteina?: number; massaMagra?: number }> = {};
+  for (const p of cc.proteina_por_massa_magra_serie) {
+    if (!porData[p.data]) porData[p.data] = {};
+    porData[p.data].proteina = Math.round(p.proteina_g_por_kg_magra * 100) / 100;
+  }
+  for (const m of cc.massa_magra_serie) {
+    if (!porData[m.data]) porData[m.data] = {};
+    porData[m.data].massaMagra = Math.round(m.massa_magra_kg * 10) / 10;
+  }
+
+  const dados = Object.entries(porData)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([data, v]) => ({
+      label: fmtDate(data),
+      proteina: v.proteina ?? null,
+      massaMagra: v.massaMagra ?? null,
+    }));
+
+  if (dados.length === 0) {
+    return (
+      <p className="text-xs text-center py-4" style={{ color: "var(--sys-text-muted)" }}>
+        Sem dados suficientes para exibir correlação.
+      </p>
+    );
+  }
+
+  const protVals = dados.map(d => d.proteina).filter((v): v is number => v !== null);
+  const massVals = dados.map(d => d.massaMagra).filter((v): v is number => v !== null);
+  const minProt = Math.max(0, Math.min(...protVals) - 0.3);
+  const maxProt = Math.max(3, Math.max(...protVals) + 0.3);
+  const minMass = Math.max(0, Math.min(...massVals) - 2);
+  const maxMass = Math.max(10, Math.max(...massVals) + 2);
+
+  const TOOLTIP_STYLE = {
+    background: "var(--sys-bg-primary)",
+    border: "1px solid var(--mod-longevidade-border)",
+    borderRadius: 6,
+    fontSize: 11,
+    boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+  };
+
+  return (
+    <div className="space-y-2">
+      <div style={{ height: 160 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={dados} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+            <ReferenceArea yAxisId="left" y1={1.6} y2={Math.min(2.2, maxProt)} fill="rgba(34,197,94,0.07)" />
+            <ReferenceLine yAxisId="left" y={1.6} stroke="rgba(34,197,94,0.4)" strokeDasharray="3 3" />
+            <ReferenceLine yAxisId="left" y={2.2} stroke="rgba(34,197,94,0.4)" strokeDasharray="3 3" />
+            <XAxis dataKey="label" tick={{ fontSize: 9, fill: "var(--sys-text-muted)" }} interval="preserveStartEnd" />
+            <YAxis
+              yAxisId="left"
+              orientation="left"
+              domain={[minProt, maxProt]}
+              tick={{ fontSize: 9, fill: "var(--sys-text-muted)" }}
+              unit=" g/kg"
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              domain={[minMass, maxMass]}
+              tick={{ fontSize: 9, fill: "var(--sys-text-muted)" }}
+              unit=" kg"
+            />
+            <RechartsTooltip
+              labelStyle={{ color: "var(--sys-text-primary)", fontSize: 11, fontWeight: 600 }}
+              contentStyle={TOOLTIP_STYLE}
+              itemStyle={{ color: "var(--sys-text-secondary)" }}
+              formatter={(v: number, name: string) =>
+                name === "proteina"
+                  ? [`${v} g/kg`, "Prot. / kg massa magra"]
+                  : [`${v} kg`, "Massa magra"]
+              }
+            />
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="proteina"
+              stroke="var(--mod-longevidade-base)"
+              strokeWidth={2}
+              dot={{ r: 3, fill: "var(--mod-longevidade-base)", strokeWidth: 0 }}
+              connectNulls={false}
+              name="proteina"
+            />
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="massaMagra"
+              stroke="#22c55e"
+              strokeWidth={2}
+              strokeDasharray="5 3"
+              dot={{ r: 3, fill: "#22c55e", strokeWidth: 0 }}
+              connectNulls={false}
+              name="massaMagra"
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="flex gap-4 flex-wrap">
+        <span className="flex items-center gap-1 text-[9px]" style={{ color: "var(--sys-text-muted)" }}>
+          <span className="inline-block w-4 h-0.5 rounded" style={{ background: "var(--mod-longevidade-base)" }} />
+          Proteína / kg massa magra
+        </span>
+        <span className="flex items-center gap-1 text-[9px]" style={{ color: "var(--sys-text-muted)" }}>
+          <span className="inline-block w-4 h-0.5 rounded border-t-2 border-dashed border-green-500" />
+          Massa magra
+        </span>
+        <span className="flex items-center gap-1 text-[9px]" style={{ color: "var(--sys-text-muted)" }}>
+          <span className="inline-block w-3 h-2 rounded-sm bg-green-200 opacity-60" />
+          Faixa ideal 1.6–2.2 g/kg
+        </span>
+      </div>
+    </div>
+  );
+}
+
 const CHART_BANDS = [
   { y1: 0,   y2: 1.2, fill: "rgba(239,68,68,0.08)",   label: "< 1.2" },
   { y1: 1.2, y2: 1.6, fill: "rgba(245,158,11,0.08)",  label: "1.2–1.6" },
@@ -571,7 +699,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
     );
   }
 
-  const { resumo, alertas, serie_proteina_relativa_30d, historico, sem_dados, mensagem_sem_dados, glicemia } = data;
+  const { resumo, alertas, serie_proteina_relativa_30d, historico, sem_dados, mensagem_sem_dados, glicemia, composicao_corporal } = data;
   const registros: NutricaoRegistroDia[] = historico?.registros ?? [];
   const coberturaPct = historico?.cobertura_pct ?? 0;
   const coberturaDias = historico?.cobertura_dias ?? 0;
@@ -843,21 +971,29 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
               </div>
 
               <div
-                className="rounded-lg p-3 flex flex-col items-center justify-center gap-2 min-h-[140px]"
+                className="rounded-lg p-3 space-y-2"
                 style={{
                   background: "var(--sys-bg-primary)",
-                  border: "1px dashed var(--mod-longevidade-border)",
-                  opacity: 0.65,
+                  border: composicao_corporal?.disponivel
+                    ? "1px solid var(--mod-longevidade-border)"
+                    : "1px dashed var(--mod-longevidade-border)",
+                  opacity: composicao_corporal?.disponivel ? 1 : 0.65,
                 }}
                 data-testid="correlacao-proteina-massa-magra"
               >
-                <TrendingUp className="h-5 w-5" style={{ color: "var(--sys-text-muted)" }} />
-                <p className="text-xs font-semibold text-center" style={{ color: "var(--sys-text-secondary)" }}>
+                <p className="text-xs font-semibold" style={{ color: "var(--sys-text-secondary)" }}>
                   Proteína Relativa ↔ Massa Magra
                 </p>
-                <p className="text-[10px] text-center" style={{ color: "var(--sys-text-muted)" }}>
-                  Disponível quando dados de composição corporal estiverem sincronizados.
-                </p>
+                {composicao_corporal ? (
+                  <ComposicaoCorporalChart cc={composicao_corporal} />
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-2 py-6">
+                    <TrendingUp className="h-5 w-5" style={{ color: "var(--sys-text-muted)" }} />
+                    <p className="text-[10px] text-center" style={{ color: "var(--sys-text-muted)" }}>
+                      Disponível quando dados de composição corporal estiverem sincronizados.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div

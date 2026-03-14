@@ -529,6 +529,22 @@ export interface NutricaoGlicemia {
   carboidratos_periodo: GliceimaCarboidratos[];
 }
 
+export interface ComposicaoCorporalPonto {
+  data: string;
+  massa_magra_kg: number;
+}
+
+export interface ProteinaPorMassaMagraPonto {
+  data: string;
+  proteina_g_por_kg_magra: number;
+}
+
+export interface NutricaoComposicaoCorporal {
+  disponivel: boolean;
+  massa_magra_serie: ComposicaoCorporalPonto[];
+  proteina_por_massa_magra_serie: ProteinaPorMassaMagraPonto[];
+}
+
 export interface RespostaNutricao {
   cliente_id: number | string;
   periodo_solicitado: number;
@@ -539,6 +555,7 @@ export interface RespostaNutricao {
   serie_proteina_relativa_30d: SeriePontoProteina[];
   historico: NutricaoHistorico;
   glicemia?: NutricaoGlicemia;
+  composicao_corporal?: NutricaoComposicaoCorporal;
 }
 
 export const BRAZILIAN_STATES = [
