@@ -308,7 +308,7 @@ function GlicemiaCorrelacaoChart({ glicemia }: { glicemia: NutricaoGlicemia }) {
 
   const leiturasByDay: Record<string, number[]> = {};
   for (const l of glicemia.leituras) {
-    const date = l.timestamp.substring(0, 10);
+    const date = new Date(l.timestamp).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
     if (!leiturasByDay[date]) leiturasByDay[date] = [];
     leiturasByDay[date].push(l.glicose_mg_dl);
   }
