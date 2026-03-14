@@ -457,15 +457,9 @@ function ComposicaoCorporalChart({ cc }: { cc: NutricaoComposicaoCorporal }) {
     porData[m.data].massaMagra = Math.round(m.massa_magra_kg * 10) / 10;
   }
 
-  const dados = Object.entries(porData)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([data, v]) => ({
-      label: fmtDate(data),
-      proteina: v.proteina ?? null,
-      massaMagra: v.massaMagra ?? null,
-    }));
+  const entradas = Object.entries(porData).sort(([a], [b]) => a.localeCompare(b));
 
-  if (dados.length === 0) {
+  if (entradas.length === 0) {
     return (
       <p className="text-xs text-center py-4" style={{ color: "var(--sys-text-muted)" }}>
         Sem dados suficientes para exibir correlação.
@@ -473,8 +467,25 @@ function ComposicaoCorporalChart({ cc }: { cc: NutricaoComposicaoCorporal }) {
     );
   }
 
+  // IQR outlier filter for massa magra (backend may send erroneous sensor readings)
+  const allMassVals = entradas.map(([, v]) => v.massaMagra).filter((v): v is number => v !== undefined);
+  const sortedMass = [...allMassVals].sort((a, b) => a - b);
+  const q1 = sortedMass[Math.floor(sortedMass.length * 0.25)] ?? 0;
+  const q3 = sortedMass[Math.floor(sortedMass.length * 0.75)] ?? 0;
+  const iqr = q3 - q1;
+  const massLow = q1 - 1.5 * iqr;
+  const massHigh = q3 + 1.5 * iqr;
+  const isOutlier = (v: number) => iqr > 0 && (v < massLow || v > massHigh);
+
+  const dados = entradas.map(([data, v]) => ({
+    label: fmtDate(data),
+    proteina: v.proteina ?? null,
+    massaMagra: (v.massaMagra !== undefined && !isOutlier(v.massaMagra)) ? v.massaMagra : null,
+  }));
+
   const protVals = dados.map(d => d.proteina).filter((v): v is number => v !== null);
   const massVals = dados.map(d => d.massaMagra).filter((v): v is number => v !== null);
+
   const minProt = Math.max(0, Math.min(...protVals) - 0.3);
   const maxProt = Math.max(3, Math.max(...protVals) + 0.3);
   const minMass = Math.max(0, Math.min(...massVals) - 2);
@@ -492,8 +503,8 @@ function ComposicaoCorporalChart({ cc }: { cc: NutricaoComposicaoCorporal }) {
     <div className="space-y-2">
       <div style={{ height: 160 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={dados} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-            <ReferenceArea yAxisId="left" y1={1.6} y2={Math.min(2.2, maxProt)} fill="rgba(34,197,94,0.07)" />
+          <ComposedChart data={dados} margin={{ top: 4, right: 40, left: -16, bottom: 0 }}>
+            <ReferenceArea yAxisId="left" y1={1.6} y2={2.2} fill="rgba(34,197,94,0.07)" />
             <ReferenceLine yAxisId="left" y={1.6} stroke="rgba(34,197,94,0.4)" strokeDasharray="3 3" />
             <ReferenceLine yAxisId="left" y={2.2} stroke="rgba(34,197,94,0.4)" strokeDasharray="3 3" />
             <XAxis dataKey="label" tick={{ fontSize: 9, fill: "var(--sys-text-muted)" }} interval="preserveStartEnd" />
@@ -502,14 +513,18 @@ function ComposicaoCorporalChart({ cc }: { cc: NutricaoComposicaoCorporal }) {
               orientation="left"
               domain={[minProt, maxProt]}
               tick={{ fontSize: 9, fill: "var(--sys-text-muted)" }}
+              tickFormatter={(v: number) => v.toFixed(1)}
               unit=" g/kg"
+              tickCount={5}
             />
             <YAxis
               yAxisId="right"
               orientation="right"
               domain={[minMass, maxMass]}
               tick={{ fontSize: 9, fill: "var(--sys-text-muted)" }}
+              tickFormatter={(v: number) => Math.round(v).toString()}
               unit=" kg"
+              tickCount={4}
             />
             <RechartsTooltip
               labelStyle={{ color: "var(--sys-text-primary)", fontSize: 11, fontWeight: 600 }}
@@ -517,8 +532,8 @@ function ComposicaoCorporalChart({ cc }: { cc: NutricaoComposicaoCorporal }) {
               itemStyle={{ color: "var(--sys-text-secondary)" }}
               formatter={(v: number, name: string) =>
                 name === "proteina"
-                  ? [`${v} g/kg`, "Prot. / kg massa magra"]
-                  : [`${v} kg`, "Massa magra"]
+                  ? [`${v.toFixed(2)} g/kg`, "Prot. / kg massa magra"]
+                  : [`${v.toFixed(1)} kg`, "Massa magra"]
               }
             />
             <Line
