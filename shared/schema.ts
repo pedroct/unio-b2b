@@ -508,6 +508,27 @@ export interface SeriePontoProteina {
   valor: number | null;
 }
 
+export interface GlicemiaLeitura {
+  timestamp: string;
+  glicose_mg_dl: number;
+  fonte: string;
+}
+
+export interface GliceimaCarboidratos {
+  data: string;
+  carboidrato_g: number;
+}
+
+export interface NutricaoGlicemia {
+  disponivel: boolean;
+  total_leituras: number;
+  media_mg_dl: number | null;
+  minima_mg_dl: number | null;
+  maxima_mg_dl: number | null;
+  leituras: GlicemiaLeitura[];
+  carboidratos_periodo: GliceimaCarboidratos[];
+}
+
 export interface RespostaNutricao {
   cliente_id: number | string;
   periodo_solicitado: number;
@@ -517,6 +538,7 @@ export interface RespostaNutricao {
   alertas: NutricaoAlerta[];
   serie_proteina_relativa_30d: SeriePontoProteina[];
   historico: NutricaoHistorico;
+  glicemia?: NutricaoGlicemia;
 }
 
 export const BRAZILIAN_STATES = [

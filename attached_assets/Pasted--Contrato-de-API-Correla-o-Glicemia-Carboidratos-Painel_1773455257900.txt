@@ -1,0 +1,375 @@
+# Contrato de API — Correlação Glicemia ↔ Carboidratos
+## Painel de Longevidade — Aba Nutrição (Aba 5)
+
+> **Status**: ✅ Backend pronto — aguardando sync mobile  
+> **Data**: 2026-03-13  
+> **Versão**: 1.0  
+> **Impacto**: Alteração no endpoint existente + novo campo na response
+
+---
+
+## 1. Endpoint Afetado
+
+```
+GET /api/painel-longevidade/clientes/{cliente_id}/nutricao
+```
+
+Este é o mesmo endpoint que a aba Nutrição já consome. **Nenhum endpoint novo é necessário.** A equipe de frontend deve atualizar o consumo deste endpoint para incluir o novo campo `glicemia`.
+
+---
+
+## 2. Mudança na Response — Campo `glicemia`
+
+O endpoint passa a retornar um novo objeto raiz `glicemia` com as leituras de glicemia pontual do cliente, provenientes do Apple Health.
+
+### Response Completa (estrutura atual + novo campo)
+
+```json
+{
+  "cliente_id": 42,
+  "periodo_solicitado": 7,
+  "sem_dados": false,
+  "mensagem_sem_dados": null,
+
+  "resumo": {
+    "proteina_relativa_g_kg_7d": 1.52,
+    "proteina_relativa_g_kg_30d": 1.71,
+    "aderencia_calorica_pct_7d": 57.0,
+    "aderencia_calorica_pct_30d": 68.3,
+    "cobertura_registros_pct_7d": 85.7,
+    "cobertura_registros_pct_30d": 76.7,
+    "refeicoes_por_dia_7d": 3.4,
+    "macros_distribuicao_30d": {
+      "proteina_pct": 27.0,
+      "carboidrato_pct": 45.0,
+      "gordura_pct": 28.0
+    }
+  },
+
+  "alertas": [],
+
+  "serie_proteina_relativa_30d": [
+    { "data": "2026-02-12", "valor": 1.65 },
+    { "data": "2026-02-13", "valor": null }
+  ],
+
+  "historico": {
+    "periodo_dias": 7,
+    "cobertura_dias": 6,
+    "periodo_dias_total": 7,
+    "cobertura_pct": 85.7,
+    "registros": [
+      {
+        "data": "2026-03-12",
+        "calorias_consumidas": 2111.0,
+        "meta_calorica": 4000.0,
+        "aderencia_calorica_pct": 52.8,
+        "refeicoes_registradas": 15,
+        "macros": {
+          "proteina_g": 97.0,
+          "carboidrato_g": 340.0,
+          "gordura_g": 43.0
+        },
+        "proteina_relativa_g_kg": 1.24
+      }
+    ],
+    "medias": {
+      "calorias_consumidas": 2408.0,
+      "proteina_g": 122.3,
+      "carboidrato_g": 295.0,
+      "gordura_g": 61.4,
+      "proteina_relativa_g_kg": 1.52,
+      "aderencia_calorica_pct": 57.0,
+      "refeicoes_por_dia": 3.4
+    }
+  },
+
+  "glicemia": {
+    "disponivel": true,
+    "total_leituras": 6,
+    "media_mg_dl": 112.3,
+    "minima_mg_dl": 88.0,
+    "maxima_mg_dl": 148.5,
+    "leituras": [
+      {
+        "timestamp": "2026-03-13T14:30:45Z",
+        "glicose_mg_dl": 118.5,
+        "fonte": "Apple Health"
+      },
+      {
+        "timestamp": "2026-03-13T08:15:00Z",
+        "glicose_mg_dl": 95.0,
+        "fonte": "Dexcom G6"
+      }
+    ],
+    "carboidratos_periodo": [
+      {
+        "data": "2026-03-13",
+        "carboidrato_g": 340.0
+      },
+      {
+        "data": "2026-03-12",
+        "carboidrato_g": 295.0
+      }
+    ]
+  }
+}
+```
+
+---
+
+## 3. Detalhamento do Objeto `glicemia`
+
+### 3.1 Campos Raiz
+
+| Campo | Tipo | Sempre presente | Descrição |
+|-------|------|----------------|-----------|
+| `disponivel` | `boolean` | ✅ Sim | `true` quando há ≥1 leitura no período. `false` = estado vazio |
+| `total_leituras` | `integer` | ✅ Sim | Total de amostras de glicemia no período (0 se indisponível) |
+| `media_mg_dl` | `number \| null` | ✅ Sim | Média de glicemia em mg/dL. `null` se sem dados |
+| `minima_mg_dl` | `number \| null` | ✅ Sim | Mínima do período. `null` se sem dados |
+| `maxima_mg_dl` | `number \| null` | ✅ Sim | Máxima do período. `null` se sem dados |
+| `leituras` | `array` | ✅ Sim | Array de leituras individuais. Array vazio `[]` se sem dados |
+| `carboidratos_periodo` | `array` | ✅ Sim | Carboidratos diários agregados do mesmo período (de `historico.registros`) |
+
+### 3.2 Objeto `leituras[]`
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `timestamp` | `string (ISO 8601, UTC)` | Momento exato da coleta |
+| `glicose_mg_dl` | `number` | Valor em mg/dL (faixa válida: 30–600) |
+| `fonte` | `string` | Origem da leitura (ex: `"Apple Health"`, `"Dexcom G6"`, `"FreeStyle Libre"`) |
+
+### 3.3 Objeto `carboidratos_periodo[]`
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `data` | `string (YYYY-MM-DD)` | Data do día |
+| `carboidrato_g` | `number` | Total de carboidratos consumidos naquele dia (em gramas) |
+
+> **Nota:** `carboidratos_periodo` é derivado de `historico.registros[].macros.carboidrato_g` — já existe na response atual. O campo é incluído no objeto `glicemia` para facilitar a montagem do gráfico de correlação sem precisar cruzar arrays manualmente no frontend.
+
+---
+
+## 4. Estados Possíveis do Campo `glicemia`
+
+### Estado 1: Sem dados de glicemia (mobile ainda não enviou)
+
+```json
+{
+  "glicemia": {
+    "disponivel": false,
+    "total_leituras": 0,
+    "media_mg_dl": null,
+    "minima_mg_dl": null,
+    "maxima_mg_dl": null,
+    "leituras": [],
+    "carboidratos_periodo": [
+      { "data": "2026-03-13", "carboidrato_g": 340.0 }
+    ]
+  }
+}
+```
+
+**Comportamento do frontend:** Manter o card placeholder atual:
+> *"Disponível quando dados de glicemia estiverem sincronizados via Apple Health."*
+
+---
+
+### Estado 2: Com dados de glicemia disponíveis
+
+```json
+{
+  "glicemia": {
+    "disponivel": true,
+    "total_leituras": 12,
+    "media_mg_dl": 112.3,
+    "minima_mg_dl": 88.0,
+    "maxima_mg_dl": 148.5,
+    "leituras": [
+      { "timestamp": "2026-03-13T14:30:45Z", "glicose_mg_dl": 118.5, "fonte": "Apple Health" },
+      { "timestamp": "2026-03-13T08:15:00Z", "glicose_mg_dl": 95.0,  "fonte": "Dexcom G6" }
+    ],
+    "carboidratos_periodo": [
+      { "data": "2026-03-13", "carboidrato_g": 340.0 },
+      { "data": "2026-03-12", "carboidrato_g": 295.0 }
+    ]
+  }
+}
+```
+
+**Comportamento do frontend:** Substituir o placeholder pelo gráfico de correlação (ver seção 6).
+
+---
+
+### Estado 3: Período sem dados nutricionais (`sem_dados: true`)
+
+```json
+{
+  "sem_dados": true,
+  "glicemia": {
+    "disponivel": false,
+    "total_leituras": 0,
+    "media_mg_dl": null,
+    "minima_mg_dl": null,
+    "maxima_mg_dl": null,
+    "leituras": [],
+    "carboidratos_periodo": []
+  }
+}
+```
+
+**Comportamento:** Estado vazio geral da aba — não exibir correlação.
+
+---
+
+## 5. Parâmetros da Request
+
+Nenhuma mudança na assinatura. O campo `glicemia` sempre reflete o mesmo período selecionado.
+
+```
+GET /api/painel-longevidade/clientes/{cliente_id}/nutricao?periodo={7|30|90}
+```
+
+| Parâmetro | Tipo | Default | Descrição |
+|-----------|------|---------|-----------|
+| `cliente_id` | `integer` | — | ID do cliente (path) |
+| `periodo` | `integer` | `7` | Janela de análise: `7`, `30` ou `90` dias |
+
+**Autenticação:** `Authorization: Bearer <JWT_token>`  
+O token deve pertencer ao profissional que tem acesso ao cliente.
+
+---
+
+## 6. Orientações de Implementação do Frontend
+
+### 6.1 Verificação de disponibilidade
+
+```typescript
+const { glicemia } = await fetchNutricao(clienteId, periodo)
+
+if (!glicemia.disponivel) {
+  // Exibir placeholder atual
+  return <GlicemiaPlaceholder />
+}
+
+// Exibir gráfico de correlação
+return <GlicemiaCorrelacaoChart data={glicemia} />
+```
+
+### 6.2 Gráfico de Correlação — Design recomendado
+
+O gráfico de correlação **Carboidrato ↔ Glicemia** substitui o card placeholder atual.
+
+**Tipo:** Gráfico dual-axis  
+**Eixo Y esquerdo:** Glicemia (mg/dL) — gráfico de dispersão/linha de pontos  
+**Eixo Y direito:** Carboidratos/dia (g) — barras verticais por dia  
+**Eixo X:** Data (granularidade: por dia para 7d e 30d; por semana para 90d)
+
+**Zonas de referência no eixo Y esquerdo (glicemia):**
+| Faixa | Cor | Label |
+|-------|-----|-------|
+| < 70 mg/dL | Vermelho | Hipoglicemia |
+| 70–99 mg/dL | Verde | Normal em jejum |
+| 100–125 mg/dL | Amarelo | Pré-diabético |
+| ≥ 126 mg/dL | Laranja | Atenção |
+
+**Cards de resumo** (exibir acima do gráfico):
+```
+Glicemia Média: 112.3 mg/dL    Mínima: 88.0    Máxima: 148.5    Leituras: 12
+```
+
+### 6.3 Agrupamento por dia (múltiplas leituras no mesmo dia)
+
+O array `leituras[]` pode ter múltiplas leituras para o mesmo dia. Para o gráfico de correlação dia-a-dia, agrupar por data e calcular a média diária:
+
+```typescript
+const leiturasPorDia = glicemia.leituras.reduce((acc, l) => {
+  const date = l.timestamp.substring(0, 10) // YYYY-MM-DD
+  if (!acc[date]) acc[date] = []
+  acc[date].push(l.glicose_mg_dl)
+  return acc
+}, {})
+
+const mediasDiarias = Object.entries(leiturasPorDia).map(([data, valores]) => ({
+  data,
+  media_mg_dl: valores.reduce((s, v) => s + v, 0) / valores.length
+}))
+```
+
+### 6.4 Correlação com carboidratos (join por data)
+
+```typescript
+// Cruzar glicemia média com carboidratos do mesmo dia
+const dadosCorrelacao = mediasDiarias.map(({ data, media_mg_dl }) => {
+  const carbs = glicemia.carboidratos_periodo.find(c => c.data === data)
+  return {
+    data,
+    glicemia_media: media_mg_dl,
+    carboidrato_g: carbs?.carboidrato_g ?? null // null = sem registro alimentar naquele dia
+  }
+})
+```
+
+---
+
+## 7. BUG CRÍTICO A CORRIGIR — `Refeições / dia`
+
+> ⚠️ **Este bug deve ser corrigido na mesma entrega da correlação de glicemia.**
+
+**Problema:** O card "Refeições / dia" exibe `15.3 média 7d` — valor impossível biologicamente. O frontend está somando `refeicoes_registradas` de cada `historico.registros[]` (que é contagem de itens alimentares) em vez de usar o campo correto.
+
+**Campo ERRADO (não usar):**
+```
+historico.registros[].refeicoes_registradas  ← contagem de entradas no banco (= itens individuais de alimento)
+```
+
+**Campo CORRETO:**
+```
+resumo.refeicoes_por_dia_7d  ← média de refeições por dia, já calculada pelo backend
+```
+
+**Exemplo:**
+```typescript
+// ❌ Errado
+const mediaRefeicoes = historico.registros.reduce((sum, r) => sum + r.refeicoes_registradas, 0) / historico.registros.length
+
+// ✅ Correto
+const mediaRefeicoes = resumo.refeicoes_por_dia_7d  // ex: 3.4
+```
+
+---
+
+## 8. Linha do Tempo — Informativo expandido
+
+O campo `refeicoes_registradas` em `historico.registros[]` pode ser usado na **Linha do Tempo de Registros** (tabela expandível), onde o contexto expandido já o rotula corretamente como "Registros alimentares".
+
+```
+Linha do tempo — linha expandida (uso correto atual):
+  "Registros alimentares: 15 | Meta calórica: 4000 kcal | Carbo: 340g ..."
+                            ^-- aqui "15" = itens, está correto com esse rótulo
+```
+
+O problema ocorre apenas no **card de cabeçalho**, que deve usar `resumo.refeicoes_por_dia_7d`.
+
+---
+
+## 9. Cronograma e Dependências
+
+| Item | Backend | Frontend | Bloqueador |
+|------|---------|----------|------------|
+| Campo `glicemia` na response | ⏳ Em implementação | Aguardando | Backend |
+| Dados de glicemia no banco | ⏳ Aguardando mobile | — | App iOS |
+| Gráfico de correlação | — | Após backend | Backend + dados |
+| Bug `refeicoes_por_dia` | ✅ Dado já no backend | Cor. necessária | Nenhum |
+
+> **Nota sobre o campo `glicemia`:** O backend está implementando o campo `glicemia` na response do endpoint existente. O frontend deve ser atualizado para consumir este campo quando disponível, mantendo o placeholder enquanto `glicemia.disponivel === false`.
+
+---
+
+## 10. Contato e Rastreamento
+
+- **PRD de referência:** `docs/painel_longevidade/Nutricao/PRD-Painel-Longevidade-Aba-Nutricao-V1.0.md`
+- **Contrato original da aba:** `docs/painel_longevidade/Nutricao/contrato_aba_nutricao.md`
+- **Pendências frontend (lista completa):** `docs/painel_longevidade/Nutricao/frontend_pendencias_aba_nutricao.md`
+- **Commit backend:** `feat(glicose): add blood glucose sync pipeline from Apple Health` (branch `staging`)

@@ -5,12 +5,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceLine, ReferenceArea,
   Tooltip as RechartsTooltip, PieChart, Pie, Cell, BarChart, Bar,
+  ComposedChart,
 } from "recharts";
 import { InfoTooltip } from "./info-tooltip";
 import { TOOLTIPS_COMPONENTES } from "./tooltips-longevidade";
 import type { ReactNode } from "react";
 import { apiRequest } from "@/lib/queryClient";
-import type { RespostaNutricao, NutricaoAlerta, NutricaoRegistroDia } from "@shared/schema";
+import type { RespostaNutricao, NutricaoAlerta, NutricaoRegistroDia, NutricaoGlicemia } from "@shared/schema";
 
 interface AbaNutricaoProps {
   pacienteId: string;
@@ -286,6 +287,154 @@ function CorrelacaoCaloriasVsMeta({ registros }: { registros: NutricaoRegistroDi
   );
 }
 
+const GLICEMIA_ZONAS = [
+  { y1: 0,   y2: 70,  fill: "rgba(239,68,68,0.08)",  label: "Hipoglicemia",  cor: "#ef4444" },
+  { y1: 70,  y2: 99,  fill: "rgba(34,197,94,0.07)",  label: "Normal jejum",  cor: "#22c55e" },
+  { y1: 99,  y2: 126, fill: "rgba(245,158,11,0.07)", label: "Pré-diabético", cor: "#f59e0b" },
+  { y1: 126, y2: 300, fill: "rgba(249,115,22,0.07)", label: "Atenção",        cor: "#f97316" },
+];
+
+function GlicemiaCorrelacaoChart({ glicemia }: { glicemia: NutricaoGlicemia }) {
+  if (!glicemia.disponivel) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 py-6">
+        <GitBranch className="h-5 w-5" style={{ color: "var(--sys-text-muted)" }} />
+        <p className="text-[10px] text-center" style={{ color: "var(--sys-text-muted)" }}>
+          Disponível quando dados de glicemia estiverem sincronizados via Apple Health.
+        </p>
+      </div>
+    );
+  }
+
+  const leiturasByDay: Record<string, number[]> = {};
+  for (const l of glicemia.leituras) {
+    const date = l.timestamp.substring(0, 10);
+    if (!leiturasByDay[date]) leiturasByDay[date] = [];
+    leiturasByDay[date].push(l.glicose_mg_dl);
+  }
+
+  const mediasDiarias = Object.entries(leiturasByDay).map(([data, vals]) => ({
+    data,
+    glicemia_media: Math.round(vals.reduce((s, v) => s + v, 0) / vals.length),
+  })).sort((a, b) => a.data.localeCompare(b.data));
+
+  const dadosCorrelacao = mediasDiarias.map(({ data, glicemia_media }) => {
+    const carbs = glicemia.carboidratos_periodo.find(c => c.data === data);
+    return {
+      label: fmtDate(data),
+      glicemia: glicemia_media,
+      carboidratos: carbs?.carboidrato_g !== undefined ? Math.round(carbs.carboidrato_g) : null,
+    };
+  });
+
+  if (dadosCorrelacao.length === 0) {
+    return (
+      <p className="text-xs text-center py-4" style={{ color: "var(--sys-text-muted)" }}>
+        Sem dados suficientes para exibir correlação.
+      </p>
+    );
+  }
+
+  const maxCarbs = Math.max(200, ...dadosCorrelacao.map(d => d.carboidratos ?? 0)) + 50;
+  const glicemiaVals = dadosCorrelacao.map(d => d.glicemia);
+  const minGlic = Math.max(40, Math.min(...glicemiaVals) - 10);
+  const maxGlic = Math.min(300, Math.max(...glicemiaVals) + 20);
+
+  const TOOLTIP_STYLE = {
+    background: "var(--sys-bg-primary)",
+    border: "1px solid var(--mod-longevidade-border)",
+    borderRadius: 6,
+    fontSize: 11,
+    boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-4 gap-2">
+        {[
+          { label: "Média", value: glicemia.media_mg_dl, unit: "mg/dL" },
+          { label: "Mínima", value: glicemia.minima_mg_dl, unit: "mg/dL" },
+          { label: "Máxima", value: glicemia.maxima_mg_dl, unit: "mg/dL" },
+          { label: "Leituras", value: glicemia.total_leituras, unit: "" },
+        ].map(c => (
+          <div key={c.label} className="text-center rounded-md p-2" style={{ background: "var(--mod-longevidade-bg-subtle)", border: "1px solid var(--mod-longevidade-border)" }}>
+            <p className="text-[9px]" style={{ color: "var(--sys-text-muted)" }}>{c.label}</p>
+            <p className="text-sm font-bold" style={{ color: "var(--mod-longevidade-text)" }}>
+              {c.value !== null ? c.value : "—"}
+            </p>
+            {c.unit && <p className="text-[9px]" style={{ color: "var(--sys-text-muted)" }}>{c.unit}</p>}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ height: 160 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={dadosCorrelacao} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+            {GLICEMIA_ZONAS.map(z => (
+              <ReferenceArea
+                key={z.label}
+                yAxisId="left"
+                y1={Math.max(z.y1, minGlic)}
+                y2={Math.min(z.y2, maxGlic)}
+                fill={z.fill}
+              />
+            ))}
+            <XAxis dataKey="label" tick={{ fontSize: 9, fill: "var(--sys-text-muted)" }} interval="preserveStartEnd" />
+            <YAxis
+              yAxisId="left"
+              orientation="left"
+              domain={[minGlic, maxGlic]}
+              tick={{ fontSize: 9, fill: "var(--sys-text-muted)" }}
+              unit=" mg"
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              domain={[0, maxCarbs]}
+              tick={{ fontSize: 9, fill: "var(--sys-text-muted)" }}
+              unit=" g"
+            />
+            <RechartsTooltip
+              labelStyle={{ color: "var(--sys-text-primary)", fontSize: 11, fontWeight: 600 }}
+              contentStyle={TOOLTIP_STYLE}
+              itemStyle={{ color: "var(--sys-text-secondary)" }}
+              formatter={(v: number, name: string) =>
+                name === "glicemia"
+                  ? [`${v} mg/dL`, "Glicemia média"]
+                  : [`${v} g`, "Carboidratos"]
+              }
+            />
+            <Bar yAxisId="right" dataKey="carboidratos" fill="rgba(245,158,11,0.35)" radius={[2, 2, 0, 0]} barSize={10} name="carboidratos" />
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="glicemia"
+              stroke="var(--mod-longevidade-base)"
+              strokeWidth={2}
+              dot={{ r: 3, fill: "var(--mod-longevidade-base)", strokeWidth: 0 }}
+              connectNulls={false}
+              name="glicemia"
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="flex gap-3 flex-wrap">
+        {GLICEMIA_ZONAS.map(z => (
+          <span key={z.label} className="flex items-center gap-1 text-[9px]" style={{ color: "var(--sys-text-muted)" }}>
+            <span className="inline-block w-2 h-2 rounded-sm" style={{ background: z.cor, opacity: 0.7 }} />
+            {z.label}
+          </span>
+        ))}
+        <span className="flex items-center gap-1 text-[9px]" style={{ color: "var(--sys-text-muted)" }}>
+          <span className="inline-block w-3 h-1 rounded" style={{ background: "rgba(245,158,11,0.5)" }} />
+          Carboidratos
+        </span>
+      </div>
+    </div>
+  );
+}
+
 const CHART_BANDS = [
   { y1: 0,   y2: 1.2, fill: "rgba(239,68,68,0.08)",   label: "< 1.2" },
   { y1: 1.2, y2: 1.6, fill: "rgba(245,158,11,0.08)",  label: "1.2–1.6" },
@@ -422,7 +571,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
     );
   }
 
-  const { resumo, alertas, serie_proteina_relativa_30d, historico, sem_dados, mensagem_sem_dados } = data;
+  const { resumo, alertas, serie_proteina_relativa_30d, historico, sem_dados, mensagem_sem_dados, glicemia } = data;
   const registros: NutricaoRegistroDia[] = historico?.registros ?? [];
   const coberturaPct = historico?.cobertura_pct ?? 0;
   const coberturaDias = historico?.cobertura_dias ?? 0;
@@ -712,21 +861,29 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
               </div>
 
               <div
-                className="rounded-lg p-3 flex flex-col items-center justify-center gap-2 min-h-[140px]"
+                className="rounded-lg p-3 space-y-2"
                 style={{
                   background: "var(--sys-bg-primary)",
-                  border: "1px dashed var(--mod-longevidade-border)",
-                  opacity: 0.5,
+                  border: glicemia?.disponivel
+                    ? "1px solid var(--mod-longevidade-border)"
+                    : "1px dashed var(--mod-longevidade-border)",
+                  opacity: glicemia?.disponivel ? 1 : 0.65,
                 }}
                 data-testid="correlacao-carboidrato-glicemia"
               >
-                <GitBranch className="h-5 w-5" style={{ color: "var(--sys-text-muted)" }} />
-                <p className="text-xs font-semibold text-center" style={{ color: "var(--sys-text-secondary)" }}>
+                <p className="text-xs font-semibold" style={{ color: "var(--sys-text-secondary)" }}>
                   Carboidrato ↔ Glicemia
                 </p>
-                <p className="text-[10px] text-center" style={{ color: "var(--sys-text-muted)" }}>
-                  Disponível com integração de glicemia contínua.
-                </p>
+                {glicemia ? (
+                  <GlicemiaCorrelacaoChart glicemia={glicemia} />
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-2 py-6">
+                    <GitBranch className="h-5 w-5" style={{ color: "var(--sys-text-muted)" }} />
+                    <p className="text-[10px] text-center" style={{ color: "var(--sys-text-muted)" }}>
+                      Disponível com integração de glicemia contínua.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
