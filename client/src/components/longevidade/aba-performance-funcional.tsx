@@ -405,7 +405,7 @@ function HistoricoExerciciosSection({ historico, intervalo, setIntervalo }: {
           style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "#8B9286", marginLeft: 4 }}
           data-testid="text-total-sessoes"
         >
-          {historico.total_sessoes} sessão{historico.total_sessoes !== 1 ? "es" : ""} {INTERVALO_LABEL[intervalo]}
+          {historico.total_sessoes} {historico.total_sessoes !== 1 ? "sessões" : "sessão"} {INTERVALO_LABEL[intervalo]}
         </span>
       </div>
 
@@ -476,7 +476,7 @@ function HistoricoExerciciosSection({ historico, intervalo, setIntervalo }: {
                     </div>
                     <div className="space-y-0.5 pl-0.5">
                       <p style={{ fontSize: 12, color: isActive ? "rgba(255,255,255,0.8)" : "#5F6B5A" }}>
-                        {r.sessoes} sessão{r.sessoes !== 1 ? "es" : ""}
+                        {r.sessoes} {r.sessoes !== 1 ? "sessões" : "sessão"}
                       </p>
                       <p className="tabular-nums" style={{ fontSize: 12, color: isActive ? "rgba(255,255,255,0.8)" : "#8B9286" }}>
                         {formatDuracao(r.total_min)} · {formatCaloriasBR(r.total_kcal)} kcal
