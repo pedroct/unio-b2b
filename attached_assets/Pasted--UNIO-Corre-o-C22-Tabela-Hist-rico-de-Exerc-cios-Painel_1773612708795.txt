@@ -1,0 +1,276 @@
+# UNIO — Correção C22: Tabela Histórico de Exercícios
+## Painel de Longevidade → Aba Performance
+
+---
+
+**Prioridade:** Alta
+**Tela:** Painel de Longevidade — aba Performance (B2B web)
+**Contexto:** A tabela de histórico de exercícios foi implementada com dados corretos e funcionalidade adequada, mas o visual e a copy não seguem os padrões de identidade visual e tom de voz do UNIO.
+
+---
+
+## Análise
+
+```
+✅ Dados corretos (sessão, início, duração, calorias, distância, elevação, METs, fonte)
+✅ Filtro de período (7d, 30d, 90d) com contagem de sessões
+✅ Cards de resumo por tipo de exercício (Bicicleta, Treino de Força, Caminhada)
+✅ Ícones diferenciados por tipo de exercício
+✅ Fonte "PCTWatch" identificada
+
+🔴 Paleta roxa/lilás — deve usar tokens UNIO (verde/terra)
+🔴 Cor do módulo Longevidade deveria ser Deep Indigo (#4A5899), não lilás genérico
+🔴 Label "HISTÓRICO DE EXERCÍCIOS" em caixa alta bold — fora do padrão
+🔴 Cards de resumo com fundo azul/lilás claro — deveria usar tokens
+🔴 Tabela com bordas e alternância de fundo que não segue o design system
+🔴 Formato de data "15/03 14:17" sem contexto relativo
+⚠️ "Treino de Força" em negrito destaque — cor diferente dos demais
+⚠️ "METs" sem explicação — jargão técnico exposto ao profissional (ok no B2B, mas pode ter tooltip)
+⚠️ Colunas "—" para distância/elevação em treino de força — correto mas poderia ser mais elegante
+```
+
+---
+
+## Correções
+
+### C22.1 — Paleta de cores: substituir roxo/lilás pelos tokens UNIO (CRÍTICO)
+
+**Problema:** A tabela inteira usa uma paleta roxa/lilás que não pertence ao design system UNIO. O Painel de Longevidade usa Deep Indigo (`#4A5899`) como cor do módulo, não lilás.
+
+**Correção — mapeamento de cores:**
+
+| Elemento | Cor atual (roxo/lilás) | Cor correta UNIO |
+|----------|----------------------|------------------|
+| Ícones de exercício | Roxo/lilás | `#4A5899` (Deep Indigo — cor do módulo Longevidade) |
+| Fundo dos cards de resumo | Lilás claro ~#F0EEFF | `#4A5899` com 8% opacidade → `#4A589914` |
+| Texto dos cards | Roxo escuro | `#2F5641` (textPrimary) para valores, `#5F6B5A` para labels |
+| Header da tabela | Fundo lilás | `#F5F3EE` (bgSecondary) |
+| Linha de Treino de Força (destaque) | Roxo bold | `#2F5641` bold, sem cor de fundo especial |
+| Filtro período ativo (7d) | Fundo roxo | `#4A5899` fundo, texto branco |
+| Filtro período inativo | Borda lilás | Borda `#D4D9D0`, texto `#8B9286` |
+| Ícone bicicleta | Roxo/rosa | `#4A5899` ou `#D97952` (accent, para exercício aeróbico) |
+| Ícone treino de força | Amarelo/dourado | `#AD8C48` (secondary/dourado) |
+| Ícone caminhada | Roxo/vermelho | `#4CA785` (success/verde) |
+
+### C22.2 — Tipografia da tabela (ALTO)
+
+**Problema:** A tabela usa fonte e pesos que parecem ser system default, com o label "HISTÓRICO DE EXERCÍCIOS" em bold uppercase genérico.
+
+**Correção:**
+
+| Elemento | Atual | Correto |
+|----------|-------|---------|
+| Título da seção | "HISTÓRICO DE EXERCÍCIOS" bold uppercase | "Histórico de exercícios" — Inter SemiBold 18pt, `#2F5641`, sentence case |
+| Contagem "12 sessões" | Texto cinza | Inter Regular 14pt, `#8B9286` |
+| Header de coluna (Sessão, Início, etc.) | Bold ~13pt | Inter Medium 12pt, `#8B9286`, letter-spacing 0.5pt |
+| Valores da tabela | Regular ~14pt | Inter Regular 14pt, `#2F5641` |
+| Valores de destaque (calorias) | Regular | Inter SemiBold 14pt, `#2F5641` |
+| Tipo de sessão (Bicicleta, Treino de Força) | Bold com cor | Inter Medium 14pt, `#2F5641` |
+| Valores "—" (sem dado) | Texto "—" | Inter Regular 14pt, `#8B9286` 50% opacidade |
+| Texto dos cards de resumo | Fonte genérica | Inter SemiBold 14pt título, Inter Regular 12pt subtítulo |
+| Filtros de período (7d, 30d, 90d) | Bold | Inter SemiBold 13pt |
+
+### C22.3 — Cards de resumo por tipo de exercício (ALTO)
+
+**Problema:** Os 3 cards usam fundo lilás e ícones roxos. Devem seguir o padrão UNIO de cards.
+
+**Correção:**
+
+```
+Container de cada card:
+  Fundo:          #FFFFFF
+  Borda:          1pt #E8EBE5
+  Border-radius:  12pt (web: border-radius: 12px)
+  Sombra:         0 1px 3px rgba(47, 86, 65, 0.06)
+  Padding:        16px
+  Hover:          borda muda para #D4D9D0, sombra shadowMd
+
+Conteúdo:
+  Ícone:          24×24, cor por tipo de exercício (ver tabela abaixo)
+  Fundo do ícone: Cor do tipo com 12% opacidade, circle 36px
+  Título:         Inter SemiBold 14pt, #2F5641
+  Subtítulo L1:   "8 sessões" — Inter Regular 12pt, #5F6B5A
+  Subtítulo L2:   "30.0 min · 170 kcal" — Inter Regular 12pt, #8B9286
+```
+
+**Cores por tipo de exercício:**
+
+| Tipo | Ícone | Cor | Justificativa |
+|------|-------|-----|--------------|
+| Bicicleta | 🚴 ou SF Symbol `bicycle` | `#4A5899` (Deep Indigo) | Cardio = módulo Longevidade |
+| Treino de Força | 💪 ou SF Symbol `dumbbell.fill` | `#AD8C48` (secondary/dourado) | Força = performance/dourado |
+| Caminhada | 🚶 ou SF Symbol `figure.walk` | `#4CA785` (success/verde) | Atividade leve = saúde/verde |
+| Corrida | 🏃 ou SF Symbol `figure.run` | `#D97952` (accent/terracota) | Cardio intenso = energia |
+
+### C22.4 — Estilo da tabela (ALTO)
+
+**Problema:** A tabela tem bordas visíveis e alternância de fundo que não seguem o design system.
+
+**Correção:**
+
+```css
+/* Header da tabela */
+.table-header {
+  background: #F5F3EE;  /* bgSecondary */
+  border-bottom: 2px solid #E8EBE5;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  color: #8B9286;  /* textMuted */
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 16px;
+}
+
+/* Linhas da tabela */
+.table-row {
+  background: #FFFFFF;
+  border-bottom: 1px solid #E8EBE5;  /* borderLight */
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #2F5641;  /* textPrimary */
+  padding: 14px 16px;
+  transition: background 150ms ease;
+}
+
+.table-row:hover {
+  background: #FAFBF8;  /* bgPrimary — hover sutil */
+}
+
+/* SEM alternância de fundo (zebra striping) */
+/* SEM bordas laterais */
+/* SEM sombra interna */
+```
+
+**Bordas:** Apenas separadores horizontais (`border-bottom: 1px solid #E8EBE5`), sem bordas verticais entre colunas e sem borda externa na tabela.
+
+### C22.5 — Formato de data e hora (MÉDIO)
+
+**Problema:** As datas estão em formato "15/03 14:17" — funcional, mas poderia ter contexto relativo para datas recentes.
+
+**Correção:**
+
+```
+Hoje:      "Hoje, 14:17"
+Ontem:     "Ontem, 17:35"
+Esta semana: "Seg, 13:04" (dia da semana abreviado)
+Mais antigo:  "09/03, 13:02"
+
+Formato: Inter Regular 14pt, #5F6B5A (textSecondary, não textPrimary)
+```
+
+### C22.6 — Filtros de período (MÉDIO)
+
+**Correção:**
+
+```
+Filtro ativo:
+  Fundo:    #4A5899 (Deep Indigo — cor do módulo Longevidade)
+  Texto:    Inter SemiBold 13pt, #FFFFFF
+  Border-radius: 8px
+  Padding:  6px 14px
+
+Filtro inativo:
+  Fundo:    transparente
+  Borda:    1px #D4D9D0
+  Texto:    Inter Medium 13pt, #8B9286
+  Border-radius: 8px
+  Padding:  6px 14px
+  Hover:    borda #4A5899 30%, texto #4A5899
+
+Contagem:
+  "12 sessões" — Inter Regular 13pt, #8B9286, margin-left 12px
+```
+
+### C22.7 — Valores "—" para campos não aplicáveis (BAIXO)
+
+**Problema:** Treino de Força não tem distância nem elevação, exibindo "—". Está correto mas pode ser mais elegante.
+
+**Correção:**
+```
+Valor "—":  Inter Regular 14pt, #8B9286 com 40% opacidade
+            (mais discreto que o "—" atual que compete com valores reais)
+```
+
+### C22.8 — UX Writing (MÉDIO)
+
+| Atual | Corrigido | Motivo |
+|-------|-----------|--------|
+| "HISTÓRICO DE EXERCÍCIOS" | "Histórico de exercícios" | Sentence case, sem caps lock |
+| "12 sessões" | "12 sessões nos últimos 7 dias" | Dado com contexto do período selecionado |
+| "Início" (coluna) | "Data" | Mais claro — "Início" pode confundir com "início do treino" |
+| "METs" | "METs" com tooltip | Adicionar tooltip: "Equivalente metabólico — intensidade do exercício" |
+| "Fonte" (coluna) | "Dispositivo" | Mais claro para o profissional |
+| "PCTWatch" | Exibir nome formatado do dispositivo ou "Apple Watch" se for via HealthKit |
+| "Treino de Força" (bold) | Mesmo peso visual que outros tipos | Não destacar um tipo sobre outro |
+| "3h 41min · 1124 kcal" | "3h 41min · 1.124 kcal" | Separador de milhar no formato brasileiro |
+
+### C22.9 — Coluna de sessão com ícone + tipo (BAIXO)
+
+**Correção do layout da primeira coluna:**
+
+```
+Cada linha da coluna "Sessão":
+  [Ícone 20px circle] [gap 8px] [Nome do tipo]
+
+  Ícone: Fundo da cor do tipo 12% opacidade, ícone na cor sólida
+  Nome:  Inter Medium 14pt, #2F5641
+```
+
+Isso substitui os ícones genéricos atuais por ícones coloridos consistentes com os cards de resumo.
+
+---
+
+## Resultado Esperado
+
+A tabela deve mudar de uma estética roxa genérica para o padrão UNIO: fundo limpo (`#FFFFFF`), separadores sutis (`#E8EBE5`), tipografia Inter, cores do módulo Longevidade (`#4A5899` Deep Indigo) para elementos de destaque, e cores por tipo de exercício consistentes com o restante do sistema.
+
+---
+
+## Tokens de Referência Rápida — Painel de Longevidade
+
+```css
+/* Cor do módulo Longevidade */
+--mod-longevidade-primary: #4A5899;    /* Deep Indigo */
+--mod-longevidade-bg: #4A589914;       /* 8% opacidade para fundos */
+--mod-longevidade-light: #4A589930;    /* 19% para bordas hover */
+
+/* Fundos */
+--bg-primary: #FAFBF8;
+--bg-secondary: #F5F3EE;
+
+/* Texto */
+--text-primary: #2F5641;
+--text-secondary: #5F6B5A;
+--text-muted: #8B9286;
+
+/* Bordas */
+--border: #D4D9D0;
+--border-light: #E8EBE5;
+
+/* Cores por tipo de exercício */
+--exercise-cardio: #4A5899;        /* Deep Indigo — bicicleta, cardio geral */
+--exercise-strength: #AD8C48;      /* Dourado — musculação, força */
+--exercise-walk: #4CA785;          /* Verde — caminhada, atividade leve */
+--exercise-run: #D97952;           /* Terracota — corrida, HIIT */
+
+/* Tipografia */
+--font-body: 'Inter', -apple-system, sans-serif;
+--font-display: 'Plus Jakarta Sans', sans-serif;
+```
+
+---
+
+## Checklist
+
+```
+[ ] C22.1 — Substituir paleta roxa por tokens UNIO (Deep Indigo #4A5899)
+[ ] C22.2 — Tipografia Inter em toda a tabela, sentence case no título
+[ ] C22.3 — Cards de resumo: fundo branco, bordas #E8EBE5, ícones coloridos por tipo
+[ ] C22.4 — Tabela: sem zebra striping, sem bordas laterais, apenas separadores horizontais
+[ ] C22.5 — Datas relativas (Hoje/Ontem/Dia da semana)
+[ ] C22.6 — Filtros: ativo #4A5899, inativo com borda #D4D9D0
+[ ] C22.7 — Valores "—" mais discretos (40% opacidade)
+[ ] C22.8 — UX Writing: sentence case, contexto no contador, tooltips, formato brasileiro
+[ ] C22.9 — Ícones coloridos por tipo de exercício na coluna Sessão
+```
