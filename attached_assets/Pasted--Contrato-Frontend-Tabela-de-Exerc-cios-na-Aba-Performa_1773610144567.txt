@@ -1,0 +1,310 @@
+# Contrato Frontend — Tabela de Exercícios na Aba Performance
+
+> **Para:** LLM Frontend Web (Painel de Longevidade)  
+> **De:** Backend UNIO  
+> **Data:** 15/03/2026  
+> **Status:** ✅ Backend implementado e disponível em staging
+
+---
+
+## 1. Contexto
+
+A aba **Performance & Funcionalidade** do Painel de Longevidade agora retorna o histórico de sessões de treino sincronizadas do Apple Watch via Apple Health. O frontend deve renderizar uma **tabela de exercícios** com filtros de intervalo temporal (7d, 30d, 90d), seguindo o padrão já existente nas demais abas do painel.
+
+---
+
+## 2. Endpoint
+
+```
+GET /api/painel_longevidade/clientes/{cliente_id}/performance-funcional?intervalo=7d
+```
+
+**Autenticação:** Bearer JWT (mesmo token já usado nas demais abas)
+
+### Parâmetro de Query
+
+| Param | Tipo | Valores | Padrão | Descrição |
+|---|---|---|---|---|
+| `intervalo` | `string` | `7d`, `30d`, `90d` | `7d` | Janela temporal do histórico de exercícios |
+
+> [!IMPORTANT]  
+> O parâmetro `intervalo` afeta **apenas** o bloco `historico_exercicios`.  
+> Os demais biomarcadores (exercise_minutes, walking_speed, stability, etc.) continuam com suas janelas próprias (7d, 30d, 90d respectivas).
+
+---
+
+## 3. Estrutura da Resposta
+
+O campo `historico_exercicios` fica dentro de `biomarcadores`:
+
+```json
+{
+  "cliente_id": 3,
+  "score": {
+    "tipo": "funcional",
+    "valor": 72.5,
+    "classificacao": "Bom",
+    "is_partial": false,
+    "tendencia_score": "estavel"
+  },
+  "biomarcadores": {
+    "exercise_minutes": { "valor": 168, "unidade": "min", "tendencia": "subindo", "data_ultima_leitura": "..." },
+    "walking_speed": { "valor": 1.42, "unidade": "m/s", "tendencia": "estavel", "data_ultima_leitura": "..." },
+    "stability": { "valor": 82.1, "unidade": "%", "tendencia": "estavel", "data_ultima_leitura": "..." },
+    "heart_rate_zones": { "zone1_minutes": 30, "zone2_minutes": 45, "zone3_minutes": 20, "zone4_minutes": 8 },
+
+    "historico_exercicios": {
+      "intervalo": "7d",
+      "total_sessoes": 5,
+      "resumo_por_tipo": {
+        "Treino de Força": { "sessoes": 2, "total_min": 132.0, "total_kcal": 643.1 },
+        "Bicicleta": { "sessoes": 2, "total_min": 7.2, "total_kcal": 39.4 },
+        "Caminhada": { "sessoes": 1, "total_min": 28.9, "total_kcal": 200.7 }
+      },
+      "sessoes": [
+        {
+          "id": 74,
+          "tipo": "Bicicleta",
+          "tipo_hk": 13,
+          "inicio": "15/03 14:17",
+          "duracao_min": 3.6,
+          "calorias_kcal": 20.2,
+          "distancia_metros": 891.0,
+          "elevacao_metros": 6.9,
+          "mets_medio": 6.0,
+          "indoor": false,
+          "fonte": "PCTWatch"
+        },
+        {
+          "id": 73,
+          "tipo": "Treino de Força",
+          "tipo_hk": 50,
+          "inicio": "15/03 13:04",
+          "duracao_min": 65.2,
+          "calorias_kcal": 289.6,
+          "distancia_metros": null,
+          "elevacao_metros": null,
+          "mets_medio": 2.1,
+          "indoor": false,
+          "fonte": "PCTWatch"
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## 4. Schema dos Campos
+
+### `historico_exercicios` (objeto)
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `intervalo` | `string` | Filtro aplicado: `"7d"`, `"30d"` ou `"90d"` |
+| `total_sessoes` | `int` | Total de sessões no período |
+| `resumo_por_tipo` | `object` | Agregação por tipo de exercício (ver abaixo) |
+| `sessoes` | `array` | Lista de sessões individuais, ordenadas por data DESC |
+
+### `resumo_por_tipo` (objeto dinâmico — chave = nome do tipo)
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `sessoes` | `int` | Quantidade de sessões desse tipo no período |
+| `total_min` | `float` | Soma da duração em minutos |
+| `total_kcal` | `float` | Soma das calorias ativas |
+
+### Cada item em `sessoes[]`
+
+| Campo | Tipo | Sempre presente? | Descrição |
+|---|---|:---:|---|
+| `id` | `int` | ✅ | ID interno da sessão |
+| `tipo` | `string` | ✅ | Nome do exercício em pt-BR (ex: "Treino de Força") |
+| `tipo_hk` | `int` | ✅ | rawValue do HKWorkoutActivityType |
+| `inicio` | `string` | ✅ | Data e hora formato `"DD/MM HH:MM"` |
+| `duracao_min` | `float \| null` | ✅ | Duração em minutos (1 casa decimal) |
+| `calorias_kcal` | `float \| null` | ⚡ | Calorias ativas (pode ser null) |
+| `distancia_metros` | `float \| null` | ⚡ | Distância em metros (null para musculação) |
+| `elevacao_metros` | `float \| null` | ⚡ | Elevação ascendida (null para indoor/musculação) |
+| `mets_medio` | `float \| null` | ⚡ | METs médio da sessão |
+| `indoor` | `bool \| null` | ⚡ | True se exercício indoor |
+| `fonte` | `string` | ✅ | Nome do dispositivo (ex: "PCTWatch") |
+
+⚡ = disponível dependendo do tipo de exercício
+
+---
+
+## 5. Componentes de UI Esperados
+
+### 5.1 Filtro de Intervalo (Segmented Control)
+
+```
+[ 7d ]  [ 30d ]  [ 90d ]
+```
+
+- Posicionado acima da tabela de exercícios
+- Padrão selecionado: **7d**
+- Ao trocar, refazer a chamada com `?intervalo=<valor>`
+- Seguir o mesmo padrão visual dos filtros já existentes no painel
+
+### 5.2 Resumo por Tipo (Cards ou Tags)
+
+Renderizar o `resumo_por_tipo` como cards compactos acima da tabela:
+
+```
+┌─────────────────┐  ┌─────────────┐  ┌─────────────┐
+│ 💪 Treino de     │  │ 🚴 Bicicleta │  │ 🚶 Caminhada │
+│ Força            │  │              │  │              │
+│ 2 sessões        │  │ 2 sessões    │  │ 1 sessão     │
+│ 132 min          │  │ 7 min        │  │ 29 min       │
+│ 643 kcal         │  │ 39 kcal      │  │ 201 kcal     │
+└─────────────────┘  └─────────────┘  └─────────────┘
+```
+
+### 5.3 Tabela de Sessões
+
+Colunas da tabela:
+
+| Coluna | Campo fonte | Formatação | Visível mobile? |
+|---|---|---|:---:|
+| **Sessão** | `tipo` | Texto (nome pt-BR) | ✅ |
+| **Início** | `inicio` | `DD/MM HH:MM` (já formatado) | ✅ |
+| **Duração** | `duracao_min` | `X.X min` — se >= 60, formatar como `Xh Ymin` | ✅ |
+| **Calorias** | `calorias_kcal` | `X.X kcal` — exibir `—` se null | ✅ |
+| **Distância** | `distancia_metros` | Se > 1000: `X.X km`, senão `X m` — exibir `—` se null | ⚡ |
+| **Elevação** | `elevacao_metros` | `X.X m` — exibir `—` se null | ⚡ |
+| **METs** | `mets_medio` | `X.X` — exibir `—` se null | ⚡ |
+| **Fonte** | `fonte` | Texto (ex: "PCTWatch") | ⚡ |
+
+⚡ = pode ser ocultada em telas menores (responsivo)
+
+### 5.4 Formatação de Duração
+
+```javascript
+function formatDuracao(min) {
+  if (min == null) return '—';
+  if (min >= 60) {
+    const h = Math.floor(min / 60);
+    const m = Math.round(min % 60);
+    return `${h}h ${m}min`;
+  }
+  return `${min.toFixed(1)} min`;
+}
+```
+
+### 5.5 Formatação de Distância
+
+```javascript
+function formatDistancia(metros) {
+  if (metros == null) return '—';
+  if (metros >= 1000) return `${(metros / 1000).toFixed(1)} km`;
+  return `${Math.round(metros)} m`;
+}
+```
+
+### 5.6 Estado Vazio
+
+Se `total_sessoes === 0`:
+
+```
+Nenhuma sessão de treino registrada nos últimos {intervalo}.
+Treinos do Apple Watch serão exibidos aqui automaticamente.
+```
+
+---
+
+## 6. Dados Reais para Preview (Staging — 15/03/2026)
+
+Os dados abaixo são reais do usuário Pedro no staging:
+
+### Filtro 7d (10/03 a 15/03)
+
+| Sessão | Início | Duração | Calorias | Distância | Elevação | METs |
+|---|---|---|---|---|---|---|
+| Bicicleta | 15/03 14:17 | 3.6 min | 20.2 kcal | 891 m | 6.9 m | 6.0 |
+| **Treino de Força** | **15/03 13:04** | **65.2 min** | **289.6 kcal** | — | — | 2.1 |
+| Bicicleta | 15/03 13:00 | 3.6 min | 19.2 kcal | 916 m | 5.8 m | 5.5 |
+| Caminhada | 14/03 17:35 | 28.9 min | 200.7 kcal | 3.4 km | 20.4 m | 6.7 |
+| Bicicleta | 13/03 13:04 | 4.0 min | 22.8 kcal | 938 m | 7.0 m | 6.0 |
+| Bicicleta | 13/03 11:48 | 3.2 min | 21.5 kcal | 918 m | 7.0 m | 6.8 |
+| Bicicleta | 11/03 13:11 | 3.3 min | 24.7 kcal | 934 m | 8.1 m | 7.3 |
+| **Treino de Força** | **11/03 11:57** | **67.3 min** | **352.5 kcal** | — | — | 3.2 |
+| Bicicleta | 11/03 11:53 | 4.3 min | 19.1 kcal | 920 m | 10.4 m | 5.3 |
+
+### Resumo 7d
+
+| Tipo | Sessões | Total (min) | Total (kcal) |
+|---|:---:|---:|---:|
+| Bicicleta | 6 | 22 min | 128 kcal |
+| Treino de Força | 2 | 132 min | 642 kcal |
+| Caminhada | 1 | 29 min | 201 kcal |
+
+---
+
+## 7. Referência Visual
+
+A tabela deve seguir o mesmo design system já utilizado nas demais seções do Painel de Longevidade:
+
+- **Dark mode** com tons de fundo `#1A1A2E` / `#16213E`
+- **Linhas zebradas** com contraste sutil
+- **Valores numéricos** alinhados à direita
+- **Negrito** em sessões longas (> 30 min)
+- **Dash (`—`)** para valores null, em cor muted
+
+---
+
+## 8. Chamada de API — Exemplo
+
+```javascript
+const intervalo = '7d'; // ou '30d' ou '90d'
+
+const response = await fetch(
+  `/api/painel_longevidade/clientes/${clienteId}/performance-funcional?intervalo=${intervalo}`,
+  {
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  }
+);
+
+const data = await response.json();
+const { historico_exercicios } = data.biomarcadores;
+
+console.log(historico_exercicios.total_sessoes);    // 5
+console.log(historico_exercicios.resumo_por_tipo);  // { "Treino de Força": {...}, ... }
+console.log(historico_exercicios.sessoes);           // [ {...}, {...}, ... ]
+```
+
+---
+
+## 9. Ícones por Tipo de Exercício (sugestão)
+
+```javascript
+const iconesPorTipo = {
+  'Treino de Força':    '💪',
+  'Treino Funcional':   '🏋️',
+  'Bicicleta':          '🚴',
+  'Caminhada':          '🚶',
+  'Corrida':            '🏃',
+  'Trilha':             '🥾',
+  'Natação':            '🏊',
+  'Yoga':               '🧘',
+  'Pilates':            '🤸',
+  'HIIT':               '⚡',
+  'Cross Training':     '🔥',
+  'Elíptico':           '🔄',
+  'Remo':               '🚣',
+  'Escada':             '🪜',
+  'Core':               '🎯',
+  'Flexibilidade':      '🤸‍♂️',
+  'Dança':              '💃',
+  'Cardio Misto':       '❤️‍🔥',
+  'Pular Corda':        '⏭️',
+  'Kickboxing':         '🥊',
+  'Boxe':               '🥊',
+  'Patinação':          '⛸️',
+  'Outro':              '🏅',
+};
+```
