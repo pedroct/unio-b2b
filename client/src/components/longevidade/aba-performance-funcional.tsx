@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Timer, Footprints, Scale, Dumbbell, Smartphone, X } from "lucide-react";
+import { Timer, Footprints, Scale, Dumbbell, Smartphone, X, Info } from "lucide-react";
 import { CardBiomarcador } from "./card-biomarcador";
 import { CardScore } from "./card-score";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest } from "@/lib/queryClient";
 import type { RespostaPerformanceFuncional, BiomarcadorDetalhe, ClassificacaoScore, TendenciaBiomarcador, HeartRateZones, HistoricoExercicios, SessaoExercicio } from "@shared/schema";
 import { TENDENCIA_FROM_API, CLASSIFICACAO_FROM_LABEL } from "@shared/schema";
@@ -62,6 +63,44 @@ const ICONES_POR_TIPO: Record<string, string> = {
   "Outro": "🏅",
 };
 
+const CORES_POR_TIPO: Record<string, string> = {
+  "Bicicleta": "#4A5899",
+  "Treino de Força": "#AD8C48",
+  "Treino Funcional": "#AD8C48",
+  "Caminhada": "#4CA785",
+  "Corrida": "#D97952",
+  "HIIT": "#D97952",
+  "Cross Training": "#D97952",
+  "Kickboxing": "#D97952",
+  "Boxe": "#D97952",
+  "Natação": "#4A5899",
+  "Remo": "#4A5899",
+  "Elíptico": "#4A5899",
+  "Cardio Misto": "#4A5899",
+  "Yoga": "#4CA785",
+  "Pilates": "#4CA785",
+  "Flexibilidade": "#4CA785",
+  "Dança": "#4CA785",
+  "Trilha": "#4CA785",
+  "Core": "#AD8C48",
+  "Escada": "#D97952",
+  "Pular Corda": "#D97952",
+  "Patinação": "#4A5899",
+  "Outro": "#8B9286",
+};
+
+const INTERVALO_LABEL: Record<Intervalo, string> = {
+  "7d": "nos últimos 7 dias",
+  "30d": "nos últimos 30 dias",
+  "90d": "nos últimos 90 dias",
+};
+
+const DIAS_SEMANA_ABR = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+function corDoTipo(tipo: string): string {
+  return CORES_POR_TIPO[tipo] ?? "#8B9286";
+}
+
 function normTrend(t: string | null | undefined): TendenciaBiomarcador {
   if (!t) return null;
   return TENDENCIA_FROM_API[t] ?? TENDENCIA_FROM_API[t.toLowerCase()] ?? null;
@@ -93,6 +132,60 @@ function formatDistancia(metros: number | null): string {
   if (metros == null) return "—";
   if (metros >= 1000) return `${(metros / 1000).toFixed(1)} km`;
   return `${Math.round(metros)} m`;
+}
+
+function formatCaloriasBR(kcal: number): string {
+  const rounded = Math.round(kcal);
+  return rounded.toLocaleString("pt-BR");
+}
+
+function formatDataRelativa(inicio: string): string {
+  const partes = inicio.match(/^(\d{2})\/(\d{2})\s+(\d{2}):(\d{2})$/);
+  if (!partes) return inicio;
+
+  const [, diaStr, mesStr, hora, minuto] = partes;
+  const agora = new Date();
+  const ano = agora.getFullYear();
+  const dia = parseInt(diaStr, 10);
+  const mes = parseInt(mesStr, 10) - 1;
+  const dataEvento = new Date(ano, mes, dia);
+
+  const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+  const ontem = new Date(hoje);
+  ontem.setDate(hoje.getDate() - 1);
+  const inicioSemana = new Date(hoje);
+  inicioSemana.setDate(hoje.getDate() - 6);
+
+  const timeStr = `${hora}:${minuto}`;
+
+  if (dataEvento.getTime() === hoje.getTime()) {
+    return `Hoje, ${timeStr}`;
+  }
+  if (dataEvento.getTime() === ontem.getTime()) {
+    return `Ontem, ${timeStr}`;
+  }
+  if (dataEvento >= inicioSemana) {
+    return `${DIAS_SEMANA_ABR[dataEvento.getDay()]}, ${timeStr}`;
+  }
+  return `${diaStr}/${mesStr}, ${timeStr}`;
+}
+
+function IconeCircular({ tipo, tamanho = 20 }: { tipo: string; tamanho?: number }) {
+  const cor = corDoTipo(tipo);
+  const emoji = ICONES_POR_TIPO[tipo] ?? "🏅";
+  const containerSize = tamanho + 16;
+  return (
+    <span
+      className="inline-flex items-center justify-center flex-shrink-0 rounded-full"
+      style={{
+        width: containerSize,
+        height: containerSize,
+        background: `${cor}1F`,
+      }}
+    >
+      <span style={{ fontSize: tamanho - 4, lineHeight: 1 }}>{emoji}</span>
+    </span>
+  );
 }
 
 function ZonasFC({ zones }: { zones: HeartRateZones }) {
@@ -146,6 +239,21 @@ function ZonasFC({ zones }: { zones: HeartRateZones }) {
   );
 }
 
+const COL_HEADERS = [
+  { key: "sessao", label: "Sessão", align: "left" as const, tooltip: null },
+  { key: "data", label: "Data", align: "right" as const, tooltip: null },
+  { key: "duracao", label: "Duração", align: "right" as const, tooltip: null },
+  { key: "calorias", label: "Calorias", align: "right" as const, tooltip: null },
+  { key: "distancia", label: "Distância", align: "right" as const, tooltip: null, hideClass: "hidden sm:table-cell" },
+  { key: "elevacao", label: "Elevação", align: "right" as const, tooltip: null, hideClass: "hidden sm:table-cell" },
+  { key: "mets", label: "METs", align: "right" as const, tooltip: "Equivalente metabólico — intensidade do exercício", hideClass: "hidden md:table-cell" },
+  { key: "dispositivo", label: "Dispositivo", align: "left" as const, tooltip: null, hideClass: "hidden md:table-cell" },
+];
+
+function ValorNulo() {
+  return <span style={{ color: "#8B9286", opacity: 0.4 }}>—</span>;
+}
+
 function TabelaSessoes({ sessoes, tipoFiltro }: { sessoes: SessaoExercicio[]; tipoFiltro: string | null }) {
   const filtradas = tipoFiltro ? sessoes.filter(s => s.tipo === tipoFiltro) : sessoes;
 
@@ -153,10 +261,10 @@ function TabelaSessoes({ sessoes, tipoFiltro }: { sessoes: SessaoExercicio[]; ti
     return (
       <div
         className="rounded-xl p-6 text-center"
-        style={{ background: "var(--mod-longevidade-bg-subtle)", border: "1px solid var(--mod-longevidade-border)" }}
+        style={{ background: "#F5F3EE", border: "1px solid #E8EBE5" }}
         data-testid="tabela-sessoes-vazia"
       >
-        <p className="text-sm" style={{ color: "var(--sys-text-muted)" }}>
+        <p className="text-sm" style={{ color: "#8B9286" }}>
           {tipoFiltro
             ? `Nenhuma sessão de "${tipoFiltro}" encontrada no período.`
             : "Nenhuma sessão registrada."}
@@ -166,59 +274,84 @@ function TabelaSessoes({ sessoes, tipoFiltro }: { sessoes: SessaoExercicio[]; ti
   }
 
   return (
-    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--mod-longevidade-border)" }}>
+    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #E8EBE5" }}>
       <div className="overflow-x-auto">
-        <table className="w-full text-xs min-w-[700px]" data-testid="tabela-sessoes">
+        <table className="w-full min-w-[700px]" style={{ fontFamily: "'Inter', sans-serif", fontSize: 14 }} data-testid="tabela-sessoes">
           <thead>
-            <tr style={{ background: "var(--mod-longevidade-bg-subtle)", borderBottom: "1px solid var(--mod-longevidade-border)" }}>
-              {["Sessão", "Início", "Duração", "Calorias", "Distância", "Elevação", "METs", "Fonte"].map(h => (
+            <tr style={{ background: "#F5F3EE", borderBottom: "2px solid #E8EBE5" }}>
+              {COL_HEADERS.map(h => (
                 <th
-                  key={h}
-                  className={`px-3 py-2 font-semibold ${h === "Sessão" || h === "Fonte" ? "text-left" : "text-right"}`}
-                  style={{ color: "var(--sys-text-secondary)", whiteSpace: "nowrap" }}
+                  key={h.key}
+                  className={`px-4 py-3 ${h.hideClass ?? ""}`}
+                  style={{
+                    color: "#8B9286",
+                    whiteSpace: "nowrap",
+                    fontWeight: 500,
+                    fontSize: 12,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                    textAlign: h.align,
+                  }}
                 >
-                  {h}
+                  <span className="inline-flex items-center gap-1">
+                    {h.label}
+                    {h.tooltip && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3 w-3 cursor-help" style={{ color: "#8B9286", opacity: 0.6 }} />
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="top"
+                          className="!bg-white dark:!bg-gray-900 !border !border-gray-200 ![padding:8px_12px] text-xs max-w-[200px]"
+                        >
+                          {h.tooltip}
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </span>
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {filtradas.map((s, idx) => {
-              const isLong = (s.duracao_min ?? 0) > 30;
+            {filtradas.map((s) => {
               return (
                 <tr
                   key={s.id}
-                  className="border-t"
+                  className="transition-colors duration-150"
                   style={{
-                    borderColor: "var(--mod-longevidade-border)",
-                    background: idx % 2 === 1 ? "var(--mod-longevidade-bg-subtle)" : undefined,
-                    fontWeight: isLong ? 600 : 400,
+                    borderBottom: "1px solid #E8EBE5",
+                    background: "#FFFFFF",
                   }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#FAFBF8"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "#FFFFFF"; }}
                   data-testid={`row-sessao-${s.id}`}
                 >
-                  <td className="px-3 py-2 text-left" style={{ color: "var(--sys-text-primary)" }}>
-                    <span className="mr-1">{ICONES_POR_TIPO[s.tipo] ?? "🏅"}</span>
-                    {s.tipo}
+                  <td className="px-4 py-3.5 text-left" style={{ color: "#2F5641" }}>
+                    <div className="flex items-center gap-2">
+                      <IconeCircular tipo={s.tipo} tamanho={20} />
+                      <span style={{ fontWeight: 500 }}>{s.tipo}</span>
+                    </div>
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums" style={{ color: "var(--sys-text-secondary)" }}>
-                    {s.inicio}
+                  <td className="px-4 py-3.5 text-right tabular-nums" style={{ color: "#5F6B5A" }}>
+                    {formatDataRelativa(s.inicio)}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums" style={{ color: "var(--sys-text-secondary)" }}>
-                    {formatDuracao(s.duracao_min)}
+                  <td className="px-4 py-3.5 text-right tabular-nums" style={{ color: "#2F5641" }}>
+                    {s.duracao_min != null ? formatDuracao(s.duracao_min) : <ValorNulo />}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums" style={{ color: "var(--sys-text-secondary)" }}>
-                    {s.calorias_kcal != null ? `${s.calorias_kcal.toFixed(1)} kcal` : "—"}
+                  <td className="px-4 py-3.5 text-right tabular-nums" style={{ color: "#2F5641", fontWeight: 600 }}>
+                    {s.calorias_kcal != null ? `${formatCaloriasBR(s.calorias_kcal)} kcal` : <ValorNulo />}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums hidden sm:table-cell" style={{ color: "var(--sys-text-secondary)" }}>
-                    {formatDistancia(s.distancia_metros)}
+                  <td className="px-4 py-3.5 text-right tabular-nums hidden sm:table-cell" style={{ color: "#2F5641" }}>
+                    {s.distancia_metros != null ? formatDistancia(s.distancia_metros) : <ValorNulo />}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums hidden sm:table-cell" style={{ color: "var(--sys-text-secondary)" }}>
-                    {s.elevacao_metros != null ? `${s.elevacao_metros.toFixed(1)} m` : "—"}
+                  <td className="px-4 py-3.5 text-right tabular-nums hidden sm:table-cell" style={{ color: "#2F5641" }}>
+                    {s.elevacao_metros != null ? `${s.elevacao_metros.toFixed(1)} m` : <ValorNulo />}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums hidden md:table-cell" style={{ color: "var(--sys-text-secondary)" }}>
-                    {s.mets_medio != null ? s.mets_medio.toFixed(1) : "—"}
+                  <td className="px-4 py-3.5 text-right tabular-nums hidden md:table-cell" style={{ color: "#2F5641" }}>
+                    {s.mets_medio != null ? s.mets_medio.toFixed(1) : <ValorNulo />}
                   </td>
-                  <td className="px-3 py-2 text-left hidden md:table-cell" style={{ color: "var(--sys-text-muted)" }}>
+                  <td className="px-4 py-3.5 text-left hidden md:table-cell" style={{ color: "#8B9286" }}>
                     {s.fonte}
                   </td>
                 </tr>
@@ -240,21 +373,26 @@ function HistoricoExerciciosSection({ historico, intervalo, setIntervalo }: {
   const tipos = Object.entries(historico.resumo_por_tipo);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="flex items-center gap-3 flex-wrap">
         <div
           className="inline-flex rounded-lg overflow-hidden"
-          style={{ border: "1px solid var(--mod-longevidade-border)" }}
+          style={{ border: "1px solid #D4D9D0" }}
           data-testid="filtro-intervalo-exercicios"
         >
           {(["7d", "30d", "90d"] as Intervalo[]).map(v => (
             <button
               key={v}
               onClick={() => { setIntervalo(v); setTipoFiltro(null); }}
-              className="px-3 py-1.5 text-xs font-medium transition-colors"
+              className="px-3.5 py-1.5 transition-colors"
               style={{
-                background: intervalo === v ? "var(--mod-longevidade-active)" : "transparent",
-                color: intervalo === v ? "#fff" : "var(--mod-longevidade-text)",
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 13,
+                fontWeight: 600,
+                borderRadius: 8,
+                background: intervalo === v ? "#4A5899" : "transparent",
+                color: intervalo === v ? "#FFFFFF" : "#8B9286",
+                border: intervalo === v ? "none" : undefined,
               }}
               data-testid={`btn-intervalo-${v}`}
             >
@@ -262,22 +400,26 @@ function HistoricoExerciciosSection({ historico, intervalo, setIntervalo }: {
             </button>
           ))}
         </div>
-        <span className="text-xs tabular-nums" style={{ color: "var(--sys-text-muted)" }} data-testid="text-total-sessoes">
-          {historico.total_sessoes} sessão{historico.total_sessoes !== 1 ? "es" : ""}
+        <span
+          className="tabular-nums"
+          style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "#8B9286", marginLeft: 4 }}
+          data-testid="text-total-sessoes"
+        >
+          {historico.total_sessoes} sessão{historico.total_sessoes !== 1 ? "es" : ""} {INTERVALO_LABEL[intervalo]}
         </span>
       </div>
 
       {historico.total_sessoes === 0 ? (
         <div
           className="rounded-xl p-8 text-center"
-          style={{ background: "var(--mod-longevidade-bg-subtle)", border: "1px solid var(--mod-longevidade-border)" }}
+          style={{ background: "#F5F3EE", border: "1px solid #E8EBE5" }}
           data-testid="estado-vazio-exercicios"
         >
-          <Dumbbell className="h-8 w-8 mx-auto mb-3" style={{ color: "var(--sys-text-muted)", opacity: 0.5 }} />
-          <p className="text-sm" style={{ color: "var(--sys-text-secondary)" }}>
-            Nenhuma sessão de treino registrada nos últimos {intervalo.replace("d", " dias")}.
+          <Dumbbell className="h-8 w-8 mx-auto mb-3" style={{ color: "#8B9286", opacity: 0.5 }} />
+          <p className="text-sm" style={{ color: "#5F6B5A", fontFamily: "'Inter', sans-serif" }}>
+            Nenhuma sessão de treino registrada {INTERVALO_LABEL[intervalo]}.
           </p>
-          <p className="text-xs mt-1" style={{ color: "var(--sys-text-muted)" }}>
+          <p className="text-xs mt-1" style={{ color: "#8B9286", fontFamily: "'Inter', sans-serif" }}>
             Treinos do Apple Watch serão exibidos aqui automaticamente.
           </p>
         </div>
@@ -287,35 +429,57 @@ function HistoricoExerciciosSection({ historico, intervalo, setIntervalo }: {
             <div className="flex gap-3 flex-wrap" data-testid="resumo-por-tipo">
               {tipos.map(([tipo, r]) => {
                 const isActive = tipoFiltro === tipo;
+                const cor = corDoTipo(tipo);
                 return (
                   <button
                     key={tipo}
                     onClick={() => setTipoFiltro(isActive ? null : tipo)}
-                    className="rounded-lg p-3 text-left transition-all min-w-[120px]"
+                    className="rounded-xl p-4 text-left transition-all min-w-[140px]"
                     style={{
-                      background: isActive ? "var(--mod-longevidade-active)" : "var(--mod-longevidade-bg-subtle)",
+                      fontFamily: "'Inter', sans-serif",
+                      background: isActive ? "#4A5899" : "#FFFFFF",
                       border: isActive
-                        ? "1.5px solid var(--mod-longevidade-base)"
-                        : "1px solid var(--mod-longevidade-border)",
-                      boxShadow: isActive ? "0 0 0 1px var(--mod-longevidade-base)" : "var(--sys-shadow-sm)",
+                        ? "1.5px solid #4A5899"
+                        : "1px solid #E8EBE5",
+                      boxShadow: isActive
+                        ? "0 0 0 1px #4A5899"
+                        : "0 1px 3px rgba(47, 86, 65, 0.06)",
                     }}
                     data-testid={`card-tipo-${tipo.replace(/\s+/g, "-").toLowerCase()}`}
                   >
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span className="text-base">{ICONES_POR_TIPO[tipo] ?? "🏅"}</span>
+                    <div className="flex items-center gap-2 mb-2">
+                      {isActive ? (
+                        <span
+                          className="inline-flex items-center justify-center rounded-full flex-shrink-0"
+                          style={{ width: 36, height: 36, background: "rgba(255,255,255,0.2)" }}
+                        >
+                          <span style={{ fontSize: 18, lineHeight: 1 }}>{ICONES_POR_TIPO[tipo] ?? "🏅"}</span>
+                        </span>
+                      ) : (
+                        <span
+                          className="inline-flex items-center justify-center rounded-full flex-shrink-0"
+                          style={{ width: 36, height: 36, background: `${cor}1F` }}
+                        >
+                          <span style={{ fontSize: 18, lineHeight: 1 }}>{ICONES_POR_TIPO[tipo] ?? "🏅"}</span>
+                        </span>
+                      )}
                       <span
-                        className="text-xs font-semibold truncate"
-                        style={{ color: isActive ? "#fff" : "var(--mod-longevidade-text)" }}
+                        className="truncate"
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: isActive ? "#FFFFFF" : "#2F5641",
+                        }}
                       >
                         {tipo}
                       </span>
                     </div>
-                    <div className="space-y-0.5">
-                      <p className="text-[10px]" style={{ color: isActive ? "rgba(255,255,255,0.8)" : "var(--sys-text-muted)" }}>
+                    <div className="space-y-0.5 pl-0.5">
+                      <p style={{ fontSize: 12, color: isActive ? "rgba(255,255,255,0.8)" : "#5F6B5A" }}>
                         {r.sessoes} sessão{r.sessoes !== 1 ? "es" : ""}
                       </p>
-                      <p className="text-[10px] tabular-nums" style={{ color: isActive ? "rgba(255,255,255,0.8)" : "var(--sys-text-muted)" }}>
-                        {formatDuracao(r.total_min)} · {Math.round(r.total_kcal)} kcal
+                      <p className="tabular-nums" style={{ fontSize: 12, color: isActive ? "rgba(255,255,255,0.8)" : "#8B9286" }}>
+                        {formatDuracao(r.total_min)} · {formatCaloriasBR(r.total_kcal)} kcal
                       </p>
                     </div>
                   </button>
@@ -326,13 +490,19 @@ function HistoricoExerciciosSection({ historico, intervalo, setIntervalo }: {
 
           {tipoFiltro && (
             <div className="flex items-center gap-2">
-              <span className="text-xs" style={{ color: "var(--sys-text-muted)" }}>
-                Filtrando: <span className="font-semibold" style={{ color: "var(--mod-longevidade-text)" }}>{tipoFiltro}</span>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: "#8B9286" }}>
+                Filtrando: <span style={{ fontWeight: 600, color: "#2F5641" }}>{tipoFiltro}</span>
               </span>
               <button
                 onClick={() => setTipoFiltro(null)}
-                className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full transition-colors"
-                style={{ background: "var(--mod-longevidade-bg-subtle)", border: "1px solid var(--mod-longevidade-border)", color: "var(--sys-text-muted)" }}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full transition-colors"
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: 11,
+                  background: "#F5F3EE",
+                  border: "1px solid #E8EBE5",
+                  color: "#8B9286",
+                }}
                 data-testid="btn-limpar-filtro-tipo"
               >
                 <X className="h-3 w-3" />
@@ -452,8 +622,17 @@ export function AbaPerformanceFuncional({ pacienteId }: AbaPerformanceFuncionalP
       </section>
 
       <section>
-        <h3 className="section-label-longevidade mb-4" data-testid="label-historico-exercicios">
-          Histórico de Exercícios
+        <h3
+          className="mb-4"
+          style={{
+            fontFamily: "'Inter', sans-serif",
+            fontSize: 18,
+            fontWeight: 600,
+            color: "#2F5641",
+          }}
+          data-testid="label-historico-exercicios"
+        >
+          Histórico de exercícios
         </h3>
 
         {isLoading ? (
@@ -475,14 +654,14 @@ export function AbaPerformanceFuncional({ pacienteId }: AbaPerformanceFuncionalP
         ) : (
           <div
             className="rounded-xl p-8 text-center"
-            style={{ background: "var(--mod-longevidade-bg-subtle)", border: "1px solid var(--mod-longevidade-border)" }}
+            style={{ background: "#F5F3EE", border: "1px solid #E8EBE5" }}
             data-testid="estado-vazio-exercicios"
           >
-            <Dumbbell className="h-8 w-8 mx-auto mb-3" style={{ color: "var(--sys-text-muted)", opacity: 0.5 }} />
-            <p className="text-sm" style={{ color: "var(--sys-text-secondary)" }}>
+            <Dumbbell className="h-8 w-8 mx-auto mb-3" style={{ color: "#8B9286", opacity: 0.5 }} />
+            <p className="text-sm" style={{ color: "#5F6B5A", fontFamily: "'Inter', sans-serif" }}>
               Histórico de exercícios não disponível.
             </p>
-            <p className="text-xs mt-1" style={{ color: "var(--sys-text-muted)" }}>
+            <p className="text-xs mt-1" style={{ color: "#8B9286", fontFamily: "'Inter', sans-serif" }}>
               Treinos do Apple Watch serão exibidos aqui quando sincronizados.
             </p>
           </div>
