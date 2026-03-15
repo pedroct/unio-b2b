@@ -98,13 +98,12 @@ function buildBiomarcadorItems(componentes: ComponentesCockpit, pilarTipo: strin
   const configs = COMPONENTES_POR_PILAR[pilarTipo];
   if (!configs) return [];
   return configs
-    .filter((cfg) => componentes[cfg.key] != null)
     .map((cfg) => {
       const comp = componentes[cfg.key];
       const isVO2 = cfg.key === "vo2";
-      const referencia = isVO2
-        ? resolveVO2Referencia(comp!)
-        : (comp?.referencia ?? cfg.defaultReferencia);
+      const referencia = comp
+        ? (isVO2 ? resolveVO2Referencia(comp) : (comp.referencia ?? cfg.defaultReferencia))
+        : cfg.defaultReferencia;
       return {
         key: cfg.key,
         nome: cfg.nome,
