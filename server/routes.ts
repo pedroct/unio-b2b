@@ -338,8 +338,13 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Token de autenticação ausente." });
     }
     try {
+      const params: Record<string, string> = {};
+      if (req.query.intervalo && typeof req.query.intervalo === "string") {
+        params.intervalo = req.query.intervalo;
+      }
       const result = await stagingPassthrough(`/api/painel-longevidade/clientes/${req.params.id}/performance-funcional`, {
         bearerToken: token,
+        params,
       });
       return res.status(result.status).json(result.data);
     } catch (err: any) {

@@ -425,6 +425,33 @@ export interface RespostaRecuperacaoSono {
   };
 }
 
+export interface SessaoExercicio {
+  id: number;
+  tipo: string;
+  tipo_hk: number;
+  inicio: string;
+  duracao_min: number | null;
+  calorias_kcal: number | null;
+  distancia_metros: number | null;
+  elevacao_metros: number | null;
+  mets_medio: number | null;
+  indoor: boolean | null;
+  fonte: string;
+}
+
+export interface ResumoPorTipoItem {
+  sessoes: number;
+  total_min: number;
+  total_kcal: number;
+}
+
+export interface HistoricoExercicios {
+  intervalo: string;
+  total_sessoes: number;
+  resumo_por_tipo: Record<string, ResumoPorTipoItem>;
+  sessoes: SessaoExercicio[];
+}
+
 export interface RespostaPerformanceFuncional {
   cliente_id: number | string;
   score: ScoreHeader | null;
@@ -434,6 +461,7 @@ export interface RespostaPerformanceFuncional {
     stability?: BiomarcadorDetalhe | null;
     strength?: BiomarcadorDetalhe | null;
     heart_rate_zones?: HeartRateZones | null;
+    historico_exercicios?: HistoricoExercicios | null;
   };
 }
 
