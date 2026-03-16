@@ -263,7 +263,7 @@ function CorrelacaoCaloriasVsMeta({ registros }: { registros: NutricaoRegistroDi
     cor: (r.aderencia_calorica_pct ?? 0) >= 90 ? "#4CA785" : (r.aderencia_calorica_pct ?? 0) >= 70 ? "#D9A441" : "#D97952",
   }));
   return (
-    <div className="h-[130px]">
+    <div className="flex-1" style={{ minHeight: 100 }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={dados} margin={{ top: 4, right: 4, left: -24, bottom: 0 }} barSize={12}>
           <XAxis dataKey="data" tick={{ fontSize: 9, fill: "var(--sys-text-muted)" }} interval="preserveStartEnd" />
@@ -507,8 +507,8 @@ function ComposicaoCorporalChart({ cc }: { cc: NutricaoComposicaoCorporal }) {
   };
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="h-[160px]">
+    <div className="flex flex-col flex-1 gap-2 min-h-0">
+      <div className="flex-1" style={{ minHeight: 120 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={dados} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
             <ReferenceArea yAxisId="left" y1={1.6} y2={2.2} fill="rgba(76,167,133,0.08)" />
@@ -968,9 +968,9 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
               Correlações
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4" style={{ gridAutoRows: "300px" }}>
               <div
-                className="rounded-lg p-3 flex flex-col gap-2"
+                className="rounded-lg p-3 flex flex-col gap-2 h-full"
                 style={{ background: "var(--sys-bg-primary)", border: "1px solid var(--mod-longevidade-border)" }}
                 data-testid="correlacao-calorias-meta"
               >
@@ -993,7 +993,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
               </div>
 
               <div
-                className="rounded-lg p-3 flex flex-col gap-2"
+                className="rounded-lg p-3 flex flex-col gap-2 h-full"
                 style={{
                   background: "var(--sys-bg-primary)",
                   border: composicao_corporal?.disponivel
@@ -1019,7 +1019,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
               </div>
 
               <div
-                className="rounded-lg p-3 space-y-2"
+                className="rounded-lg p-3 flex flex-col gap-2 h-full"
                 style={{
                   background: "var(--sys-bg-primary)",
                   border: glicemia?.disponivel
