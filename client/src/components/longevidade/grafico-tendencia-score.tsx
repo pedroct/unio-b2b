@@ -95,9 +95,9 @@ interface PilarConfig {
 
 const PILARES_CHART: PilarConfig[] = [
   { key: "cardiovascular", label: "Cardiovascular", color: "#4A5899" },
-  { key: "metabolico", label: "Metabólico", color: "#5B8C6F" },
-  { key: "recuperacao", label: "Recuperação", color: "#3D7A8C" },
-  { key: "funcional", label: "Funcional", color: "#D97952" },
+  { key: "metabolico",     label: "Metabólico",     color: "#AD8C48" },
+  { key: "recuperacao",    label: "Recuperação",     color: "#3D7A8C" },
+  { key: "funcional",      label: "Funcional",       color: "#648D4A" },
 ];
 
 function classificarScore(valor: number): string {
@@ -186,18 +186,19 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
   return (
     <div data-testid="grafico-tendencia-score">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold" style={{ color: "var(--mod-longevidade-text)" }}>
-          Tendência do Score
+        <h3 className="text-base font-semibold" style={{ color: "var(--mod-longevidade-text)" }}>
+          Tendência dos scores
         </h3>
         <div className="flex gap-1">
           {PERIODOS.map((p) => (
             <button
               key={p.intervalo}
               onClick={() => setIntervalo(p.intervalo)}
-              className="px-3 py-1 rounded text-xs font-medium transition-colors"
+              className="px-3 py-1 rounded-lg text-xs font-medium transition-colors"
               style={{
-                background: intervalo === p.intervalo ? "var(--mod-longevidade-base)" : "transparent",
-                color: intervalo === p.intervalo ? "#fff" : "var(--sys-text-muted)",
+                background: intervalo === p.intervalo ? "#4A5899" : "transparent",
+                color: intervalo === p.intervalo ? "#fff" : "#8B9286",
+                border: intervalo === p.intervalo ? "none" : "1px solid #D4D9D0",
               }}
               data-testid={`button-periodo-${p.intervalo}`}
             >
@@ -215,7 +216,7 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
             <defs>
               {activePilares.map(pc => (
                 <linearGradient key={`grad-${pc.key}`} id={`gradiente-${pc.key}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={pc.color} stopOpacity={0.25} />
+                  <stop offset="0%" stopColor={pc.color} stopOpacity={0.2} />
                   <stop offset="100%" stopColor={pc.color} stopOpacity={0.02} />
                 </linearGradient>
               ))}
@@ -236,22 +237,22 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
               tickLine={false}
               ticks={[0, 20, 40, 60, 80, 100]}
             />
-            <ReferenceArea y1={80} y2={100} fill="var(--score-excellent-bg)" fillOpacity={0.5} />
-            <ReferenceArea y1={60} y2={80} fill="var(--score-good-bg)" fillOpacity={0.5} />
-            <ReferenceArea y1={40} y2={60} fill="var(--score-attention-bg)" fillOpacity={0.5} />
-            <ReferenceArea y1={0} y2={40} fill="var(--score-risk-bg)" fillOpacity={0.5} />
+            <ReferenceArea y1={80} y2={100} fill="#4CA785" fillOpacity={0.04} />
+            <ReferenceArea y1={60} y2={80} fill="#4A5899" fillOpacity={0.04} />
+            <ReferenceArea y1={40} y2={60} fill="#D9A441" fillOpacity={0.04} />
+            <ReferenceArea y1={0}  y2={40} fill="#D97952" fillOpacity={0.04} />
             <Tooltip content={<MultiTooltip intervalo={intervalo} />} />
-            <ReferenceLine y={80} stroke="var(--score-excellent-border)" strokeDasharray="4 4" strokeOpacity={0.3} />
-            <ReferenceLine y={60} stroke="var(--score-good-border)" strokeDasharray="4 4" strokeOpacity={0.3} />
-            <ReferenceLine y={40} stroke="var(--score-attention-border)" strokeDasharray="4 4" strokeOpacity={0.3} />
-            {activePilares.map((pc, idx) => (
+            <ReferenceLine y={80} stroke="#4CA785" strokeDasharray="4 4" strokeOpacity={0.3} />
+            <ReferenceLine y={60} stroke="#4A5899" strokeDasharray="4 4" strokeOpacity={0.3} />
+            <ReferenceLine y={40} stroke="#D9A441" strokeDasharray="4 4" strokeOpacity={0.3} />
+            {activePilares.map(pc => (
               <Area
                 key={pc.key}
                 type="monotone"
                 dataKey={pc.key}
                 name={pc.label}
                 stroke={pc.color}
-                strokeWidth={idx === 0 ? 2 : 1.5}
+                strokeWidth={2}
                 fill={`url(#gradiente-${pc.key})`}
                 dot={false}
                 activeDot={{ r: 4, fill: pc.color, stroke: "#fff", strokeWidth: 2 }}
@@ -261,10 +262,10 @@ export function GraficoTendenciaScore({ pacienteId }: GraficoTendenciaScoreProps
             {showLegend && (
               <Legend
                 verticalAlign="bottom"
-                height={24}
-                iconType="circle"
-                iconSize={8}
-                wrapperStyle={{ fontSize: 11 }}
+                height={28}
+                iconType="square"
+                iconSize={10}
+                wrapperStyle={{ fontSize: 12, color: "#5F6B5A" }}
               />
             )}
           </AreaChart>

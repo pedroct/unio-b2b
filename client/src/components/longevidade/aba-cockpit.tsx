@@ -24,10 +24,17 @@ const ICONES_PILAR: Record<string, typeof Activity> = {
 };
 
 const LABELS_PILAR: Record<string, string> = {
-  cardiovascular: "Score Cardiovascular",
-  metabolic: "Score Metabólico",
-  recovery: "Score Recuperação",
-  functional: "Score Funcional",
+  cardiovascular: "Score cardiovascular",
+  metabolic: "Score metabólico",
+  recovery: "Score recuperação",
+  functional: "Score funcional",
+};
+
+const LABELS_COMPONENTES: Record<string, string> = {
+  cardiovascular: "Componentes do score cardiovascular",
+  metabolic: "Componentes do score metabólico",
+  recovery: "Componentes do score recuperação",
+  functional: "Componentes do score funcional",
 };
 
 const TIPO_TO_COMPONENTE: Record<string, string> = {
@@ -49,28 +56,28 @@ interface ComponenteConfig {
 
 const COMPONENTES_POR_PILAR: Record<string, ComponenteConfig[]> = {
   cardiovascular: [
-    { key: "hrv", nome: "HRV", defaultUnit: "ms", tooltip: TOOLTIPS_COMPONENTES.hrv },
-    { key: "fcr", nome: "FC de Repouso", defaultUnit: "bpm", invertedSemantics: true, tooltip: TOOLTIPS_COMPONENTES.fcr },
-    { key: "vo2", nome: "VO₂ Máximo", defaultUnit: "mL/kg/min", tooltip: TOOLTIPS_COMPONENTES.vo2 },
-    { key: "recuperacao", nome: "Recuperação da FC", defaultUnit: "bpm", defaultReferencia: "Média das últimas 5 sessões", tooltip: TOOLTIPS_COMPONENTES.recuperacao },
+    { key: "hrv",        nome: "HRV",               defaultUnit: "ms",        tooltip: TOOLTIPS_COMPONENTES.hrv },
+    { key: "fcr",        nome: "FC de repouso",      defaultUnit: "bpm",       invertedSemantics: true, tooltip: TOOLTIPS_COMPONENTES.fcr },
+    { key: "vo2",        nome: "VO₂ máximo",         defaultUnit: "mL/kg/min", tooltip: TOOLTIPS_COMPONENTES.vo2 },
+    { key: "recuperacao",nome: "Recuperação da FC",  defaultUnit: "bpm",       defaultReferencia: "Média das últimas 5 sessões", tooltip: TOOLTIPS_COMPONENTES.recuperacao },
   ],
   metabolic: [
-    { key: "gordura", nome: "% Gordura Corporal", defaultUnit: "%", tooltip: TOOLTIPS_COMPONENTES.gordura },
-    { key: "cintura", nome: "Cintura", defaultUnit: "cm", tooltip: TOOLTIPS_COMPONENTES.cintura },
-    { key: "massa_magra", nome: "Massa Magra", defaultUnit: "kg", tooltip: TOOLTIPS_COMPONENTES.massa_magra },
-    { key: "tendencia_peso", nome: "Tendência Peso", defaultUnit: "kg", invertedSemantics: true, tooltip: TOOLTIPS_COMPONENTES.tendencia_peso },
+    { key: "gordura",       nome: "Gordura corporal",  defaultUnit: "%",  invertedSemantics: true,  tooltip: TOOLTIPS_COMPONENTES.gordura },
+    { key: "cintura",       nome: "Cintura",            defaultUnit: "cm", invertedSemantics: true,  tooltip: TOOLTIPS_COMPONENTES.cintura },
+    { key: "massa_magra",   nome: "Massa magra",        defaultUnit: "kg", invertedSemantics: false, tooltip: TOOLTIPS_COMPONENTES.massa_magra },
+    { key: "tendencia_peso",nome: "Tendência de peso",  defaultUnit: "kg", invertedSemantics: false, tooltip: TOOLTIPS_COMPONENTES.tendencia_peso },
   ],
   recovery: [
-    { key: "sono_total", nome: "Sono Total", defaultUnit: "min", tooltip: TOOLTIPS_COMPONENTES.sono_total },
-    { key: "sono_rem_profundo", nome: "REM + Profundo", defaultUnit: "min", tooltip: TOOLTIPS_COMPONENTES.sono_rem_profundo },
-    { key: "hrv_noturna", nome: "HRV Noturna", defaultUnit: "ms", tooltip: TOOLTIPS_COMPONENTES.hrv_noturna },
-    { key: "fc_noturna", nome: "FC Noturna", defaultUnit: "bpm", invertedSemantics: true, tooltip: TOOLTIPS_COMPONENTES.fc_noturna },
+    { key: "sono_total",      nome: "Sono total",   defaultUnit: "min", tooltip: TOOLTIPS_COMPONENTES.sono_total },
+    { key: "sono_rem_profundo",nome: "REM + profundo",defaultUnit: "min", tooltip: TOOLTIPS_COMPONENTES.sono_rem_profundo },
+    { key: "hrv_noturna",     nome: "HRV noturna",  defaultUnit: "ms",  tooltip: TOOLTIPS_COMPONENTES.hrv_noturna },
+    { key: "fc_noturna",      nome: "FC noturna",   defaultUnit: "bpm", invertedSemantics: true, tooltip: TOOLTIPS_COMPONENTES.fc_noturna },
   ],
   functional: [
-    { key: "velocidade_caminhada", nome: "Velocidade de Caminhada", defaultUnit: "m/s", defaultReferencia: "Média 30d", tooltip: TOOLTIPS_COMPONENTES.velocidade_caminhada },
-    { key: "forca", nome: "Força", defaultUnit: "nível", defaultReferencia: "Avaliação funcional", tooltip: TOOLTIPS_COMPONENTES.forca },
-    { key: "volume_treino", nome: "Volume de Treino", defaultUnit: "min/semana", defaultReferencia: "Soma 7d", tooltip: TOOLTIPS_COMPONENTES.volume_treino },
-    { key: "estabilidade", nome: "Estabilidade", defaultUnit: "%", defaultReferencia: "Estabilidade ao caminhar", tooltip: TOOLTIPS_COMPONENTES.estabilidade },
+    { key: "velocidade_caminhada", nome: "Velocidade de caminhada", defaultUnit: "m/s",        defaultReferencia: "Média 30d", tooltip: TOOLTIPS_COMPONENTES.velocidade_caminhada },
+    { key: "forca",               nome: "Força",                   defaultUnit: "nível",       defaultReferencia: "Avaliação funcional", tooltip: TOOLTIPS_COMPONENTES.forca },
+    { key: "volume_treino",       nome: "Volume de treino",        defaultUnit: "min/semana",  defaultReferencia: "Total 7 dias", tooltip: TOOLTIPS_COMPONENTES.volume_treino },
+    { key: "estabilidade",        nome: "Estabilidade",            defaultUnit: "%",           defaultReferencia: "Estabilidade ao caminhar", tooltip: TOOLTIPS_COMPONENTES.estabilidade },
   ],
 };
 
@@ -94,6 +101,31 @@ function resolveVO2Referencia(comp: NonNullable<ComponentesCockpit[string]>): st
   return undefined;
 }
 
+function formatarBrCockpit(valor: number | null, casas = 1): string | null {
+  if (valor === null) return null;
+  return valor.toLocaleString("pt-BR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: casas,
+  });
+}
+
+function formatarTendenciaPeso(valor: number | null, unidade: string): string | null {
+  if (valor === null) return null;
+  const abs = Math.abs(valor).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (valor > 0) return `+${abs} ${unidade}`;
+  if (valor < 0) return `\u2212${abs} ${unidade}`;
+  return `0,00 ${unidade}`;
+}
+
+function mapReferencia(ref: string | null | undefined): string | undefined {
+  if (!ref) return undefined;
+  const lower = ref.toLowerCase();
+  if (lower === "clínico" || lower === "clinico") return "Último registro";
+  if (lower === "soma 7d" || lower === "soma 7 dias") return "Total 7 dias";
+  if (lower === "média 7d") return "Média 7 dias";
+  return ref;
+}
+
 function buildBiomarcadorItems(componentes: ComponentesCockpit, pilarTipo: string): BiomarcadorItem[] {
   const configs = COMPONENTES_POR_PILAR[pilarTipo];
   if (!configs) return [];
@@ -101,15 +133,31 @@ function buildBiomarcadorItems(componentes: ComponentesCockpit, pilarTipo: strin
     .map((cfg) => {
       const comp = componentes[cfg.key];
       const isVO2 = cfg.key === "vo2";
+      const isPeso = cfg.key === "tendencia_peso";
+      const rawValue = comp?.valor ?? null;
+      const unit = comp?.unidade ?? cfg.defaultUnit;
+
       const referencia = comp
-        ? (isVO2 ? resolveVO2Referencia(comp) : (comp.referencia ?? cfg.defaultReferencia))
-        : cfg.defaultReferencia;
+        ? (isVO2 ? resolveVO2Referencia(comp) : mapReferencia(comp.referencia ?? cfg.defaultReferencia))
+        : mapReferencia(cfg.defaultReferencia);
+
+      let valorFormatado: string | null = comp?.valor_formatado ?? null;
+      if (!valorFormatado && rawValue !== null) {
+        if (isPeso) {
+          valorFormatado = formatarTendenciaPeso(rawValue, unit);
+        } else {
+          const casas = unit === "mL/kg/min" ? 2 : 1;
+          const formatted = formatarBrCockpit(rawValue, casas);
+          if (formatted !== null) valorFormatado = `${formatted} ${unit}`;
+        }
+      }
+
       return {
         key: cfg.key,
         nome: cfg.nome,
-        value: comp?.valor ?? null,
-        valorFormatado: comp?.valor_formatado ?? null,
-        unit: comp?.unidade ?? cfg.defaultUnit,
+        value: rawValue,
+        valorFormatado,
+        unit,
         trend: normTrend(comp?.tendencia),
         referencia,
         invertedSemantics: cfg.invertedSemantics,
@@ -130,11 +178,16 @@ function buildCardioFromLegacy(cardio: RespostaCardiometabolico): BiomarcadorIte
     .map((cfg) => {
       const m = cardio.metricas_cardio.find(mc => mc.metric_type === metricMap[cfg.key]);
       if (!m || m.valor_atual === null) return null;
+      const unit = m.unidade ?? cfg.defaultUnit;
+      const casas = unit === "mL/kg/min" ? 2 : 1;
+      const formatted = formatarBrCockpit(m.valor_atual, casas);
+      const valorFormatado = formatted !== null ? `${formatted} ${unit}` : null;
       return {
         key: cfg.key,
         nome: cfg.nome,
         value: m.valor_atual,
-        unit: m.unidade ?? cfg.defaultUnit,
+        valorFormatado,
+        unit,
         trend: normTrend(m.tendencia),
         baseline: m.media_30d ?? undefined,
         referencia: cfg.defaultReferencia,
@@ -279,8 +332,8 @@ export function AbaCockpit({ pacienteId }: AbaCockpitProps) {
           if (pilar.score != null) {
             return (
               <div key={`componentes-${pilar.tipo}`}>
-                <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--mod-longevidade-text)" }}>
-                  Componentes — {LABELS_PILAR[pilar.tipo] ?? pilar.tipo}
+                <h3 className="section-label-longevidade mb-3" data-testid={`label-componentes-${pilar.tipo}`}>
+                  {LABELS_COMPONENTES[pilar.tipo] ?? pilar.tipo}
                 </h3>
                 <p className="text-sm text-muted-foreground">Dados dos componentes serão disponibilizados em breve.</p>
               </div>
@@ -291,8 +344,8 @@ export function AbaCockpit({ pacienteId }: AbaCockpitProps) {
 
         return (
           <div key={`componentes-${pilar.tipo}`}>
-            <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--mod-longevidade-text)" }}>
-              Componentes — {LABELS_PILAR[pilar.tipo] ?? pilar.tipo}
+            <h3 className="section-label-longevidade mb-3" data-testid={`label-componentes-${pilar.tipo}`}>
+              {LABELS_COMPONENTES[pilar.tipo] ?? pilar.tipo}
             </h3>
             <GradeGenerica items={items} testId={`grade-biomarcadores-${pilar.tipo}`} />
           </div>

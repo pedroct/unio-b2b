@@ -1,0 +1,358 @@
+# UNIO — Correção C28: Aba Cockpit (Dashboard Principal)
+## Painel de Longevidade — Auditoria Completa
+
+---
+
+**Prioridade:** Crítica — é a primeira tela que o profissional vê
+**Tela:** Painel de Longevidade → Aba Cockpit (B2B web)
+**Contexto:** O Cockpit é a visão executiva do cliente — o profissional deve avaliar o status geral em menos de 10 segundos (critério de sucesso do PRD III-A). Contém 4 scores consolidados, 16 componentes distribuídos em 4 seções, e um gráfico de tendência. É a aba mais densa e a mais importante para acertar.
+
+---
+
+## Análise Geral
+
+### O que está correto
+```
+✅ 4 scores consolidados no topo (Cardiovascular 72, Metabólico 91, Recuperação 74, Funcional 93)
+✅ Badges de classificação (Bom, Excelente) com cor verde
+✅ Tendência estável indicada em cada score
+✅ Timestamp "Atualizado 16/03/2026 às 08:01" em cada card
+✅ 4 seções de componentes alinhadas com os scores
+✅ 16 biomarcadores com valores, unidades e tendências
+✅ Gráfico "Tendência do score" com 4 linhas coloridas e filtro de período
+✅ "Score baseado em dados parciais" no Score Funcional — transparência
+✅ Contexto temporal variado: "Comparado a 90d", "Média 7d", "Soma 7d", "Clínico"
+✅ "Aguardando leitura" para Força (sem dado) — melhor que "—"
+```
+
+### Desvios
+```
+🔴 Labels dos scores em uppercase bold verde: "SCORE CARDIOVASCULAR", etc.
+🔴 Labels de seção "Componentes — Score X" em bold verde
+🔴 Cards sem accent bar Deep Indigo
+🔴 Todos os mesmos desvios de tipografia, sentence case e decimais das outras abas
+🔴 "omponentes" cortado na esquerda — labels saindo da viewport (bug de overflow)
+🔴 Gráfico de tendência com cores genéricas (verdes/cinza) — difícil distinguir 4 linhas
+🔴 Badge "Bom" e "Excelente" ambos em verde — sem diferenciação visual entre níveis
+⚠️ 4 scores grandes + 16 componentes + gráfico = muita informação vertical
+⚠️ Seções de componentes repetem dados das outras abas (HRV, FC, Gordura, etc.)
+⚠️ Formato de data com "às" (correto!) mas decimais ainda com ponto
+⚠️ "REM + Profundo" como biomarcador — label composto pode confundir
+```
+
+---
+
+## Bloco 1 — Cards de Score (4 scores no topo)
+
+### C28.1 — Labels dos scores (CRÍTICO)
+
+```
+ANTES:  "🫀 SCORE CARDIOVASCULAR", "⚡ SCORE METABÓLICO", etc.
+        Bold uppercase verde, com emojis/ícones
+
+DEPOIS: Dentro de cada card, o label é:
+        "Score cardiovascular" — Inter Medium 13px, #8B9286
+        "Score metabólico" — Inter Medium 13px, #8B9286
+        "Score recuperação" — Inter Medium 13px, #8B9286
+        "Score funcional" — Inter Medium 13px, #8B9286
+
+        Sentence case. Cor textMuted. Sem uppercase bold.
+        Os ícones podem ficar, mas em #4A5899 (Deep Indigo), não verde.
+```
+
+### C28.2 — Cards de score — visual (CRÍTICO)
+
+```
+Container (cada card):
+  Fundo:          #FFFFFF
+  Border:         1px solid #E8EBE5
+  Border-radius:  16px
+  Accent bar:     3px topo, cor específica por score (ver C28.4)
+  Sombra:         0 1px 3px rgba(47,86,65,0.06)
+  Padding:        24px
+  Hover:          sombra shadowMd, border #D4D9D0
+
+Valor do score:
+  Font:           Plus Jakarta Sans Bold 48px, #2F5641
+
+Tooltip:          ⓘ em #8B9286, hover #4A5899
+```
+
+### C28.3 — Badges de classificação — diferenciação por nível (ALTO)
+
+**Problema:** "Bom" (72, 74) e "Excelente" (91, 93) usam ambos o mesmo verde. O profissional não consegue distinguir os níveis visualmente sem ler o texto.
+
+**Correção — cores por faixa:**
+
+| Faixa | Label | Fundo badge | Texto badge | Token |
+|-------|-------|-------------|-------------|-------|
+| 0–39 | Ruim | `#D97952` 12% | `#D97952` | accent |
+| 40–59 | Regular | `#D9A441` 12% | `#D9A441` | warning |
+| 60–79 | Bom | `#4A5899` 12% | `#4A5899` | Deep Indigo |
+| 80–100 | Excelente | `#4CA785` 12% | `#4CA785` | success |
+
+**Motivo:** "Bom" (60–79) usa Deep Indigo em vez de verde — reservar o verde (#4CA785) para "Excelente" cria uma hierarquia visual onde verde = ótimo. "Bom" é positivo mas não é o topo, então usa a cor do módulo (Indigo) como tom intermediário positivo.
+
+Aplicar na aba Cockpit:
+```
+Score Cardiovascular 72 → "Bom" badge em #4A5899
+Score Metabólico 91     → "Excelente" badge em #4CA785
+Score Recuperação 74    → "Bom" badge em #4A5899
+Score Funcional 93      → "Excelente" badge em #4CA785
+```
+
+### C28.4 — Accent bar por score — cor diferenciada (ALTO)
+
+Para que o profissional identifique visualmente cada score, cada card tem accent bar em cor própria. Estas mesmas cores são usadas no gráfico de tendência:
+
+```
+Score Cardiovascular:  accent bar #4A5899 (Deep Indigo)
+Score Metabólico:      accent bar #AD8C48 (Dourado)
+Score Recuperação:     accent bar #3D7A8C (Teal/Corpo)
+Score Funcional:       accent bar #648D4A (Verde Nutrição)
+```
+
+### C28.5 — Tendência nos cards de score (MÉDIO)
+
+```
+ANTES:  "— Tendência estável"
+        "Score baseado em dados parciais · Tendência estável"
+
+DEPOIS:
+  Tendência normal:
+    "→ Tendência estável" — Inter Medium 13px, #8B9286
+    Ícone → em #8B9286
+
+  Score parcial:
+    "Score baseado em dados parciais · Tendência estável"
+    → separar em 2 linhas:
+    Linha 1: "Dados parciais" — Inter Medium 12px, #D9A441 (warning, sem ícone ⚠)
+    Linha 2: "→ Tendência estável" — Inter Medium 12px, #8B9286
+
+Timestamp:
+  "Atualizado 16/03/2026 às 08:01"
+  → "Atualizado em 16/03 às 08:01" (remover ano quando é o ano corrente)
+  Inter Regular 11px, #8B9286
+```
+
+---
+
+## Bloco 2 — Seções de Componentes (4 seções × 4 cards)
+
+### C28.6 — Labels de seção cortados (CRÍTICO — BUG)
+
+**Problema:** Os labels "Componentes — Score Cardiovascular", "Componentes — Score Metabólico", etc. estão com o início cortado ("omponentes —"). Isso é um bug de overflow/margin.
+
+**Correção:**
+```
+Verificar:
+  - padding-left da seção (deve ser >= 20px)
+  - overflow do container pai (não deve ser hidden se o conteúdo alinha à esquerda)
+  - margin-left negativa acidental
+
+Label corrigido (visual):
+  "COMPONENTES — SCORE CARDIOVASCULAR"
+  → "Componentes do score cardiovascular"
+  Inter SemiBold 12px, #8B9286, uppercase, letter-spacing 1px
+
+  Simplificar: remover o "—" e reformular como frase:
+  "COMPONENTES DO SCORE CARDIOVASCULAR"
+  "COMPONENTES DO SCORE METABÓLICO"
+  "COMPONENTES DO SCORE RECUPERAÇÃO"
+  "COMPONENTES DO SCORE FUNCIONAL"
+```
+
+### C28.7 — Cards de componentes (ALTO)
+
+Mesmo padrão de C24.5 / C27.3. Todos os 16 cards seguem:
+
+```
+Container:
+  Fundo:          #FFFFFF
+  Border:         1px solid #E8EBE5
+  Border-radius:  12px
+  Sombra:         0 1px 3px rgba(47,86,65,0.06)
+  Padding:        16px
+
+Título:     Inter SemiBold 14px, #2F5641, sentence case
+Valor:      Inter Bold 28px, #2F5641
+Unidade:    Inter Regular 14px, #8B9286
+Tendência:  Cor semântica com direção correta (ver tabela C27)
+Contexto:   Inter Regular 11px, #8B9286
+```
+
+### C28.8 — Títulos dos componentes em sentence case (ALTO)
+
+```
+ANTES:                              DEPOIS:
+"HRV"                               "HRV"
+"FC de Repouso"                     "FC de repouso"
+"VO₂ Máximo"                        "VO₂ máximo"
+"Recuperação da FC"                 "Recuperação da FC"
+"% Gordura Corporal"                "Gordura corporal"
+"Cintura"                           "Cintura"
+"Massa Magra"                       "Massa magra"
+"Tendência Peso"                    "Tendência de peso"
+"Sono Total"                        "Sono total"
+"REM + Profundo"                    "REM + profundo"
+"HRV Noturna"                       "HRV noturna"
+"FC Noturna"                        "FC noturna"
+"Velocidade de Caminhada"           "Velocidade de caminhada"
+"Força"                             "Força"
+"Volume de Treino"                  "Volume de treino"
+"Estabilidade"                      "Estabilidade"
+```
+
+### C28.9 — Semântica direcional de todos os 16 componentes (CRÍTICO)
+
+Consolidação da tabela completa — aplicar a todos os cards do Cockpit:
+
+| Componente | Subindo | Descendo | Invertido? |
+|-----------|---------|----------|-----------|
+| HRV | `#4CA785` | `#D97952` | Não |
+| FC de repouso | `#D97952` | `#4CA785` | **Sim** |
+| VO₂ máximo | `#4CA785` | `#D97952` | Não |
+| Recuperação da FC | `#4CA785` | `#D97952` | Não |
+| Gordura corporal | `#D97952` | `#4CA785` | **Sim** |
+| Cintura | `#D97952` | `#4CA785` | **Sim** |
+| Massa magra | `#4CA785` | `#D97952` | Não |
+| Tendência de peso | `#2F5641` | `#2F5641` | Neutro (V1) |
+| Sono total | `#4CA785` | `#D97952` | Não |
+| REM + profundo | `#4CA785` | `#D97952` | Não |
+| HRV noturna | `#4CA785` | `#D97952` | Não |
+| FC noturna | `#D97952` | `#4CA785` | **Sim** |
+| Velocidade de caminhada | `#4CA785` | `#D97952` | Não |
+| Força | `#4CA785` | `#D97952` | Não |
+| Volume de treino | `#4CA785` | `#D97952` | Não |
+| Estabilidade | `#4CA785` | `#D97952` | Não |
+
+**4 biomarcadores invertidos:** FC de repouso, gordura corporal, cintura, FC noturna.
+Nesses, descendo = verde (positivo), subindo = terracota (atenção).
+
+### C28.10 — Formato decimal e contextos temporais (MÉDIO)
+
+```
+Decimais: vírgula brasileira em todos os valores
+  "30.5" → "30,5"
+  "37.49" → "37,49"
+  "30.8" → "30,8"
+  "60.4" → "60,4"
+  "-1.19" → "−1,19"
+
+Contextos temporais — padronizar:
+  "Comparado a 90d" → "Comparado aos últimos 90 dias" ou "vs. 90 dias" (mais conciso)
+  "Média 7d" → "Média 7 dias"
+  "Soma 7d" → "Total 7 dias" (soma é técnico demais)
+  "Clínico" → "Último registro" ou data
+  "Estável" (sem contexto) → "Estável · Média 30 dias"
+  "Média das últimas 5 sessões" → ok, manter
+  "Aguardando leitura" → ok, manter
+```
+
+---
+
+## Bloco 3 — Gráfico "Tendência do Score"
+
+### C28.11 — Cores das linhas (ALTO)
+
+**Problema:** As 4 linhas do gráfico são difíceis de distinguir — parecem usar tons de verde e cinza muito próximos.
+
+**Correção — usar as mesmas cores dos accent bars dos scores:**
+
+```
+Linha Cardiovascular:  #4A5899 (Deep Indigo) — stroke 2px
+Linha Metabólico:      #AD8C48 (Dourado) — stroke 2px
+Linha Recuperação:     #3D7A8C (Teal) — stroke 2px
+Linha Funcional:       #648D4A (Verde) — stroke 2px
+```
+
+Essas 4 cores são visualmente distintas (azul, dourado, teal, verde) e criam correspondência direta com os cards de score acima.
+
+### C28.12 — Faixas de referência no gráfico (MÉDIO)
+
+Adicionar faixas horizontais para contextualizar os valores:
+
+```
+Faixa 80–100 (Excelente):  fill #4CA785 com 4% opacidade
+Faixa 60–79 (Bom):         fill #4A5899 com 4% opacidade
+Faixa 40–59 (Regular):     fill #D9A441 com 4% opacidade
+Faixa 0–39 (Ruim):         fill #D97952 com 4% opacidade
+```
+
+### C28.13 — Legenda do gráfico (MÉDIO)
+
+```
+ANTES:  Dots coloridos + "Cardiovascular", "Metabólico", "Recuperação", "Funcional"
+        Cores genéricas verdes/cinza
+
+DEPOIS:
+  Layout: horizontal, abaixo do gráfico, gap 20px
+  Cada item: rect 10×10px cor + label Inter Regular 12px #5F6B5A
+
+  ▪ #4A5899  "Cardiovascular"
+  ▪ #AD8C48  "Metabólico"
+  ▪ #3D7A8C  "Recuperação"
+  ▪ #648D4A  "Funcional"
+```
+
+### C28.14 — Filtro de período do gráfico (MÉDIO)
+
+```
+ANTES:  [30 dias] [90 dias] [365 dias] — "30 dias" ativo em verde
+DEPOIS:
+  Ativo:   fundo #4A5899 (Deep Indigo), texto branco, radius 8px
+  Inativo: borda #D4D9D0, texto #8B9286
+```
+
+### C28.15 — Título do gráfico (BAIXO)
+
+```
+ANTES:  "Tendência do Score" (cortado na esquerda — mesmo bug de overflow)
+DEPOIS: "Tendência dos scores" — Inter SemiBold 16px, #2F5641
+        Sentence case. Plural (são 4 scores).
+        Corrigir overflow/margin-left.
+```
+
+---
+
+## Padrão de Cores dos 4 Scores — Referência Global
+
+Esta tabela é a referência para **todo o Painel de Longevidade** — usar sempre que os 4 scores aparecerem juntos (Cockpit, gráficos, relatórios):
+
+| Score | Cor primária | Hex | Uso |
+|-------|-------------|-----|-----|
+| Cardiovascular | Deep Indigo | `#4A5899` | Accent bar, linha gráfico, ícone |
+| Metabólico | Dourado | `#AD8C48` | Accent bar, linha gráfico, ícone |
+| Recuperação | Teal | `#3D7A8C` | Accent bar, linha gráfico, ícone |
+| Funcional | Verde | `#648D4A` | Accent bar, linha gráfico, ícone |
+
+---
+
+## Checklist
+
+### Scores
+```
+[ ] C28.1  — Labels dos scores: Inter Medium 13px #8B9286 sentence case
+[ ] C28.2  — Cards: border #E8EBE5, accent bar por score, sombra verde
+[ ] C28.3  — Badges: Bom=#4A5899, Excelente=#4CA785, Regular=#D9A441, Ruim=#D97952
+[ ] C28.4  — Accent bar: Cardio=#4A5899, Meta=#AD8C48, Recup=#3D7A8C, Func=#648D4A
+[ ] C28.5  — Tendência: seta → estável, dados parciais em warning sem ⚠
+```
+
+### Componentes
+```
+[ ] C28.6  — CORRIGIR BUG: labels cortados ("omponentes") — overflow/margin
+[ ] C28.7  — Cards componentes: padrão visual unificado
+[ ] C28.8  — Títulos sentence case (16 componentes)
+[ ] C28.9  — Semântica direcional (4 invertidos: FC rep, gordura, cintura, FC noturna)
+[ ] C28.10 — Decimais vírgula + contextos temporais padronizados
+```
+
+### Gráfico de tendência
+```
+[ ] C28.11 — 4 cores distintas: Indigo/Dourado/Teal/Verde
+[ ] C28.12 — Faixas de referência (Excelente/Bom/Regular/Ruim)
+[ ] C28.13 — Legenda com cores corretas
+[ ] C28.14 — Filtro ativo em #4A5899
+[ ] C28.15 — Título: "Tendência dos scores", corrigir overflow
+```
