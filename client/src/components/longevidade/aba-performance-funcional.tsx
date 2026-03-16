@@ -188,7 +188,7 @@ function IconeCircular({ tipo, tamanho = 20 }: { tipo: string; tamanho?: number 
   );
 }
 
-function ZonasFC({ zones }: { zones: HeartRateZones }) {
+function ZonasFC({ zones, totalSessoes }: { zones: HeartRateZones; totalSessoes?: number }) {
   const total = zones.zone1_minutes + zones.zone2_minutes + zones.zone3_minutes + zones.zone4_minutes;
   if (total === 0) return null;
 
@@ -282,6 +282,9 @@ function ZonasFC({ zones }: { zones: HeartRateZones }) {
         style={{ borderTop: "1px solid #E8EBE5", fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#8B9286" }}
       >
         <span>Total: <span style={{ fontWeight: 600, color: "#2F5641" }}>{Math.round(total)} min</span></span>
+        {totalSessoes != null && (
+          <span>{totalSessoes} {totalSessoes !== 1 ? "sessões" : "sessão"}</span>
+        )}
       </div>
     </div>
   );
@@ -650,7 +653,7 @@ export function AbaPerformanceFuncional({ pacienteId }: AbaPerformanceFuncionalP
               </div>
             )}
 
-            {hrZones && <ZonasFC zones={hrZones} />}
+            {hrZones && <ZonasFC zones={hrZones} totalSessoes={historico?.total_sessoes} />}
           </div>
         ) : (
           <div
