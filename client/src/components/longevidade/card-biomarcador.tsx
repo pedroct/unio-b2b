@@ -29,17 +29,17 @@ function calcularDiff(valor: number | null, baseline: number | undefined): numbe
 }
 
 function corTendencia(tendencia: TendenciaBiomarcador, invertedSemantics: boolean): string {
-  if (!tendencia || tendencia === "stable") return "var(--sys-text-muted)";
+  if (!tendencia || tendencia === "stable") return "#8B9286";
   const positivo = invertedSemantics ? tendencia === "down" : tendencia === "up";
-  return positivo ? "var(--score-excellent-icon)" : "var(--score-risk-icon)";
+  return positivo ? "#4CA785" : "#D97952";
 }
 
 function copyTendencia(tendencia: TendenciaBiomarcador, diff: number | null, unidade: string, invertedSemantics: boolean): string {
   if (!tendencia || tendencia === "stable") return "Estável";
   const sinal = diff !== null && diff > 0 ? "+" : "";
   const diffStr = diff !== null ? ` ${sinal}${diff} ${unidade}` : "";
-  if (tendencia === "up") return invertedSemantics ? `Em alta${diffStr}` : `Em alta${diffStr}`;
-  return invertedSemantics ? `Em queda${diffStr}` : `Em queda${diffStr}`;
+  if (tendencia === "up") return `Em alta${diffStr}`;
+  return `Em queda${diffStr}`;
 }
 
 function SparklineMini({ data, cor }: { data: number[]; cor: string }) {
@@ -62,9 +62,9 @@ function SparklineMini({ data, cor }: { data: number[]; cor: string }) {
 }
 
 function corSparkline(tendencia: TendenciaBiomarcador, invertedSemantics: boolean): string {
-  if (!tendencia || tendencia === "stable") return "var(--sys-text-muted)";
+  if (!tendencia || tendencia === "stable") return "#8B9286";
   const positivo = invertedSemantics ? tendencia === "down" : tendencia === "up";
-  return positivo ? "var(--score-excellent-icon)" : "var(--score-risk-icon)";
+  return positivo ? "#4CA785" : "#D97952";
 }
 
 export function CardBiomarcador({
@@ -88,40 +88,57 @@ export function CardBiomarcador({
 
   return (
     <div
-      className={`rounded-lg p-4 ${insuficiente ? "biomarker-card--insufficient" : ""}`}
+      className="rounded-xl p-4 transition-all duration-150"
       style={{
-        background: "var(--mod-longevidade-bg-subtle)",
-        border: "1px solid var(--mod-longevidade-border)",
-        boxShadow: "var(--sys-shadow-sm)",
+        background: "#FFFFFF",
+        border: "1px solid #E8EBE5",
+        boxShadow: "0 1px 3px rgba(47, 86, 65, 0.06)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = "rgba(74, 88, 153, 0.3)";
+        e.currentTarget.style.boxShadow = "0 4px 12px rgba(47, 86, 65, 0.1)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "#E8EBE5";
+        e.currentTarget.style.boxShadow = "0 1px 3px rgba(47, 86, 65, 0.06)";
       }}
       data-testid={`card-biomarcador-${nome.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
     >
       <div className="flex items-center gap-1 mb-2">
-        <p className="text-sm font-semibold flex-1" style={{ color: "var(--mod-longevidade-text)" }}>
+        <p className="text-sm font-semibold flex-1" style={{ color: "#2F5641" }}>
           {nome}
         </p>
         {tooltip && <InfoTooltip text={tooltip} side="top" />}
       </div>
 
       <div className="flex items-baseline gap-1.5">
-        <span className={`text-2xl font-bold ${insuficiente ? "biomarker-card__value text-muted-foreground" : ""}`}>
+        <span
+          className="font-bold"
+          style={{
+            fontSize: 28,
+            color: insuficiente ? "#8B9286" : "#2F5641",
+            fontFamily: "'Inter', sans-serif",
+          }}
+        >
           {insuficiente ? "—" : (valorFormatado || valor)}
         </span>
-        {!valorFormatado && <span className="text-xs text-muted-foreground">{unidade}</span>}
+        {!insuficiente && !valorFormatado && (
+          <span className="text-sm" style={{ color: "#8B9286" }}>{unidade}</span>
+        )}
       </div>
 
       {insuficiente ? (
-        <p className="text-xs text-muted-foreground mt-2">{aguardandoLeitura ? "Aguardando leitura" : "Dados insuficientes"}</p>
+        <p className="text-xs mt-2" style={{ color: "#8B9286" }}>{aguardandoLeitura ? "Aguardando leitura" : "Dados insuficientes"}</p>
       ) : (
         <div className="mt-2 space-y-0.5">
           {IconeTendencia && (
-            <span className="flex items-center gap-1 text-xs" style={{ color: cor }}>
+            <span className="flex items-center gap-1" style={{ color: cor, fontSize: 12, fontFamily: "'Inter', sans-serif", fontWeight: 500 }}>
               <IconeTendencia className="h-3.5 w-3.5" />
               {copy}
             </span>
           )}
           {labelSecundario && (
-            <p className="text-[10px]" style={{ color: "var(--sys-text-muted)" }}>{labelSecundario}</p>
+            <p style={{ fontSize: 11, color: "#8B9286", fontFamily: "'Inter', sans-serif" }}>{labelSecundario}</p>
           )}
         </div>
       )}

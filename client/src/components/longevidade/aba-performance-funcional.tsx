@@ -31,10 +31,10 @@ const BIOMARCADORES_CONFIG: {
 ];
 
 const ZONE_CONFIG = [
-  { key: "zone1_minutes" as const, label: "Zona 1 — Leve", range: "50–60%", color: "var(--score-good-bg, #dbeafe)" },
-  { key: "zone2_minutes" as const, label: "Zona 2 — Moderada", range: "60–70%", color: "var(--score-excellent-bg, #dcfce7)" },
-  { key: "zone3_minutes" as const, label: "Zona 3 — Intensa", range: "70–80%", color: "var(--score-attention-bg, #fef9c3)" },
-  { key: "zone4_minutes" as const, label: "Zona 4 — Máxima", range: "80–90%", color: "var(--score-risk-bg, #fee2e2)" },
+  { key: "zone1_minutes" as const, label: "Zona 1", sublabel: "Leve", range: "50–60%", color: "#4CA785" },
+  { key: "zone2_minutes" as const, label: "Zona 2", sublabel: "Moderada", range: "60–70%", color: "#648D4A" },
+  { key: "zone3_minutes" as const, label: "Zona 3", sublabel: "Intensa", range: "70–80%", color: "#D9A441" },
+  { key: "zone4_minutes" as const, label: "Zona 4", sublabel: "Máxima", range: "80–90%", color: "#D97952" },
 ];
 
 const ICONES_POR_TIPO: Record<string, string> = {
@@ -192,18 +192,30 @@ function ZonasFC({ zones }: { zones: HeartRateZones }) {
   const total = zones.zone1_minutes + zones.zone2_minutes + zones.zone3_minutes + zones.zone4_minutes;
   if (total === 0) return null;
 
+  const maxVal = Math.max(...ZONE_CONFIG.map(z => zones[z.key]));
+
   return (
     <div
-      className="rounded-lg p-4 space-y-3"
-      style={{ background: "var(--mod-longevidade-bg-subtle)", border: "1px solid var(--mod-longevidade-border)", boxShadow: "var(--sys-shadow-sm)" }}
+      className="p-5 space-y-4"
+      style={{
+        background: "#FFFFFF",
+        border: "1px solid #E8EBE5",
+        borderTop: "3px solid #4A5899",
+        borderRadius: 16,
+        boxShadow: "0 1px 3px rgba(47, 86, 65, 0.06)",
+      }}
       data-testid="card-zonas-fc"
     >
-      <p className="text-sm font-semibold" style={{ color: "var(--mod-longevidade-text)" }}>
-        Zonas de Frequência Cardíaca
-      </p>
-      <p className="text-[10px] text-muted-foreground mb-2">Distribuição semanal (últimos 7 dias)</p>
+      <div>
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 600, color: "#2F5641" }}>
+          Zonas de Frequência Cardíaca
+        </p>
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "#8B9286", marginTop: 2 }}>
+          Distribuição semanal (últimos 7 dias)
+        </p>
+      </div>
 
-      <div className="flex w-full h-6 rounded-md overflow-hidden" data-testid="bar-zonas-fc">
+      <div className="flex w-full h-5 rounded-md overflow-hidden" data-testid="bar-zonas-fc">
         {ZONE_CONFIG.map(z => {
           const val = zones[z.key];
           const pct = (val / total) * 100;
@@ -212,28 +224,64 @@ function ZonasFC({ zones }: { zones: HeartRateZones }) {
             <div
               key={z.key}
               style={{ width: `${pct}%`, background: z.color }}
-              className="flex items-center justify-center text-[9px] font-semibold"
-              title={`${z.label}: ${Math.round(val)} min (${Math.round(pct)}%)`}
+              className="flex items-center justify-center text-[9px] font-semibold text-white"
+              title={`${z.label} ${z.sublabel}: ${Math.round(val)} min (${Math.round(pct)}%)`}
             >
-              {pct > 8 ? `${Math.round(val)}m` : ""}
+              {pct > 10 ? `${Math.round(pct)}%` : ""}
             </div>
           );
         })}
       </div>
 
-      <div className="grid grid-cols-2 gap-2 mt-2">
+      <div className="space-y-3">
         {ZONE_CONFIG.map(z => {
           const val = zones[z.key];
+          const pct = total > 0 ? (val / total) * 100 : 0;
+          const barWidth = maxVal > 0 ? (val / maxVal) * 100 : 0;
           return (
-            <div key={z.key} className="flex items-center gap-2 text-xs">
-              <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: z.color }} />
-              <span style={{ color: "var(--mod-longevidade-text)" }}>
-                {z.label}
+            <div key={z.key} className="flex items-center gap-3" style={{ fontFamily: "'Inter', sans-serif" }}>
+              <span
+                className="inline-flex items-center justify-center rounded-md flex-shrink-0"
+                style={{
+                  width: 28,
+                  height: 28,
+                  background: `${z.color}1A`,
+                  color: z.color,
+                  fontSize: 11,
+                  fontWeight: 700,
+                }}
+              >
+                {z.label.split(" ")[1]}
               </span>
-              <span className="ml-auto text-muted-foreground">{Math.round(val)} min</span>
+
+              <div className="flex flex-col min-w-[90px]">
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#2F5641" }}>{z.sublabel}</span>
+                <span style={{ fontSize: 11, color: "#8B9286" }}>{z.range} FC máx</span>
+              </div>
+
+              <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: "#F5F3EE" }}>
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${barWidth}%`, background: z.color }}
+                />
+              </div>
+
+              <span className="tabular-nums text-right min-w-[52px]" style={{ fontSize: 13, fontWeight: 600, color: "#2F5641" }}>
+                {Math.round(val)} min
+              </span>
+              <span className="tabular-nums text-right min-w-[36px]" style={{ fontSize: 12, color: "#8B9286" }}>
+                {Math.round(pct)}%
+              </span>
             </div>
           );
         })}
+      </div>
+
+      <div
+        className="flex items-center justify-between pt-3"
+        style={{ borderTop: "1px solid #E8EBE5", fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#8B9286" }}
+      >
+        <span>Total: <span style={{ fontWeight: 600, color: "#2F5641" }}>{Math.round(total)} min</span></span>
       </div>
     </div>
   );
@@ -622,16 +670,7 @@ export function AbaPerformanceFuncional({ pacienteId }: AbaPerformanceFuncionalP
       </section>
 
       <section>
-        <h3
-          className="mb-4"
-          style={{
-            fontFamily: "'Inter', sans-serif",
-            fontSize: 18,
-            fontWeight: 600,
-            color: "#2F5641",
-          }}
-          data-testid="label-historico-exercicios"
-        >
+        <h3 className="section-label-longevidade mb-4" data-testid="label-historico-exercicios">
           Histórico de exercícios
         </h3>
 

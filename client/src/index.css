@@ -93,7 +93,7 @@
   --score-risk-bg:          #FDECEA;
   --score-risk-text:        #9E3830;
   --score-risk-border:      #E8A8A3;
-  --score-risk-icon:        #D9635C;
+  --score-risk-icon:        #D97952;
   --score-risk-badge:       #F5D5D2;
 
   --color-longevity: var(--mod-longevidade-base);
@@ -412,8 +412,12 @@
 }
 
 .tabs-longevidade [data-state="active"] {
-  border-bottom: 2px solid var(--mod-longevidade-base);
-  color: var(--mod-longevidade-text);
+  border-bottom: 2px solid #4A5899;
+  color: #4A5899;
+}
+
+.tabs-longevidade [data-state="active"] svg {
+  color: #4A5899;
 }
 
 .tabs-longevidade [data-state="active"].tab-bloqueada {
@@ -422,7 +426,20 @@
 }
 
 .tabs-longevidade [data-state="inactive"] {
-  color: var(--sys-text-secondary);
+  color: #8B9286;
+}
+
+.tabs-longevidade [data-state="inactive"] svg {
+  color: #8B9286;
+}
+
+.tabs-longevidade [data-state="inactive"]:hover {
+  color: #5F6B5A;
+  background: #F5F3EE;
+}
+
+.tabs-longevidade [data-state="inactive"]:hover svg {
+  color: #5F6B5A;
 }
 
 .tabs-longevidade .tab-bloqueada {
@@ -472,9 +489,9 @@
   font-family: var(--font-sans);
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--mod-longevidade-text);
+  color: #8B9286;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 1px;
 }
 
 .axis-sublabel {
@@ -487,6 +504,8 @@
 }
 
 .badge-status-ativo {
-  background: color-mix(in srgb, var(--sys-success) 15%, transparent);
-  color: var(--sys-success);
+  background: rgba(76, 167, 133, 0.12);
+  color: #4CA785;
+  font-weight: 600;
+  font-size: 11px;
 }
