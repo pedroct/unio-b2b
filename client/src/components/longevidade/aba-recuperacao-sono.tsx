@@ -18,12 +18,21 @@ const BIOMARCADORES_CONFIG: {
   icon: typeof Bed;
   tooltip?: string;
 }[] = [
-  { key: "sono_total",   nome: "Sono Total",    invertedSemantics: false, icon: Bed,        tooltip: TOOLTIPS_COMPONENTES.sono_total },
-  { key: "sono_rem",     nome: "Sono REM",       invertedSemantics: false, icon: MoonIcon,   tooltip: TOOLTIPS_COMPONENTES.sono_rem },
-  { key: "sono_profundo",nome: "Sono Profundo",  invertedSemantics: false, icon: Brain,      tooltip: TOOLTIPS_COMPONENTES.sono_profundo },
-  { key: "hrv_noturna",  nome: "HRV Noturna",   invertedSemantics: false, icon: HeartPulse, tooltip: TOOLTIPS_COMPONENTES.hrv_noturna },
-  { key: "fc_noturna",   nome: "FC Noturna",    invertedSemantics: true,  icon: Heart,      tooltip: TOOLTIPS_COMPONENTES.fc_noturna },
+  { key: "sono_total",   nome: "Sono total",    invertedSemantics: false, icon: Bed,        tooltip: TOOLTIPS_COMPONENTES.sono_total },
+  { key: "sono_rem",     nome: "Sono REM",      invertedSemantics: false, icon: MoonIcon,   tooltip: TOOLTIPS_COMPONENTES.sono_rem },
+  { key: "sono_profundo",nome: "Sono profundo", invertedSemantics: false, icon: Brain,      tooltip: TOOLTIPS_COMPONENTES.sono_profundo },
+  { key: "hrv_noturna",  nome: "HRV noturna",  invertedSemantics: false, icon: HeartPulse, tooltip: TOOLTIPS_COMPONENTES.hrv_noturna },
+  { key: "fc_noturna",   nome: "FC noturna",   invertedSemantics: true,  icon: Heart,      tooltip: TOOLTIPS_COMPONENTES.fc_noturna },
 ];
+
+function formatarDecimalBr(valor: number | null, unidade: string): string | null {
+  if (valor === null) return null;
+  return (
+    valor.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) +
+    " " +
+    unidade
+  );
+}
 
 function normTrend(t: string | null | undefined): TendenciaBiomarcador {
   if (!t) return null;
@@ -93,6 +102,7 @@ export function AbaRecuperacaoSono({ pacienteId }: AbaRecuperacaoSonoProps) {
                   key={cfg.key}
                   nome={cfg.nome}
                   valor={bio.valor}
+                  valorFormatado={formatarDecimalBr(bio.valor, bio.unidade)}
                   unidade={bio.unidade}
                   tendencia={normTrend(bio.tendencia)}
                   invertedSemantics={cfg.invertedSemantics}

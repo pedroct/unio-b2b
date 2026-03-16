@@ -1,0 +1,193 @@
+# UNIO — Correção C26: Aba Recuperação & Sono
+## Painel de Longevidade — Auditoria e Refinamento
+
+---
+
+**Prioridade:** Média
+**Tela:** Painel de Longevidade → Aba Recuperação & Sono (B2B web)
+**Contexto:** A aba é a mais enxuta do Painel — apenas score + 5 biomarcadores. A estrutura está correta, mas os mesmos desvios sistêmicos das outras abas se repetem. Como é uma aba mais simples, é oportunidade para aplicar o padrão rapidamente.
+
+---
+
+## Análise
+
+### O que está correto
+```
+✅ Score 74 com badge "Bom" e tendência "estável"
+✅ 5 biomarcadores relevantes (Sono Total, REM, Profundo, HRV, FC Noturna)
+✅ Valores com unidades corretas (h, ms, bpm)
+✅ Indicadores de tendência (Em queda, Em alta, Estável)
+✅ "Média 7d" como contexto temporal
+✅ Tooltips (ⓘ) nos cards
+✅ Layout 3+2 para os cards (3 de sono em cima, 2 cardíacos embaixo)
+```
+
+### Desvios
+```
+🔴 Labels "SCORE DE RECUPERAÇÃO" e "BIOMARCADORES" em verde bold uppercase
+🔴 "SCORE RECUPERAÇÃO" dentro do card — repetição do label de seção
+🔴 Cards sem accent bar Deep Indigo
+🔴 Bordas dos cards com traço verde/teal pontilhado no score — fora do padrão
+🔴 "Em queda" em vermelho para Sono Total e REM — verificar se deve ser accent
+⚠️ Valores decimais com ponto ("6.4", "30.8") — deveria ser vírgula (brasileiro)
+⚠️ Tipografia parece system font
+⚠️ Semântica direcional: HRV "Em alta" é positivo, FC Noturna "Estável" é neutro — ok
+⚠️ Sono Profundo "Em alta" é positivo — cor verde está correta
+⚠️ Card do score com borda pontilhada verde — parece incompleto/debug
+```
+
+---
+
+## Correções
+
+### C26.1 — Label de seção "Score de recuperação" (ALTO)
+
+```
+ANTES:  "SCORE DE RECUPERAÇÃO" — bold uppercase verde
+DEPOIS: "SCORE DE RECUPERAÇÃO" — Inter SemiBold 12px, #8B9286, uppercase, letter-spacing 1px
+
+Mesmo padrão aplicado em Performance (C24) e Nutrição (C25).
+```
+
+### C26.2 — Card do score (ALTO)
+
+**Problema:** O card tem borda pontilhada verde/teal e repete "SCORE RECUPERAÇÃO" internamente — redundante com o label de seção acima.
+
+```
+Container:
+  Fundo:          #FFFFFF
+  Border:         1px solid #E8EBE5 (NÃO pontilhada, NÃO verde)
+  Border-radius:  16px
+  Accent bar:     3px topo, #4A5899 (Deep Indigo)
+  Sombra:         0 1px 3px rgba(47,86,65,0.06)
+  Padding:        24px
+
+Título interno:
+  ANTES:  "🌙 SCORE RECUPERAÇÃO" bold uppercase
+  DEPOIS: Remover o título interno — o label de seção acima já cumpre essa função.
+          Ou, se quiser manter um label dentro do card:
+          "Score de recuperação" — Inter Medium 13px, #8B9286
+          Ícone lua: cor #4A5899 (não emoji 🌙)
+
+Score "74":
+  Font:     Plus Jakarta Sans Bold 48px, #2F5641
+
+Badge "Bom":
+  Fundo:    #4CA785 12% opacidade
+  Texto:    Inter SemiBold 12px, #4CA785
+  Radius:   9999px, padding 4px 12px
+
+Tendência:
+  "— Tendência estável"
+  ANTES:  Formato "— Tendência estável" com travessão
+  DEPOIS: "→ Tendência estável" — Inter Medium 13px, #8B9286
+          Ícone seta → em #8B9286 (estável = neutro)
+
+Tooltip: ⓘ em #8B9286, hover #4A5899
+```
+
+**Classificação do score de recuperação:**
+
+| Faixa | Label | Cor | Token |
+|-------|-------|-----|-------|
+| 0–39 | Ruim | `#D97952` | accent |
+| 40–59 | Regular | `#D9A441` | warning |
+| 60–79 | Bom | `#4CA785` | success |
+| 80–100 | Excelente | `#4CA785` | success |
+
+### C26.3 — Label de seção "Biomarcadores" (ALTO)
+
+```
+ANTES:  "BIOMARCADORES" — bold uppercase verde
+DEPOIS: "BIOMARCADORES" — Inter SemiBold 12px, #8B9286, uppercase, letter-spacing 1px
+```
+
+### C26.4 — Cards de biomarcadores (ALTO)
+
+Aplicar o mesmo padrão definido em C24.5 (aba Performance):
+
+```
+Container (cada card):
+  Fundo:          #FFFFFF
+  Border:         1px solid #E8EBE5
+  Border-radius:  12px
+  Sombra:         0 1px 3px rgba(47,86,65,0.06)
+  Padding:        16px
+  Hover:          border #4A5899 30%, sombra shadowMd
+
+Título:    Inter SemiBold 14px, #2F5641
+Tooltip:   ⓘ em #8B9286, hover #4A5899
+Valor:     Inter Bold 28px, #2F5641
+Unidade:   Inter Regular 14px, #8B9286
+Contexto:  "Média 7d" — Inter Regular 11px, #8B9286
+```
+
+### C26.5 — Semântica direcional dos biomarcadores (ALTO)
+
+A direção clínica de cada biomarcador determina se "Em queda" é positivo ou negativo:
+
+| Biomarcador | Subindo | Descendo | Estável | Nota clínica |
+|------------|---------|----------|---------|-------------|
+| Sono Total | ↗ #4CA785 (positivo) | ↘ #D97952 (atenção) | → #8B9286 | Mais sono = melhor recuperação |
+| Sono REM | ↗ #4CA785 | ↘ #D97952 | → #8B9286 | Mais REM = melhor consolidação |
+| Sono Profundo | ↗ #4CA785 | ↘ #D97952 | → #8B9286 | Mais profundo = melhor restauração |
+| HRV Noturna | ↗ #4CA785 (positivo) | ↘ #D97952 | → #8B9286 | HRV maior = melhor recuperação |
+| FC Noturna | ↗ #D97952 (atenção) | ↘ #4CA785 (positivo) | → #8B9286 | FC menor = melhor repouso (**direção invertida**) |
+
+**FC Noturna tem semântica invertida** — assim como a FCR no Painel de Longevidade (aprendizado documentado). FC descendo durante o sono é positivo (coração mais eficiente em repouso). A UI não pode tratar descida como negativa.
+
+```
+FC Noturna:
+  "Em queda" → ↘ #4CA785 (success) + texto "Em queda" em verde
+  "Em alta"  → ↗ #D97952 (accent) + texto "Em alta" em terracota
+  "Estável"  → → #8B9286
+```
+
+### C26.6 — Formato decimal brasileiro (MÉDIO)
+
+```
+ANTES:  "6.4 h", "1.8 h", "0.8 h", "30.8 ms", "60.4 bpm"
+DEPOIS: "6,4 h", "1,8 h", "0,8 h", "30,8 ms", "60,4 bpm"
+
+Vírgula como separador decimal — padrão brasileiro.
+Aplicar Locale pt_BR nos formatadores numéricos.
+```
+
+### C26.7 — Títulos dos cards em sentence case (MÉDIO)
+
+```
+ANTES:  "Sono Total", "Sono REM", "Sono Profundo", "HRV Noturna", "FC Noturna"
+DEPOIS: "Sono total", "Sono REM", "Sono profundo", "HRV noturna", "FC noturna"
+
+Sentence case em todos os títulos.
+"REM" permanece em uppercase por ser sigla.
+```
+
+### C26.8 — Oportunidade: conteúdo adicional (BAIXO — futuro)
+
+A aba está esparsa comparada às outras. Para futuras iterações, considerar adicionar:
+
+```
+Possíveis adições V2+:
+  - Gráfico de tendência de sono (barras empilhadas: REM + Profundo + Leve)
+  - Correlação Sono ↔ HRV (scatter ou dual axis)
+  - Distribuição de estágios de sono (donut, similar ao donut de macros)
+  - Dica contextual: "Sua recuperação melhorou 12% esta semana"
+  
+Não implementar agora — priorizar os ajustes visuais primeiro.
+```
+
+---
+
+## Checklist
+
+```
+[ ] C26.1 — Label "SCORE DE RECUPERAÇÃO": Inter 12px #8B9286 uppercase
+[ ] C26.2 — Card score: remover borda pontilhada, accent bar #4A5899, remover título duplicado
+[ ] C26.3 — Label "BIOMARCADORES": Inter 12px #8B9286 uppercase
+[ ] C26.4 — Cards biomarcadores: border #E8EBE5, hover #4A5899 30%, tipografia Inter
+[ ] C26.5 — FC Noturna: inverter semântica (queda = positivo verde, alta = atenção terracota)
+[ ] C26.6 — Decimais: vírgula brasileira ("6,4 h", "30,8 ms", "60,4 bpm")
+[ ] C26.7 — Títulos sentence case: "Sono total", "HRV noturna", "FC noturna"
+[ ] C26.8 — (Futuro) Adicionar gráficos de tendência e correlação
+```
