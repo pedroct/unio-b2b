@@ -507,8 +507,8 @@ function ComposicaoCorporalChart({ cc }: { cc: NutricaoComposicaoCorporal }) {
   };
 
   return (
-    <div className="space-y-2">
-      <div style={{ height: 160 }}>
+    <div className="flex flex-col flex-1 gap-2 min-h-0">
+      <div className="flex-1 min-h-[160px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={dados} margin={{ top: 4, right: 40, left: -16, bottom: 0 }}>
             <ReferenceArea yAxisId="left" y1={1.6} y2={2.2} fill="rgba(76,167,133,0.08)" />
@@ -991,7 +991,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
               </div>
 
               <div
-                className="rounded-lg p-3 space-y-2"
+                className="rounded-lg p-3 flex flex-col gap-2"
                 style={{
                   background: "var(--sys-bg-primary)",
                   border: composicao_corporal?.disponivel
