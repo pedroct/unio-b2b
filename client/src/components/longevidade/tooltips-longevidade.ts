@@ -47,6 +47,9 @@ export const TOOLTIPS_COMPONENTES: Record<string, string> = {
   estabilidade:
     "Estimativa de estabilidade ao caminhar, medida pelo iPhone. Avalia o equilíbrio e a consistência da marcha. Valores altos indicam baixo risco de quedas.",
 
+  zonas_fc:
+    "Distribuição do tempo de exercício entre as 4 zonas de intensidade, baseada na frequência cardíaca máxima estimada. Zona 1 (50–60%): aquecimento e recuperação ativa. Zona 2 (60–70%): base aeróbia e queima de gordura — a mais importante para saúde cardiovascular a longo prazo. Zona 3 (70–80%): limiar anaeróbio, melhora de performance. Zona 4 (80–90%): alta intensidade, usada com moderação.",
+
   proteina_relativa:
     "Gramas de proteína ingeridas por quilo de peso corporal por dia. Reflete a qualidade da ingestão proteica em relação às necessidades individuais. Faixa ideal: 1,6 a 2,2 g/kg para manutenção e hipertrofia.",
   aderencia_calorica:

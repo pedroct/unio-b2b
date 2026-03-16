@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Timer, Footprints, Scale, Dumbbell, Smartphone, X, Info } from "lucide-react";
 import { CardBiomarcador } from "./card-biomarcador";
 import { CardScore } from "./card-score";
+import { InfoTooltip } from "./info-tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest } from "@/lib/queryClient";
@@ -207,9 +208,12 @@ function ZonasFC({ zones, totalSessoes }: { zones: HeartRateZones; totalSessoes?
       data-testid="card-zonas-fc"
     >
       <div>
-        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 600, color: "#2F5641" }}>
-          Zonas de Frequência Cardíaca
-        </p>
+        <div className="flex items-center gap-1.5">
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 600, color: "#2F5641" }}>
+            Zonas de Frequência Cardíaca
+          </p>
+          <InfoTooltip text={TOOLTIPS_COMPONENTES.zonas_fc} side="top" />
+        </div>
         <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: "#8B9286", marginTop: 2 }}>
           Distribuição semanal (últimos 7 dias)
         </p>
