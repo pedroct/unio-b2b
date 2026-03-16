@@ -510,7 +510,7 @@ function ComposicaoCorporalChart({ cc }: { cc: NutricaoComposicaoCorporal }) {
     <div className="flex flex-col flex-1 gap-2 min-h-0">
       <div className="flex-1 min-h-[160px]">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={dados} margin={{ top: 4, right: 40, left: -16, bottom: 0 }}>
+          <ComposedChart data={dados} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
             <ReferenceArea yAxisId="left" y1={1.6} y2={2.2} fill="rgba(76,167,133,0.08)" />
             <ReferenceLine yAxisId="left" y={1.6} stroke="rgba(76,167,133,0.5)" strokeDasharray="3 3" />
             <ReferenceLine yAxisId="left" y={2.2} stroke="rgba(76,167,133,0.5)" strokeDasharray="3 3" />
@@ -523,6 +523,7 @@ function ComposicaoCorporalChart({ cc }: { cc: NutricaoComposicaoCorporal }) {
               tickFormatter={(v: number) => v.toFixed(1)}
               unit=" g/kg"
               tickCount={5}
+              width={48}
             />
             <YAxis
               yAxisId="right"
@@ -532,6 +533,7 @@ function ComposicaoCorporalChart({ cc }: { cc: NutricaoComposicaoCorporal }) {
               tickFormatter={(v: number) => Math.round(v).toString()}
               unit=" kg"
               tickCount={4}
+              width={36}
             />
             <RechartsTooltip
               labelStyle={{ color: "var(--sys-text-primary)", fontSize: 11, fontWeight: 600 }}
