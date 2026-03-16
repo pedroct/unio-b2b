@@ -263,7 +263,7 @@ function CorrelacaoCaloriasVsMeta({ registros }: { registros: NutricaoRegistroDi
     cor: (r.aderencia_calorica_pct ?? 0) >= 90 ? "#4CA785" : (r.aderencia_calorica_pct ?? 0) >= 70 ? "#D9A441" : "#D97952",
   }));
   return (
-    <div style={{ height: 130 }}>
+    <div className="flex-1 min-h-[130px]">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={dados} margin={{ top: 4, right: 4, left: -24, bottom: 0 }} barSize={12}>
           <XAxis dataKey="data" tick={{ fontSize: 9, fill: "var(--sys-text-muted)" }} interval="preserveStartEnd" />
@@ -968,7 +968,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div
-                className="rounded-lg p-3 space-y-2"
+                className="rounded-lg p-3 flex flex-col gap-2"
                 style={{ background: "var(--sys-bg-primary)", border: "1px solid var(--mod-longevidade-border)" }}
                 data-testid="correlacao-calorias-meta"
               >
