@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Lock, Bell } from "lucide-react";
 import { CardBiomarcador } from "./card-biomarcador";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { RespostaCardiometabolico, MetricaMetabolica } from "@shared/schema";
+import type { RespostaCardiometabolico, TendenciaBiomarcador } from "@shared/schema";
 import { TENDENCIA_FROM_API } from "@shared/schema";
 import { TOOLTIPS_COMPONENTES } from "./tooltips-longevidade";
 
@@ -19,10 +19,10 @@ const CARDIO_CONFIGS: {
   eixo: "autonomico" | "aerobio";
   tooltip?: string;
 }[] = [
-  { metricType: "hrv_rmssd",       nome: "HRV",               defaultUnit: "ms",        invertedSemantics: false, eixo: "autonomico", tooltip: TOOLTIPS_COMPONENTES.hrv },
-  { metricType: "resting_hr",      nome: "FC de Repouso",     defaultUnit: "bpm",       invertedSemantics: true,  eixo: "autonomico", tooltip: TOOLTIPS_COMPONENTES.fcr },
-  { metricType: "vo2_max",         nome: "VO₂ Máximo",        defaultUnit: "mL/kg/min", invertedSemantics: false, eixo: "aerobio",    tooltip: TOOLTIPS_COMPONENTES.vo2 },
-  { metricType: "hr_recovery_1min",nome: "Recuperação da FC", defaultUnit: "bpm",       invertedSemantics: false, labelSecundario: "Média das últimas 5 sessões", eixo: "aerobio", tooltip: TOOLTIPS_COMPONENTES.recuperacao },
+  { metricType: "hrv_rmssd",        nome: "HRV",               defaultUnit: "ms",        invertedSemantics: false, eixo: "autonomico", tooltip: TOOLTIPS_COMPONENTES.hrv },
+  { metricType: "resting_hr",       nome: "FC de repouso",     defaultUnit: "bpm",       invertedSemantics: true,  eixo: "autonomico", tooltip: TOOLTIPS_COMPONENTES.fcr },
+  { metricType: "vo2_max",          nome: "VO₂ máximo",        defaultUnit: "mL/kg/min", invertedSemantics: false, eixo: "aerobio",    tooltip: TOOLTIPS_COMPONENTES.vo2 },
+  { metricType: "hr_recovery_1min", nome: "Recuperação da FC", defaultUnit: "bpm",       invertedSemantics: false, labelSecundario: "Média das últimas 5 sessões", eixo: "aerobio", tooltip: TOOLTIPS_COMPONENTES.recuperacao },
 ];
 
 const METABOLICO_CONFIGS: {
@@ -32,29 +32,44 @@ const METABOLICO_CONFIGS: {
   invertedSemantics: boolean;
   tooltip?: string;
 }[] = [
-  { metricType: "body_fat_pct",   nome: "% Gordura Corporal", defaultUnit: "%",  invertedSemantics: true,  tooltip: TOOLTIPS_COMPONENTES.gordura },
-  { metricType: "waist_circ",     nome: "Cintura",             defaultUnit: "cm", invertedSemantics: true,  tooltip: TOOLTIPS_COMPONENTES.cintura },
-  { metricType: "lean_mass",      nome: "Massa Magra",         defaultUnit: "kg", invertedSemantics: false, tooltip: TOOLTIPS_COMPONENTES.massa_magra },
-  { metricType: "tendencia_peso", nome: "Tendência de Peso",   defaultUnit: "kg", invertedSemantics: true,  tooltip: TOOLTIPS_COMPONENTES.tendencia_peso },
+  { metricType: "body_fat_pct",   nome: "Gordura corporal", defaultUnit: "%",  invertedSemantics: true,  tooltip: TOOLTIPS_COMPONENTES.gordura },
+  { metricType: "waist_circ",     nome: "Cintura",          defaultUnit: "cm", invertedSemantics: true,  tooltip: TOOLTIPS_COMPONENTES.cintura },
+  { metricType: "lean_mass",      nome: "Massa magra",      defaultUnit: "kg", invertedSemantics: false, tooltip: TOOLTIPS_COMPONENTES.massa_magra },
+  { metricType: "tendencia_peso", nome: "Tendência de peso",defaultUnit: "kg", invertedSemantics: false, tooltip: TOOLTIPS_COMPONENTES.tendencia_peso },
 ];
 
 const METABOLICO_LOCKED_LABELS = [
-  "% Gordura corporal",
+  "Gordura corporal",
   "Circunferência abdominal",
   "Tendência de peso",
   "Glicemia (CGM)",
 ];
 
-function normTrend(t: string | null | undefined) {
+function normTrend(t: string | null | undefined): TendenciaBiomarcador {
   if (!t) return null;
   return TENDENCIA_FROM_API[t] ?? TENDENCIA_FROM_API[t.toLowerCase()] ?? null;
 }
 
+function formatarBr(valor: number | null, casas = 1): string | null {
+  if (valor === null) return null;
+  return valor.toLocaleString("pt-BR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: casas,
+  });
+}
+
 function formatTendenciaPeso(valor: number | null): string | null {
   if (valor === null) return null;
-  if (valor > 0) return `+${valor.toFixed(2)} kg`;
-  if (valor < 0) return `${valor.toFixed(2)} kg`;
-  return `0.00 kg`;
+  const abs = Math.abs(valor).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (valor > 0) return `+${abs} kg`;
+  if (valor < 0) return `\u2212${abs} kg`;
+  return `0,00 kg`;
+}
+
+function labelReferencia(ref: string | null | undefined): string | undefined {
+  if (!ref) return undefined;
+  if (ref.toLowerCase() === "clínico" || ref.toLowerCase() === "clinico") return "Último registro";
+  return ref;
 }
 
 export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
@@ -70,17 +85,27 @@ export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
   const aerobio    = CARDIO_CONFIGS.filter(c => c.eixo === "aerobio");
 
   function renderCardioCard(cfg: typeof CARDIO_CONFIGS[0]) {
-    const m = metricas.find(mc => mc.metric_type === cfg.metricType);
-    const valor     = m?.valor_atual ?? null;
-    const unidade   = m?.unidade ?? cfg.defaultUnit;
-    const tendencia = normTrend(m?.tendencia);
-    const baseline  = m?.media_30d ?? undefined;
-    const label     = cfg.labelSecundario ?? (baseline != null ? "Média 30d" : undefined);
+    const m        = metricas.find(mc => mc.metric_type === cfg.metricType);
+    const valor    = m?.valor_atual ?? null;
+    const unidade  = m?.unidade ?? cfg.defaultUnit;
+    const baseline = m?.media_30d ?? undefined;
+    const label    = cfg.labelSecundario ?? (baseline != null ? "Média 30d" : undefined);
+
+    let tendencia = normTrend(m?.tendencia);
+    if (tendencia && baseline != null && valor !== null) {
+      const delta = Math.abs(valor - baseline);
+      if (delta < 0.5) tendencia = null;
+    }
+
+    const casas = unidade === "mL/kg/min" ? 2 : 1;
+    const valorFormatado = formatarBr(valor, casas);
+
     return (
       <CardBiomarcador
         key={cfg.metricType}
         nome={cfg.nome}
         valor={valor}
+        valorFormatado={valorFormatado !== null ? `${valorFormatado} ${unidade}` : null}
         unidade={unidade}
         tendencia={tendencia}
         baseline={baseline}
@@ -95,18 +120,28 @@ export function AbaCardiometabolico({ pacienteId }: AbaCardiometabolicoProps) {
   function renderMetabolicoCard(cfg: typeof METABOLICO_CONFIGS[0]) {
     const m = metabolicas.find(mc => mc.metric_type === cfg.metricType);
     if (!m) return null;
+
     const isPeso = cfg.metricType === "tendencia_peso";
-    const valorFormatado = isPeso ? (formatTendenciaPeso(m.valor) ?? undefined) : undefined;
+    const unidade = m.unidade ?? cfg.defaultUnit;
+
+    let valorFormatado: string | null | undefined;
+    if (isPeso) {
+      valorFormatado = formatTendenciaPeso(m.valor) ?? undefined;
+    } else {
+      const formatted = formatarBr(m.valor, 1);
+      valorFormatado = formatted !== null ? `${formatted} ${unidade}` : undefined;
+    }
+
     return (
       <CardBiomarcador
         key={cfg.metricType}
         nome={cfg.nome}
         valor={m.valor}
         valorFormatado={valorFormatado}
-        unidade={m.unidade ?? cfg.defaultUnit}
+        unidade={unidade}
         tendencia={null}
         invertedSemantics={cfg.invertedSemantics}
-        labelSecundario={m.referencia ?? undefined}
+        labelSecundario={labelReferencia(m.referencia)}
         aguardandoLeitura={m.valor === null}
         tooltip={cfg.tooltip}
       />

@@ -1,0 +1,302 @@
+# UNIO — Correção C27: Aba Cardiometabólico
+## Painel de Longevidade — Auditoria e Refinamento
+
+---
+
+**Prioridade:** Alta
+**Tela:** Painel de Longevidade → Aba Cardiometabólico (B2B web)
+**Contexto:** A aba Cardiometabólico é a primeira aba clínica do Painel (V1 foi construída em torno do Score Cardiovascular). Contém 3 seções — Cardiovascular, Capacidade Aeróbia e Metabólico — com 8 biomarcadores. Os mesmos desvios sistêmicos das outras abas se aplicam, mais algumas questões clínicas específicas importantes.
+
+---
+
+## Análise
+
+### O que está correto
+```
+✅ Estrutura em 3 seções lógicas (Cardiovascular, Capacidade Aeróbia, Metabólico)
+✅ Sub-seção "Controle Autonômico" dentro de Cardiovascular (HRV + FC Repouso)
+✅ 8 biomarcadores com valores, unidades e tendências
+✅ Tooltip (ⓘ) em todos os cards
+✅ "Média 30d" e "Média das últimas 5 sessões" como contexto temporal
+✅ Recuperação da FC com delta "+3.9 bpm" — dado com contexto
+✅ Layout 2 colunas (Cardiovascular, Aeróbia) e 4 colunas (Metabólico) — boa adaptação
+```
+
+### Desvios
+```
+🔴 Labels de seção em verde bold uppercase (CARDIOVASCULAR, CONTROLE AUTONÔMICO, etc.)
+🔴 Cards sem accent bar Deep Indigo
+🔴 Sem score consolidado cardiometabólico no topo (diferente de Performance e Recuperação)
+🔴 HRV "Em queda 0 ms" — queda de zero é irrelevante, copy confusa
+🔴 Recuperação FC "Em alta +3.9 bpm" em verde — semântica invertida
+🔴 Títulos em Title Case: "FC de Repouso", "VO₂ Máximo", "Recuperação da FC", etc.
+⚠️ Valores decimais com ponto ("29.7", "37.49", "31.3", "21.4", "-1.19")
+⚠️ Cards da seção Metabólico com borda verde/teal — deveria ser #E8EBE5
+⚠️ "Clínico" como contexto temporal nos cards metabólicos — ambíguo
+⚠️ "% Gordura Corporal" com símbolo % antes do nome — sentence case incorreto
+```
+
+---
+
+## Correções
+
+### C27.1 — Labels de seção (ALTO)
+
+Todos os labels seguem o padrão global (C24):
+
+```
+ANTES:                              DEPOIS:
+"CARDIOVASCULAR"                    "CARDIOVASCULAR"
+  "CONTROLE AUTONÔMICO"              "CONTROLE AUTONÔMICO"
+"CAPACIDADE AERÓBIA"                "CAPACIDADE AERÓBIA"
+"METABÓLICO"                        "METABÓLICO"
+
+Font:           Inter SemiBold 12px
+Cor:            #8B9286 (textMuted) — NÃO verde
+Caixa:          UPPERCASE (já está)
+Letter-spacing: 1px
+Margin-top:     32px (entre seções)
+Margin-bottom:  12px
+```
+
+A hierarquia "CARDIOVASCULAR" > "CONTROLE AUTONÔMICO" é correta. Para diferenciar os dois níveis:
+```
+Seção principal (CARDIOVASCULAR):  Inter SemiBold 12px, #8B9286, uppercase
+Sub-seção (CONTROLE AUTONÔMICO):   Inter Medium 11px, #8B9286, uppercase
+                                    Margin-top: 20px (menor que seção principal)
+```
+
+### C27.2 — Ausência de score consolidado (MÉDIO)
+
+**Observação:** As abas Performance e Recuperação têm um score no topo (93 e 74 respectivamente). A aba Cardiometabólico não tem. Isso pode ser intencional (score cardiovascular está no Cockpit) ou uma omissão.
+
+**Sugestão (não obrigatória para V1):**
+Se o Score Cardiovascular já existe no Cockpit, adicionar uma versão compacta no topo:
+```
+Card compacto (inline, não hero):
+  "Score cardiovascular: 78 — Bom · Tendência estável"
+  Inter Medium 14px, #2F5641
+  Badge "Bom" em #4CA785 12%
+  Link: "Ver detalhes no Cockpit →"
+```
+
+Se a decisão for não duplicar, manter sem score. Documentar a decisão.
+
+### C27.3 — Cards de biomarcadores — visual (ALTO)
+
+Aplicar o padrão de C24.5 em todos os 8 cards:
+
+```
+Container:
+  Fundo:          #FFFFFF
+  Border:         1px solid #E8EBE5 (NÃO verde/teal)
+  Border-radius:  12px
+  Sombra:         0 1px 3px rgba(47,86,65,0.06)
+  Padding:        16px
+  Hover:          border #4A5899 30%, sombra shadowMd
+
+Título:     Inter SemiBold 14px, #2F5641, sentence case
+Valor:      Inter Bold 28px, #2F5641
+Unidade:    Inter Regular 14px, #8B9286
+Tendência:  Ícone + texto, Inter Medium 12px, cor semântica
+Contexto:   Inter Regular 11px, #8B9286
+Tooltip:    ⓘ em #8B9286, hover #4A5899
+```
+
+### C27.4 — Títulos dos cards em sentence case (ALTO)
+
+```
+ANTES:                          DEPOIS:
+"HRV"                           "HRV" (sigla, mantém)
+"FC de Repouso"                 "FC de repouso"
+"VO₂ Máximo"                    "VO₂ máximo"
+"Recuperação da FC"             "Recuperação da FC"
+"% Gordura Corporal"            "Gordura corporal"
+"Cintura"                       "Cintura" (ok)
+"Massa Magra"                   "Massa magra"
+"Tendência de Peso"             "Tendência de peso"
+```
+
+**Nota:** "% Gordura Corporal" — remover o "%" do início do título. O símbolo de percentual é a unidade, não parte do nome. O valor já exibe "21.4 %".
+
+### C27.5 — Semântica direcional — HRV e FC (CRÍTICO)
+
+Estes biomarcadores têm direção clínica documentada no aprendizado do projeto:
+
+**HRV (Variabilidade da Frequência Cardíaca):**
+```
+Subindo = positivo (melhor recuperação autonômica)
+  ↗ #4CA785 (success) + "Em alta"
+
+Descendo = atenção (pior recuperação)
+  ↘ #D97952 (accent) + "Em queda"
+
+Estável = neutro
+  → #8B9286 + "Estável"
+
+PROBLEMA ATUAL: "Em queda 0 ms" — queda de zero não faz sentido.
+Se o delta é 0, o estado é "Estável", não "Em queda".
+```
+
+**FC de Repouso (Frequência Cardíaca de Repouso):**
+```
+DIREÇÃO INVERTIDA — FC menor em repouso = coração mais eficiente
+
+Descendo = positivo
+  ↘ #4CA785 (success) + "Em queda"
+
+Subindo = atenção
+  ↗ #D97952 (accent) + "Em alta"
+
+Estável = neutro
+  → #8B9286 + "Estável"
+
+ATUALMENTE: "Estável" em cinza → CORRETO neste caso
+```
+
+**Recuperação da FC:**
+```
+DIREÇÃO INVERTIDA — recuperação maior = coração se recupera mais rápido pós-exercício
+
+"Em alta +3.9 bpm" em VERDE → VERIFICAR SEMÂNTICA
+
+A "Recuperação da FC" mede quantos bpm o coração reduz 1 min após parar o exercício.
+MAIOR recuperação = MELHOR (coração volta ao normal mais rápido).
+
+Portanto:
+  Subindo (maior recuperação) = positivo
+  ↗ #4CA785 (success) + "Em alta +3,9 bpm" ← CORRETO como está!
+
+  Descendo (menor recuperação) = atenção
+  ↘ #D97952 (accent) + "Em queda"
+```
+
+**VO₂ Máximo:**
+```
+Subindo = positivo (melhor capacidade aeróbia)
+  ↗ #4CA785 + "Em alta"
+
+Descendo = atenção
+  ↘ #D97952 + "Em queda"
+
+ATUALMENTE: "Estável" → CORRETO
+```
+
+### C27.6 — "Em queda 0 ms" na HRV (ALTO)
+
+```
+ANTES:  "↘ Em queda 0 ms"
+DEPOIS: "→ Estável"
+
+Lógica: Se o delta absoluto é 0 (ou < limiar mínimo, ex: < 0.5 ms),
+classificar como "Estável", não como "Em queda".
+
+Implementação:
+  if abs(delta) < 0.5 {
+      trend = .stable  // "Estável" em #8B9286
+  } else if delta > 0 {
+      trend = .rising   // "Em alta" com cor semântica
+  } else {
+      trend = .falling  // "Em queda" com cor semântica
+  }
+```
+
+### C27.7 — Contexto "Clínico" nos cards metabólicos (MÉDIO)
+
+```
+ANTES:  "Clínico" (abaixo de Gordura Corporal, Cintura, Massa Magra)
+DEPOIS: Mais descritivo — de onde vem o dado?
+
+Opções:
+  a) "Último registro" — se vem de entrada manual ou balança
+  b) "Via balança BLE" — se vem do dispositivo
+  c) "Registro profissional" — se foi inserido pelo profissional
+  d) Remover e mostrar apenas a data: "15/03/2026"
+
+"Clínico" é ambíguo — pode significar "dado clínico" ou "inserido em consulta clínica".
+Recomendação: substituir por data da última leitura:
+  "Última leitura: 15/03" — Inter Regular 11px, #8B9286
+```
+
+### C27.8 — Formato decimal brasileiro (MÉDIO)
+
+```
+ANTES:  "29.7 ms", "37.49 mL/kg/min", "31.3 bpm", "21.4 %", "-1.19 kg"
+DEPOIS: "29,7 ms", "37,49 mL/kg/min", "31,3 bpm", "21,4 %", "−1,19 kg"
+
+Vírgula decimal em todos os valores.
+Sinal de menos: usar "−" (U+2212 minus sign), não "-" (hyphen).
+```
+
+### C27.9 — Card "Tendência de peso" — valor negativo (MÉDIO)
+
+```
+Valor:    "-1.19 kg" → "−1,19 kg"
+Cor:      Depende do objetivo do cliente:
+
+Se objetivo = perder peso:
+  −1,19 kg = positivo → Inter Bold 28px, #4CA785 (success)
+
+Se objetivo = ganhar massa:
+  −1,19 kg = atenção → Inter Bold 28px, #D97952 (accent)
+
+Se objetivo indefinido:
+  Cor neutra → Inter Bold 28px, #2F5641 (textPrimary)
+
+V1: usar cor neutra (#2F5641). A personalização por objetivo é V2.
+```
+
+### C27.10 — Layout da seção Metabólico (BAIXO)
+
+A seção tem 4 cards em uma linha — funciona no desktop mas pode apertar no tablet.
+
+```
+Desktop (> 1024px):   4 colunas
+Tablet (768–1024px):  2 colunas × 2 linhas
+Mobile (< 768px):     1 coluna × 4 linhas (scroll vertical)
+```
+
+### C27.11 — Cards metabólicos com borda verde/teal (BAIXO)
+
+```
+ANTES:  Bordas parecem ter tom esverdeado/teal
+DEPOIS: Borda 1px solid #E8EBE5 (borderLight) — neutro
+        Hover: borda #4A5899 30% (Deep Indigo do módulo)
+```
+
+---
+
+## Tabela de Semântica Direcional Completa — Aba Cardiometabólico
+
+Referência rápida para a LLM. **Memorizar esta tabela — aplicar em todos os contextos.**
+
+| Biomarcador | Subindo | Descendo | Cor subindo | Cor descendo | Notas |
+|-------------|---------|----------|-------------|--------------|-------|
+| HRV | Positivo | Atenção | `#4CA785` | `#D97952` | Maior HRV = melhor recuperação |
+| FC de repouso | **Atenção** | **Positivo** | `#D97952` | `#4CA785` | **Invertida**: FC menor = melhor |
+| VO₂ máximo | Positivo | Atenção | `#4CA785` | `#D97952` | Maior VO₂ = melhor capacidade |
+| Recuperação FC | Positivo | Atenção | `#4CA785` | `#D97952` | Maior queda pós-exercício = melhor |
+| Gordura corporal | **Atenção** | **Positivo** | `#D97952` | `#4CA785` | **Invertida**: menos gordura = melhor* |
+| Cintura | **Atenção** | **Positivo** | `#D97952` | `#4CA785` | **Invertida**: cintura menor = melhor |
+| Massa magra | Positivo | Atenção | `#4CA785` | `#D97952` | Mais massa magra = melhor |
+| Tendência de peso | Neutro | Neutro | `#2F5641` | `#2F5641` | Depende do objetivo (V2) |
+
+*\*Gordura corporal: a semântica "menos = melhor" é o padrão geral. Para atletas com gordura muito baixa, o profissional avalia clinicamente.*
+
+---
+
+## Checklist
+
+```
+[ ] C27.1  — Labels de seção: Inter 12px #8B9286 uppercase (todos os 4 labels)
+[ ] C27.2  — (Opcional) Score cardiovascular compacto no topo
+[ ] C27.3  — Cards: border #E8EBE5, hover #4A5899, tipografia Inter, accent bar nos principais
+[ ] C27.4  — Títulos sentence case: "FC de repouso", "VO₂ máximo", "Massa magra", etc.
+[ ] C27.5  — Semântica direcional: FC de repouso e gordura/cintura são INVERTIDAS
+[ ] C27.6  — "Em queda 0 ms" → "Estável" (delta < 0.5 = estável)
+[ ] C27.7  — "Clínico" → data da última leitura ou "Último registro"
+[ ] C27.8  — Decimais com vírgula: "29,7 ms", "37,49 mL/kg/min"
+[ ] C27.9  — Tendência de peso: cor neutra em V1, personalizada por objetivo em V2
+[ ] C27.10 — Responsivo: 4 colunas desktop → 2 tablet → 1 mobile
+[ ] C27.11 — Bordas dos cards metabólicos: #E8EBE5 neutro
+```
