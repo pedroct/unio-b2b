@@ -1,0 +1,445 @@
+# UNIO — Correção C24: Aba Performance Completa
+## Painel de Longevidade — Auditoria e Redesign
+
+---
+
+**Prioridade:** Alta
+**Tela:** Painel de Longevidade → Aba Performance (B2B web)
+**Contexto:** A aba Performance contém 4 blocos — Score Funcional, Biomarcadores, Zonas de FC e Histórico de Exercícios. A implementação está funcional mas apresenta desvios consistentes da identidade visual UNIO em cores, tipografia, UX writing e padrão de componentes. Este documento audita todos os blocos e fornece as correções unificadas.
+
+---
+
+## Análise Geral
+
+### O que está correto
+```
+✅ Estrutura de 5 abas do Painel (Cockpit, Cardiometabólico, Recuperação & Sono, Performance, Nutrição)
+✅ Header com avatar, nome, idade, sexo, email mascarado, badge "Ativo"
+✅ Conteúdo organizado em blocos lógicos (score → biomarcadores → zonas → histórico)
+✅ Dados reais sendo exibidos (480 min, 1.28 m/s, 100%, 12 sessões)
+✅ Tooltip (ⓘ) nos cards de biomarcadores
+✅ Filtros de período (7d, 30d, 90d) no histórico
+✅ Ícones diferenciados por tipo de exercício
+✅ Datas relativas aplicadas (Ontem, Sáb, Sex, Qua)
+✅ Coluna renomeada para "Dispositivo" (não mais "Fonte")
+✅ "12 sessões nos últimos 7 dias" com contexto
+```
+
+### Desvios sistêmicos (afetam toda a aba)
+```
+🔴 Cor do módulo: usando verde genérico em vez de Deep Indigo (#4A5899)
+🔴 Labels de seção em caixa alta bold (SCORE FUNCIONAL, BIOMARCADORES)
+🔴 Cards sem a accent bar de 3pt do módulo Longevidade
+🔴 Tipografia aparenta ser system font, não Inter / Plus Jakarta Sans
+⚠️ Sombras e bordas dos cards não seguem tokens (sombra cinza vs verde)
+⚠️ Espaçamento entre blocos irregular
+```
+
+---
+
+## Bloco 1 — Score Funcional
+
+### Análise
+```
+✅ Score 93 em destaque grande — hierarquia visual correta
+✅ Badge "Excelente" em verde
+✅ "Score parcial" e "Estável" como metadados
+
+🔴 Label "SCORE FUNCIONAL" em verde bold uppercase → fora do padrão
+🔴 Ícone e badge "Excelente" em verde genérico → deve ser Deep Indigo ou token correto
+🔴 "Score parcial" com ícone de alerta → pode gerar confusão
+⚠️ Card sem accent bar do módulo
+⚠️ Tooltip (ⓘ) posicionado corretamente
+```
+
+### Correções
+
+**C24.1 — Label de seção:**
+```
+ANTES:  "SCORE FUNCIONAL" — bold uppercase verde
+DEPOIS: "Score funcional" — Inter SemiBold 12px, #8B9286 (textMuted)
+        Letter-spacing: 1px, uppercase
+        O label de seção é organizacional, não de destaque
+```
+
+**C24.2 — Card do score:**
+```
+Container:
+  Fundo:        #FFFFFF
+  Border:       1px solid #E8EBE5
+  Border-radius: 16px
+  Accent bar:   3px topo, #4A5899 (Deep Indigo — cor do módulo Longevidade)
+  Sombra:       0 1px 3px rgba(47, 86, 65, 0.06)
+  Padding:      24px
+
+Ícone:          Cor #4A5899 (não verde genérico)
+
+Score "93":
+  Font:         Plus Jakarta Sans Bold 48px, #2F5641
+  
+Badge "Excelente":
+  Fundo:        #4CA785 12% opacidade
+  Texto:        Inter SemiBold 12px, #4CA785
+  Border-radius: 9999px (pill)
+  Padding:      4px 12px
+
+"Score parcial — Estável":
+  Ícone triângulo: #D9A441 (warning) — indica score incompleto
+  "Score parcial": Inter Medium 13px, #D9A441
+  Separador "—": #8B9286
+  "Estável": Inter Medium 13px, #8B9286
+```
+
+**C24.3 — UX Writing do score:**
+```
+ANTES:  "⚠ Score parcial — Estável"
+DEPOIS: "Score baseado em dados parciais · Tendência estável"
+
+O "⚠" pode alarmar o profissional desnecessariamente.
+Usar texto descritivo sem ícone de alerta.
+Separador: "·" (middle dot) em vez de "—" (mais leve)
+```
+
+---
+
+## Bloco 2 — Biomarcadores
+
+### Análise
+```
+✅ 3 cards lado a lado (Volume de Treino, Velocidade Caminhada, Estabilidade ao Caminhar)
+✅ Valores numéricos em destaque (480, 1.28, 100)
+✅ Unidades visíveis (min, m/s, %)
+✅ Indicadores de tendência (Em queda, Estável, Em alta)
+✅ Timestamp da última leitura
+✅ Tooltips (ⓘ)
+
+🔴 Label "BIOMARCADORES" em verde bold uppercase → mesmo problema do score
+🔴 Cards com borda verde-claro → deve ser #E8EBE5 (borderLight) ou accent Indigo
+🔴 "Em queda" em vermelho/coral — semanticamente correto se queda é negativa
+🔴 "Em alta" em verde — semanticamente correto se alta é positiva
+⚠️ Tipografia dos valores parece system font
+⚠️ Formato de data "15/03 as 21:38" → "às" (com acento), e formato pode ser relativo
+```
+
+### Correções
+
+**C24.4 — Label de seção:**
+```
+ANTES:  "BIOMARCADORES" — bold uppercase verde
+DEPOIS: "Biomarcadores" — Inter SemiBold 12px, #8B9286, uppercase, letter-spacing 1px
+```
+
+**C24.5 — Cards de biomarcadores:**
+```
+Container (cada card):
+  Fundo:        #FFFFFF
+  Border:       1px solid #E8EBE5 (borderLight)
+  Border-radius: 12px
+  Sombra:       0 1px 3px rgba(47, 86, 65, 0.06)
+  Padding:      16px
+  Hover:        border muda para #4A5899 30%, sombra shadowMd
+
+Título do card:
+  Inter SemiBold 14px, #2F5641
+
+Valor numérico:
+  Inter Bold 28px, #2F5641
+
+Unidade:
+  Inter Regular 14px, #8B9286
+
+Tendência:
+  Ícone + texto, Inter Medium 12px
+  "Em queda":  ícone ↘ + texto em #D97952 (accent — NÃO error)
+  "Estável":   ícone → + texto em #8B9286 (textMuted)
+  "Em alta":   ícone ↗ + texto em #4CA785 (success)
+
+Timestamp:
+  Inter Regular 11px, #8B9286
+  ANTES:  "Última leitura: 15/03 as 21:38"
+  DEPOIS: "Última leitura: Ontem às 21:38"
+  Nota: "às" com acento (não "as")
+```
+
+**C24.6 — Semântica direcional dos biomarcadores:**
+
+Volume de treino em queda pode ser negativo ou neutro — depende do contexto. Para V1, manter a lógica atual, mas documentar:
+
+```
+Volume de Treino:
+  Subindo = positivo (#4CA785) — mais treino é melhor
+  Descendo = atenção (#D97952) — menos treino pode indicar destreino
+
+Velocidade de Caminhada:
+  Subindo = positivo (#4CA785)
+  Descendo = atenção (#D97952) — perda de mobilidade
+
+Estabilidade ao Caminhar:
+  Subindo = positivo (#4CA785) — mais estável é melhor
+  Descendo = atenção (#D97952) — perda de equilíbrio
+
+Usar accent (#D97952, terracota) para tendência negativa, NÃO error (#D9635C, vermelho).
+Mesmo princípio da glicemia: dado que precisa atenção ≠ erro do sistema.
+```
+
+---
+
+## Bloco 3 — Zonas de Frequência Cardíaca
+
+### Correção já documentada no C23
+
+Aplicar integralmente o documento `UNIO-Correcao-C23-ZonasFC.md`:
+- Substituir barra empilhada por layout de linhas por zona
+- Cada zona: badge + nome + faixa FC + barra individual + tempo + %
+- Cores: #4CA785 → #648D4A → #D9A441 → #D97952
+- Barra resumo compacta mantida no topo
+- Rodapé com total + sessões
+
+**Adicionalmente, alinhar o container:**
+```
+Card:
+  Accent bar:   3px topo, #4A5899 (Deep Indigo)
+  Border:       1px solid #E8EBE5
+  Border-radius: 16px
+  Sombra:       padrão
+```
+
+---
+
+## Bloco 4 — Histórico de Exercícios
+
+### Correção já documentada no C22
+
+Aplicar integralmente o documento `UNIO-Correcao-C22-HistoricoExercicios.md`.
+
+**Ajustes adicionais observados nesta nova versão:**
+
+**C24.7 — As correções de C22 já aplicadas (verificar completude):**
+```
+✅ Título em sentence case: "Histórico de exercícios" ← OK
+✅ "12 sessões nos últimos 7 dias" com contexto ← OK
+✅ Datas relativas (Ontem, Sáb, Sex, Qua) ← OK
+✅ Coluna "Dispositivo" em vez de "Fonte" ← parcial, header mostra "DISPOSITIVO"
+✅ Ícones coloridos por tipo na coluna Sessão ← OK
+```
+
+**C24.8 — Headers de coluna da tabela:**
+```
+ANTES:  "SESSÃO  DATA  DURAÇÃO  CALORIAS  DISTÂNCIA  ELEVAÇÃO  METS ⓘ  DISPOSITIVO"
+        Uppercase bold, fonte escura
+
+DEPOIS: "Sessão  Data  Duração  Calorias  Distância  Elevação  METs ⓘ  Dispositivo"
+        Inter Medium 12px, #8B9286 (textMuted), uppercase, letter-spacing 0.5px
+        Fundo da linha header: #F5F3EE (bgSecondary)
+        Border-bottom: 2px solid #E8EBE5
+```
+
+**C24.9 — Filtro de período ativo:**
+```
+ANTES:  Badge "7d" com fundo verde genérico
+DEPOIS: Badge "7d" com fundo #4A5899 (Deep Indigo), texto branco
+        Inativo: borda #D4D9D0, texto #8B9286
+```
+
+**C24.10 — Cards de resumo por tipo (Bicicleta, Treino de Força, Caminhada):**
+```
+ANTES:  Ícones com fundo colorido (roxo/laranja/vermelho claro)
+DEPOIS: Aplicar cores por tipo documentadas no C22:
+        Bicicleta:       ícone #4A5899 (Deep Indigo), fundo #4A5899 12%
+        Treino de Força: ícone #AD8C48 (dourado), fundo #AD8C48 12%
+        Caminhada:       ícone #4CA785 (verde), fundo #4CA785 12%
+```
+
+**C24.11 — Valores de calorias na tabela:**
+```
+ANTES:  "20 kcal", "290 kcal" — com unidade em cada linha
+DEPOIS: Header da coluna já diz "Calorias" — os valores podem ser apenas "20", "290"
+        OU manter "20 kcal" para clareza quando a tabela é scrollada
+        Recomendação: manter "kcal" por consistência com dados exportáveis
+
+Calorias altas (> 200 kcal): Inter SemiBold 14px, #2F5641
+Calorias baixas (< 50 kcal): Inter Regular 14px, #5F6B5A
+```
+
+---
+
+## Bloco 5 — Header do Painel (transversal)
+
+### Análise
+```
+✅ Avatar com iniciais "PT" em circle verde escuro
+✅ Nome "Pedro Teixeira" + badge "Ativo"
+✅ "48 anos · Masculino · c****@pedroct.com.br"
+✅ Navegação por abas (Cockpit, Cardiometabólico, etc.)
+
+⚠️ Badge "Ativo" em verde genérico — deve usar token
+⚠️ Abas com ícones — verificar se os ícones são consistentes
+⚠️ Aba ativa "Performance" com fundo e borda — verificar estilo
+```
+
+### Correções
+
+**C24.12 — Avatar:**
+```
+Circle:    40×40px
+Fundo:     #2F5641 (primaryDark) ← parece correto
+Texto:     Inter Bold 14px, branco, "PT"
+```
+
+**C24.13 — Badge "Ativo":**
+```
+Fundo:     #4CA785 12% opacidade
+Texto:     Inter SemiBold 11px, #4CA785
+Radius:    9999px (pill)
+Padding:   3px 10px
+```
+
+**C24.14 — Navegação por abas:**
+```
+Aba ativa:
+  Fundo:     #FFFFFF
+  Border:    1px solid #E8EBE5
+  Border-bottom: 2px solid #4A5899 (Deep Indigo)
+  Texto:     Inter SemiBold 14px, #4A5899
+  Ícone:     Cor #4A5899
+
+Aba inativa:
+  Fundo:     transparente
+  Border:    nenhuma
+  Texto:     Inter Regular 14px, #8B9286
+  Ícone:     Cor #8B9286
+  Hover:     texto e ícone mudam para #5F6B5A, fundo #F5F3EE sutil
+```
+
+---
+
+## Padrões Globais — Aplicar em Toda a Aba
+
+### Labels de seção (regra universal)
+```
+Todos os labels de seção do painel seguem:
+  Font:           Inter SemiBold 12px
+  Cor:            #8B9286 (textMuted)
+  Caixa:          UPPERCASE
+  Letter-spacing: 1px
+  Margin-bottom:  12px
+  Margin-top:     32px (exceto o primeiro bloco)
+
+NUNCA usar:
+  ✗ Bold verde
+  ✗ Font-size > 14px para labels de seção
+  ✗ Cor do módulo para labels de seção
+```
+
+### Cards (regra universal)
+```
+Fundo:          #FFFFFF
+Border:         1px solid #E8EBE5
+Border-radius:  16px (cards grandes) ou 12px (cards menores)
+Accent bar:     3px topo, #4A5899 (Deep Indigo) — quando é card principal
+Sombra:         0 1px 3px rgba(47, 86, 65, 0.06)
+Padding:        20px 24px (desktop) / 16px (mobile)
+Hover:          border muda para #D4D9D0, sombra shadowMd
+```
+
+### Tendências (regra universal)
+```
+Subindo (positivo):   ↗ + cor #4CA785 (success)
+Estável:              → + cor #8B9286 (textMuted)
+Descendo (atenção):   ↘ + cor #D97952 (accent, NÃO error)
+```
+
+### Tooltips (ⓘ)
+```
+Ícone:     SF Symbol "info.circle" ou circle com "i"
+Cor:       #8B9286 (textMuted)
+Tamanho:   16×16px
+Hover:     cor muda para #4A5899 (Deep Indigo)
+Conteúdo:  tooltip flutuante com fundo #2F5641, texto branco Inter Regular 13px
+           Border-radius: 8px, padding: 8px 12px
+           Max-width: 280px
+           Seta apontando para o ícone
+```
+
+---
+
+## Tokens de Referência — Painel de Longevidade
+
+```css
+/* Módulo */
+--mod-longevidade: #4A5899;
+--mod-longevidade-bg: rgba(74, 88, 153, 0.08);
+--mod-longevidade-border: rgba(74, 88, 153, 0.3);
+
+/* Fundos */
+--bg-primary: #FAFBF8;
+--bg-secondary: #F5F3EE;
+--white: #FFFFFF;
+
+/* Texto */
+--text-primary: #2F5641;
+--text-secondary: #5F6B5A;
+--text-muted: #8B9286;
+
+/* Bordas */
+--border: #D4D9D0;
+--border-light: #E8EBE5;
+
+/* Feedback */
+--success: #4CA785;
+--warning: #D9A441;
+--accent: #D97952;
+--error: #D9635C;
+
+/* Tipografia */
+--font-display: 'Plus Jakarta Sans', sans-serif;
+--font-body: 'Inter', -apple-system, sans-serif;
+```
+
+---
+
+## Checklist Consolidado
+
+### Score funcional
+```
+[ ] C24.1  — Label "Score funcional" → Inter SemiBold 12px, #8B9286, uppercase
+[ ] C24.2  — Card com accent bar #4A5899, ícone em Deep Indigo
+[ ] C24.3  — "Score baseado em dados parciais · Tendência estável" (sem ⚠)
+```
+
+### Biomarcadores
+```
+[ ] C24.4  — Label "Biomarcadores" → padrão de seção (#8B9286)
+[ ] C24.5  — Cards: border #E8EBE5, hover #4A5899, tipografia Inter
+[ ] C24.6  — Tendência negativa em #D97952 (accent), não error; "às" com acento
+```
+
+### Zonas FC
+```
+[ ] Aplicar C23 integralmente (layout de linhas, cores, barra resumo)
+```
+
+### Histórico de exercícios
+```
+[ ] Aplicar C22 integralmente (paleta, tipografia, tabela)
+[ ] C24.8  — Headers de coluna: Inter Medium 12px, #8B9286, fundo #F5F3EE
+[ ] C24.9  — Filtro ativo: fundo #4A5899, texto branco
+[ ] C24.10 — Cards resumo: cores por tipo (Indigo/Dourado/Verde)
+[ ] C24.11 — Calorias: destaque para valores altos (SemiBold > 200kcal)
+```
+
+### Header e navegação
+```
+[ ] C24.12 — Avatar: #2F5641 com iniciais brancas
+[ ] C24.13 — Badge "Ativo": fundo #4CA785 12%, texto #4CA785
+[ ] C24.14 — Abas: ativa com border-bottom #4A5899, inativa #8B9286
+```
+
+### Padrões globais
+```
+[ ] Labels de seção: todos em Inter SemiBold 12px #8B9286 uppercase
+[ ] Cards: accent bar 3px #4A5899 nos cards principais
+[ ] Tendências: accent (#D97952) para descendo, success para subindo
+[ ] Tooltips: #8B9286, hover #4A5899, conteúdo fundo escuro
+[ ] Sombras: tint verde rgba(47,86,65) em vez de cinza
+```
