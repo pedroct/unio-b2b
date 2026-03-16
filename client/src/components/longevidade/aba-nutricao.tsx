@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Info, X, Utensils, TrendingUp, ChevronDown, ChevronRight, GitBranch } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceLine, ReferenceArea,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, ReferenceArea,
   Tooltip as RechartsTooltip, PieChart, Pie, Cell, BarChart, Bar,
   ComposedChart,
 } from "recharts";
@@ -19,12 +19,12 @@ interface AbaNutricaoProps {
 
 type Periodo = "7" | "30" | "90";
 
-const BADGE_PROTEINA: { min: number; max: number; label: string; bg: string; text: string }[] = [
-  { min: 0,   max: 1.2, label: "Insuficiente", bg: "bg-red-100 dark:bg-red-950",    text: "text-red-700 dark:text-red-300" },
-  { min: 1.2, max: 1.6, label: "Subótimo",     bg: "bg-yellow-100 dark:bg-yellow-950", text: "text-yellow-700 dark:text-yellow-300" },
-  { min: 1.6, max: 2.2, label: "Adequado",     bg: "bg-green-100 dark:bg-green-950",  text: "text-green-700 dark:text-green-300" },
-  { min: 2.2, max: 3.0, label: "Elevado",      bg: "bg-yellow-100 dark:bg-yellow-950", text: "text-yellow-700 dark:text-yellow-300" },
-  { min: 3.0, max: 999, label: "Excessivo",    bg: "bg-red-100 dark:bg-red-950",    text: "text-red-700 dark:text-red-300" },
+const BADGE_PROTEINA: { min: number; max: number; label: string; style: { background: string; color: string } }[] = [
+  { min: 0,   max: 1.2, label: "Insuficiente", style: { background: "rgba(217,121,82,0.12)",  color: "#D97952" } },
+  { min: 1.2, max: 1.6, label: "Subótimo",     style: { background: "rgba(217,164,65,0.12)",  color: "#D9A441" } },
+  { min: 1.6, max: 2.2, label: "Adequado",     style: { background: "rgba(76,167,133,0.12)",  color: "#4CA785" } },
+  { min: 2.2, max: 3.0, label: "Elevado",      style: { background: "rgba(217,164,65,0.12)",  color: "#D9A441" } },
+  { min: 3.0, max: 999, label: "Excessivo",    style: { background: "rgba(217,121,82,0.12)",  color: "#D97952" } },
 ];
 
 function classifyProteina(valor: number | null) {
@@ -32,11 +32,12 @@ function classifyProteina(valor: number | null) {
   return BADGE_PROTEINA.find(b => valor >= b.min && valor < b.max) ?? BADGE_PROTEINA[BADGE_PROTEINA.length - 1];
 }
 
-function statusAderencia(pct: number | null): { label: string; bg: string; text: string } | null {
+function statusAderencia(pct: number | null): { label: string; style: { background: string; color: string } } | null {
   if (pct === null) return null;
-  if (pct >= 90) return { label: "Alta",    bg: "bg-green-100 dark:bg-green-950",  text: "text-green-700 dark:text-green-300" };
-  if (pct >= 70) return { label: "Moderada", bg: "bg-yellow-100 dark:bg-yellow-950", text: "text-yellow-700 dark:text-yellow-300" };
-  return              { label: "Baixa",   bg: "bg-red-100 dark:bg-red-950",    text: "text-red-700 dark:text-red-300" };
+  if (pct > 110) return  { label: "Excedente", style: { background: "rgba(217,164,65,0.12)",  color: "#D9A441" } };
+  if (pct >= 90) return  { label: "Ideal",     style: { background: "rgba(76,167,133,0.12)",  color: "#4CA785" } };
+  if (pct >= 70) return  { label: "Moderada",  style: { background: "rgba(217,164,65,0.12)",  color: "#D9A441" } };
+  return                 { label: "Baixa",     style: { background: "rgba(217,121,82,0.12)",  color: "#D97952" } };
 }
 
 function fmtDate(iso: string) {
@@ -52,25 +53,28 @@ const URGENCIA_STYLE: Record<NutricaoAlerta["urgencia"], { icon: typeof AlertTri
 function CardResumo({ title, children, tooltip }: { title: string; children: ReactNode; tooltip?: string }) {
   return (
     <div
-      className="rounded-lg p-4"
+      className="rounded-xl overflow-hidden"
       style={{
-        background: "var(--mod-longevidade-bg-subtle)",
-        border: "1px solid var(--mod-longevidade-border)",
-        boxShadow: "var(--sys-shadow-sm)",
+        background: "#FFFFFF",
+        border: "1px solid #E8EBE5",
+        boxShadow: "0 1px 3px rgba(47,86,65,0.06)",
       }}
     >
-      <div className="flex items-center gap-1 mb-2">
-        <p className="text-sm font-semibold flex-1" style={{ color: "var(--mod-longevidade-text)" }}>
-          {title}
-        </p>
-        {tooltip && <InfoTooltip text={tooltip} side="top" />}
+      <div style={{ height: 3, background: "#4A5899", borderRadius: "12px 12px 0 0" }} />
+      <div className="p-4">
+        <div className="flex items-center gap-1 mb-2">
+          <p className="flex-1" style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 600, color: "#2F5641" }}>
+            {title}
+          </p>
+          {tooltip && <InfoTooltip text={tooltip} side="top" />}
+        </div>
+        {children}
       </div>
-      {children}
     </div>
   );
 }
 
-const MACRO_COLORS = { proteina: "#3b82f6", carbo: "#f59e0b", gordura: "#ef4444" };
+const MACRO_COLORS = { proteina: "#648D4A", carbo: "#AD8C48", gordura: "#D97952" };
 
 function MacroDonut({ proteina, carbo, gordura }: { proteina: number | null; carbo: number | null; gordura: number | null }) {
   const p = proteina ?? 0;
@@ -108,8 +112,8 @@ function MacroDonut({ proteina, carbo, gordura }: { proteina: number | null; car
       </div>
       <div className="space-y-0.5 flex-1 min-w-0">
         {segments.map(s => (
-          <span key={s.name} className="flex items-center gap-1 text-[10px]" style={{ color: "var(--sys-text-secondary)" }}>
-            <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color }} />
+          <span key={s.name} className="flex items-center gap-1" style={{ color: "#5F6B5A", fontSize: 12, fontFamily: "'Inter', sans-serif" }}>
+            <span className="inline-block flex-shrink-0" style={{ width: 8, height: 8, borderRadius: 2, background: s.color }} />
             {s.name} {Math.round(s.value)}%
           </span>
         ))}
@@ -150,12 +154,12 @@ function TabelaRegistros({ registros }: { registros: NutricaoRegistroDia[] }) {
       <div className="overflow-x-auto">
         <table className="w-full text-xs min-w-[600px]">
           <thead>
-            <tr style={{ background: "var(--mod-longevidade-bg-subtle)", borderBottom: "1px solid var(--mod-longevidade-border)" }}>
-              {["Data", "Calorias", "Proteína g", "g/kg", "Aderência", "Status"].map(h => (
+            <tr style={{ background: "#F5F3EE", borderBottom: "2px solid #E8EBE5" }}>
+              {["Data", "Calorias", "Proteína", "g/kg", "Aderência", "Status"].map(h => (
                 <th
                   key={h}
-                  className={`px-3 py-2 font-semibold ${h === "Data" ? "text-left" : "text-right last:text-center"}`}
-                  style={{ color: "var(--sys-text-secondary)", whiteSpace: "nowrap" }}
+                  className={`px-3 py-2 ${h === "Data" ? "text-left" : "text-right last:text-center"}`}
+                  style={{ color: "#8B9286", whiteSpace: "nowrap", fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.5px" }}
                 >
                   {h}
                 </th>
@@ -192,20 +196,20 @@ function TabelaRegistros({ registros }: { registros: NutricaoRegistroDia[] }) {
                       )}
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums" style={{ color: "var(--sys-text-secondary)" }}>
-                      {semRegistros ? "—" : `${Math.round(r.calorias_consumidas)} kcal`}
+                      {semRegistros ? "—" : `${Math.round(r.calorias_consumidas).toLocaleString("pt-BR")} kcal`}
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums" style={{ color: "var(--sys-text-secondary)" }}>
                       {semRegistros ? "—" : `${Math.round(r.macros.proteina_g)} g`}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: "var(--sys-text-secondary)" }}>
-                      {r.proteina_relativa_g_kg !== null ? `${r.proteina_relativa_g_kg.toFixed(2)}` : "—"}
+                    <td className="px-3 py-2 text-right tabular-nums font-semibold" style={{ color: classifyProteina(r.proteina_relativa_g_kg)?.style.color ?? "var(--sys-text-secondary)" }}>
+                      {r.proteina_relativa_g_kg !== null ? r.proteina_relativa_g_kg.toFixed(2).replace(".", ",") : "—"}
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums" style={{ color: "var(--sys-text-secondary)" }}>
                       {r.aderencia_calorica_pct !== null ? `${Math.round(r.aderencia_calorica_pct)}%` : "—"}
                     </td>
                     <td className="px-3 py-2 text-center">
                       {badge ? (
-                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${badge.bg} ${badge.text}`}>
+                        <span style={{ ...badge.style, fontSize: 11, fontWeight: 600, fontFamily: "'Inter', sans-serif", padding: "3px 10px", borderRadius: 9999, display: "inline-block" }}>
                           {badge.label}
                         </span>
                       ) : "—"}
@@ -256,7 +260,7 @@ function CorrelacaoCaloriasVsMeta({ registros }: { registros: NutricaoRegistroDi
   const dados = comMeta.map(r => ({
     data: fmtDate(r.data),
     aderencia: r.aderencia_calorica_pct !== null ? Math.round(r.aderencia_calorica_pct) : null,
-    cor: (r.aderencia_calorica_pct ?? 0) >= 90 ? "#22c55e" : (r.aderencia_calorica_pct ?? 0) >= 70 ? "#f59e0b" : "#ef4444",
+    cor: (r.aderencia_calorica_pct ?? 0) >= 90 ? "#4CA785" : (r.aderencia_calorica_pct ?? 0) >= 70 ? "#D9A441" : "#D97952",
   }));
   return (
     <div style={{ height: 130 }}>
@@ -288,10 +292,9 @@ function CorrelacaoCaloriasVsMeta({ registros }: { registros: NutricaoRegistroDi
 }
 
 const GLICEMIA_ZONAS = [
-  { y1: 0,   y2: 70,  fill: "rgba(239,68,68,0.08)",  label: "Hipoglicemia",  cor: "#ef4444" },
-  { y1: 70,  y2: 99,  fill: "rgba(34,197,94,0.07)",  label: "Normal jejum",  cor: "#22c55e" },
-  { y1: 99,  y2: 126, fill: "rgba(245,158,11,0.07)", label: "Pré-diabético", cor: "#f59e0b" },
-  { y1: 126, y2: 300, fill: "rgba(249,115,22,0.07)", label: "Atenção",        cor: "#f97316" },
+  { y1: 0,   y2: 100, fill: "rgba(76,167,133,0.07)",  label: "Normal (< 100 mg/dL)",       cor: "#4CA785" },
+  { y1: 100, y2: 125, fill: "rgba(217,164,65,0.07)",  label: "Elevado (100–125 mg/dL)",    cor: "#D9A441" },
+  { y1: 125, y2: 300, fill: "rgba(217,121,82,0.07)",  label: "Alto (> 125 mg/dL)",         cor: "#D97952" },
 ];
 
 function GlicemiaCorrelacaoChart({ glicemia }: { glicemia: NutricaoGlicemia }) {
@@ -404,14 +407,18 @@ function GlicemiaCorrelacaoChart({ glicemia }: { glicemia: NutricaoGlicemia }) {
                   : [`${v} g`, "Carboidratos"]
               }
             />
-            <Bar yAxisId="right" dataKey="carboidratos" fill="rgba(245,158,11,0.35)" radius={[2, 2, 0, 0]} barSize={10} name="carboidratos" />
+            <Bar yAxisId="right" dataKey="carboidratos" fill="#AD8C48" fillOpacity={0.45} radius={[2, 2, 0, 0]} barSize={10} name="carboidratos" />
             <Line
               yAxisId="left"
               type="monotone"
               dataKey="glicemia"
-              stroke="var(--mod-longevidade-base)"
+              stroke="#4A5899"
               strokeWidth={2}
-              dot={{ r: 3, fill: "var(--mod-longevidade-base)", strokeWidth: 0 }}
+              dot={(props: { cx: number; cy: number; value: number }) => {
+                const { cx, cy, value } = props;
+                const cor = value < 100 ? "#4CA785" : value <= 125 ? "#D9A441" : "#D97952";
+                return <circle key={`dot-${cx}-${cy}`} cx={cx} cy={cy} r={3} fill={cor} stroke="none" />;
+              }}
               connectNulls={false}
               name="glicemia"
             />
@@ -422,12 +429,12 @@ function GlicemiaCorrelacaoChart({ glicemia }: { glicemia: NutricaoGlicemia }) {
       <div className="flex gap-3 flex-wrap">
         {GLICEMIA_ZONAS.map(z => (
           <span key={z.label} className="flex items-center gap-1 text-[9px]" style={{ color: "var(--sys-text-muted)" }}>
-            <span className="inline-block w-2 h-2 rounded-sm" style={{ background: z.cor, opacity: 0.7 }} />
+            <span className="inline-block w-2 h-2 rounded-sm" style={{ background: z.cor, opacity: 0.85 }} />
             {z.label}
           </span>
         ))}
         <span className="flex items-center gap-1 text-[9px]" style={{ color: "var(--sys-text-muted)" }}>
-          <span className="inline-block w-3 h-1 rounded" style={{ background: "rgba(245,158,11,0.5)" }} />
+          <span className="inline-block w-3 h-1 rounded" style={{ background: "#AD8C48", opacity: 0.7 }} />
           Carboidratos
         </span>
       </div>
@@ -504,9 +511,9 @@ function ComposicaoCorporalChart({ cc }: { cc: NutricaoComposicaoCorporal }) {
       <div style={{ height: 160 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={dados} margin={{ top: 4, right: 40, left: -16, bottom: 0 }}>
-            <ReferenceArea yAxisId="left" y1={1.6} y2={2.2} fill="rgba(34,197,94,0.07)" />
-            <ReferenceLine yAxisId="left" y={1.6} stroke="rgba(34,197,94,0.4)" strokeDasharray="3 3" />
-            <ReferenceLine yAxisId="left" y={2.2} stroke="rgba(34,197,94,0.4)" strokeDasharray="3 3" />
+            <ReferenceArea yAxisId="left" y1={1.6} y2={2.2} fill="rgba(76,167,133,0.08)" />
+            <ReferenceLine yAxisId="left" y={1.6} stroke="rgba(76,167,133,0.5)" strokeDasharray="3 3" />
+            <ReferenceLine yAxisId="left" y={2.2} stroke="rgba(76,167,133,0.5)" strokeDasharray="3 3" />
             <XAxis dataKey="label" tick={{ fontSize: 9, fill: "var(--sys-text-muted)" }} interval="preserveStartEnd" />
             <YAxis
               yAxisId="left"
@@ -540,9 +547,9 @@ function ComposicaoCorporalChart({ cc }: { cc: NutricaoComposicaoCorporal }) {
               yAxisId="left"
               type="monotone"
               dataKey="proteina"
-              stroke="var(--mod-longevidade-base)"
+              stroke="#648D4A"
               strokeWidth={2}
-              dot={{ r: 3, fill: "var(--mod-longevidade-base)", strokeWidth: 0 }}
+              dot={{ r: 3, fill: "#648D4A", strokeWidth: 0 }}
               connectNulls={false}
               name="proteina"
             />
@@ -550,10 +557,10 @@ function ComposicaoCorporalChart({ cc }: { cc: NutricaoComposicaoCorporal }) {
               yAxisId="right"
               type="monotone"
               dataKey="massaMagra"
-              stroke="#22c55e"
+              stroke="#3D7A8C"
               strokeWidth={2}
               strokeDasharray="5 3"
-              dot={{ r: 3, fill: "#22c55e", strokeWidth: 0 }}
+              dot={{ r: 3, fill: "#3D7A8C", strokeWidth: 0 }}
               connectNulls={false}
               name="massaMagra"
             />
@@ -562,15 +569,15 @@ function ComposicaoCorporalChart({ cc }: { cc: NutricaoComposicaoCorporal }) {
       </div>
       <div className="flex gap-4 flex-wrap">
         <span className="flex items-center gap-1 text-[9px]" style={{ color: "var(--sys-text-muted)" }}>
-          <span className="inline-block w-4 h-0.5 rounded" style={{ background: "var(--mod-longevidade-base)" }} />
+          <span className="inline-block w-4 h-0.5 rounded" style={{ background: "#648D4A" }} />
           Proteína / kg massa magra
         </span>
         <span className="flex items-center gap-1 text-[9px]" style={{ color: "var(--sys-text-muted)" }}>
-          <span className="inline-block w-4 h-0.5 rounded border-t-2 border-dashed border-green-500" />
+          <span className="inline-block w-4" style={{ borderTop: "2px dashed #3D7A8C" }} />
           Massa magra
         </span>
         <span className="flex items-center gap-1 text-[9px]" style={{ color: "var(--sys-text-muted)" }}>
-          <span className="inline-block w-3 h-2 rounded-sm bg-green-200 opacity-60" />
+          <span className="inline-block w-3 h-2 rounded-sm" style={{ background: "rgba(76,167,133,0.25)" }} />
           Faixa ideal 1.6–2.2 g/kg
         </span>
       </div>
@@ -579,11 +586,10 @@ function ComposicaoCorporalChart({ cc }: { cc: NutricaoComposicaoCorporal }) {
 }
 
 const CHART_BANDS = [
-  { y1: 0,   y2: 1.2, fill: "rgba(239,68,68,0.08)",   label: "< 1.2" },
-  { y1: 1.2, y2: 1.6, fill: "rgba(245,158,11,0.08)",  label: "1.2–1.6" },
-  { y1: 1.6, y2: 2.2, fill: "rgba(34,197,94,0.10)",   label: "1.6–2.2" },
-  { y1: 2.2, y2: 3.0, fill: "rgba(245,158,11,0.08)",  label: "> 2.2" },
-  { y1: 3.0, y2: 5,   fill: "rgba(239,68,68,0.08)",   label: "> 3.0" },
+  { y1: 0,   y2: 1.2, fill: "rgba(217,121,82,0.06)",  label: "< 1.2" },
+  { y1: 1.2, y2: 1.6, fill: "rgba(217,164,65,0.06)",  label: "1.2–1.6" },
+  { y1: 1.6, y2: 2.2, fill: "rgba(76,167,133,0.06)",  label: "1.6–2.2" },
+  { y1: 2.2, y2: 5.0, fill: "rgba(217,164,65,0.06)",  label: "> 2.2" },
 ];
 
 function ProteinaChart({ serie }: { serie: { data: string; valor: number | null }[] }) {
@@ -606,7 +612,7 @@ function ProteinaChart({ serie }: { serie: { data: string; valor: number | null 
               </p>
               <p className="text-[10px]" style={{ color: "var(--sys-text-muted)" }}>g/kg</p>
               {cls && (
-                <span className={`mt-1 inline-block text-[9px] font-medium px-1.5 py-0.5 rounded-full ${cls.bg} ${cls.text}`}>
+                <span style={{ ...cls.style, fontSize: 9, fontWeight: 600, fontFamily: "'Inter', sans-serif", padding: "2px 6px", borderRadius: 9999, display: "inline-block", marginTop: 4 }}>
                   {cls.label}
                 </span>
               )}
@@ -630,10 +636,11 @@ function ProteinaChart({ serie }: { serie: { data: string; valor: number | null 
           {CHART_BANDS.map(b => (
             <ReferenceArea key={b.label} y1={b.y1} y2={Math.min(b.y2, maxY)} fill={b.fill} />
           ))}
-          <ReferenceLine y={1.6} stroke="rgba(34,197,94,0.4)" strokeDasharray="3 3" />
-          <ReferenceLine y={2.2} stroke="rgba(34,197,94,0.4)" strokeDasharray="3 3" />
-          <XAxis dataKey="data" tick={{ fontSize: 9, fill: "var(--sys-text-muted)" }} interval="preserveStartEnd" />
-          <YAxis domain={[0, maxY]} tick={{ fontSize: 9, fill: "var(--sys-text-muted)" }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#E8EBE5" strokeWidth={0.5} vertical={false} />
+          <ReferenceLine y={1.6} stroke="rgba(76,167,133,0.5)" strokeDasharray="3 3" />
+          <ReferenceLine y={2.2} stroke="rgba(217,164,65,0.5)" strokeDasharray="3 3" />
+          <XAxis dataKey="data" tick={{ fontSize: 11, fill: "#8B9286", fontFamily: "'Inter', sans-serif" }} interval="preserveStartEnd" />
+          <YAxis domain={[0, maxY]} tick={{ fontSize: 11, fill: "#8B9286", fontFamily: "'Inter', sans-serif" }} />
           <RechartsTooltip
             formatter={(v: number) => [v != null ? `${v.toFixed(2)} g/kg` : "—", "Proteína relativa"]}
             labelStyle={{ color: "var(--sys-text-primary)", fontSize: 11, fontWeight: 600, marginBottom: 2 }}
@@ -649,7 +656,7 @@ function ProteinaChart({ serie }: { serie: { data: string; valor: number | null 
           <Line
             type="monotone"
             dataKey="valor"
-            stroke="var(--score-excellent-icon)"
+            stroke="#648D4A"
             strokeWidth={2}
             dot={false}
             connectNulls={false}
@@ -746,18 +753,17 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
   return (
     <div className="space-y-6" data-testid="aba-nutricao">
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-sm font-medium" style={{ color: "var(--sys-text-secondary)" }}>Período:</span>
         {(["7", "30", "90"] as Periodo[]).map(p => (
           <button
             key={p}
             onClick={() => setPeriodo(p)}
             disabled={isFetching}
             data-testid={`btn-periodo-${p}`}
-            className="px-3 py-1.5 text-xs font-medium rounded-md transition-all disabled:cursor-wait"
+            className="transition-all disabled:cursor-wait"
             style={
               periodo === p
-                ? { background: "var(--mod-longevidade-base)", color: "#fff", opacity: isFetching ? 0.75 : 1 }
-                : { background: "var(--mod-longevidade-bg-subtle)", color: "var(--sys-text-secondary)", border: "1px solid var(--mod-longevidade-border)" }
+                ? { background: "#4A5899", color: "#FFFFFF", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600, borderRadius: 8, padding: "6px 14px", border: "none", opacity: isFetching ? 0.75 : 1 }
+                : { background: "transparent", color: "#8B9286", fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 500, borderRadius: 8, padding: "6px 14px", border: "1px solid #D4D9D0" }
             }
           >
             {p}d
@@ -819,7 +825,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
       ) : (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" data-testid="grid-resumo">
-            <CardResumo title="Proteína Relativa" tooltip={TOOLTIPS_COMPONENTES.proteina_relativa}>
+            <CardResumo title="Proteína relativa" tooltip={TOOLTIPS_COMPONENTES.proteina_relativa}>
               {proteinaValor !== null ? (
                 <>
                   <div className="flex items-baseline gap-1">
@@ -829,7 +835,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
                     <span className="text-xs" style={{ color: "var(--sys-text-muted)" }}>g/kg</span>
                   </div>
                   {proteinaClass && (
-                    <span className={`mt-1.5 inline-block text-[10px] font-medium px-2 py-0.5 rounded-full ${proteinaClass.bg} ${proteinaClass.text}`}>
+                    <span style={{ ...proteinaClass.style, fontSize: 11, fontWeight: 600, fontFamily: "'Inter', sans-serif", padding: "3px 10px", borderRadius: 9999, display: "inline-block", marginTop: 6 }}>
                       {proteinaClass.label}
                     </span>
                   )}
@@ -851,7 +857,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
               )}
             </CardResumo>
 
-            <CardResumo title="Aderência Calórica" tooltip={TOOLTIPS_COMPONENTES.aderencia_calorica}>
+            <CardResumo title="Aderência calórica" tooltip={TOOLTIPS_COMPONENTES.aderencia_calorica}>
               {aderenciaValor !== null ? (
                 <>
                   <div className="flex items-baseline gap-1">
@@ -860,12 +866,15 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
                     </span>
                     <span className="text-xs" style={{ color: "var(--sys-text-muted)" }}>%</span>
                   </div>
-                  <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--mod-longevidade-border)" }}>
+                  <div className="mt-2 h-2 rounded-full overflow-hidden" style={{ background: "#F5F3EE" }}>
                     <div
                       className="h-full rounded-full transition-all"
                       style={{
                         width: `${Math.min(aderenciaValor ?? 0, 100)}%`,
-                        background: (aderenciaValor ?? 0) >= 70 ? "var(--score-excellent-icon)" : "var(--score-attention-icon)",
+                        background: (aderenciaValor ?? 0) > 110 ? "#D9A441"
+                          : (aderenciaValor ?? 0) >= 90 ? "#4CA785"
+                          : (aderenciaValor ?? 0) >= 70 ? "#D9A441"
+                          : "#D97952",
                       }}
                     />
                   </div>
@@ -883,7 +892,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
               )}
             </CardResumo>
 
-            <CardResumo title="Refeições / dia" tooltip={TOOLTIPS_COMPONENTES.refeicoes_por_dia}>
+            <CardResumo title="Refeições por dia" tooltip={TOOLTIPS_COMPONENTES.refeicoes_por_dia}>
               {resumo?.refeicoes_por_dia_7d !== null && resumo?.refeicoes_por_dia_7d !== undefined ? (
                 <div className="flex items-baseline gap-1">
                   <span className="text-2xl font-bold" style={{ color: "var(--mod-longevidade-text)" }}>
@@ -896,7 +905,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
               )}
             </CardResumo>
 
-            <CardResumo title="Distribuição de Macros" tooltip={TOOLTIPS_COMPONENTES.macros_distribuicao}>
+            <CardResumo title="Distribuição de macros" tooltip={TOOLTIPS_COMPONENTES.macros_distribuicao}>
               <MacroDonut
                 proteina={macros?.proteina_pct ?? null}
                 carbo={macros?.carboidrato_pct ?? null}
@@ -915,9 +924,8 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
             data-testid="secao-grafico-proteina"
           >
             <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="h-4 w-4" style={{ color: "var(--sys-text-muted)" }} />
-              <p className="text-sm font-semibold" style={{ color: "var(--mod-longevidade-text)" }}>
-                Proteína Relativa — Evolução 30d
+              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 16, fontWeight: 600, color: "#2F5641" }}>
+                Proteína relativa — evolução 30 dias
               </p>
               <InfoTooltip text={TOOLTIPS_COMPONENTES.proteina_relativa} side="top" />
             </div>
@@ -931,13 +939,13 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
                 <ProteinaChart serie={serie_proteina_relativa_30d} />
                 <div className="flex gap-4 mt-3 flex-wrap">
                   {[
-                    { color: "bg-red-200",    label: "< 1.2 g/kg — Insuficiente" },
-                    { color: "bg-yellow-200", label: "1.2–1.6 g/kg — Subótimo" },
-                    { color: "bg-green-200",  label: "1.6–2.2 g/kg — Adequado" },
-                    { color: "bg-yellow-200", label: "> 2.2 g/kg — Elevado" },
+                    { color: "#D97952", label: "< 1.2 g/kg — Insuficiente" },
+                    { color: "#D9A441", label: "1.2–1.6 g/kg — Subótimo" },
+                    { color: "#4CA785", label: "1.6–2.2 g/kg — Adequado" },
+                    { color: "#D9A441", label: "> 2.2 g/kg — Elevado" },
                   ].map(l => (
                     <span key={l.label} className="flex items-center gap-1 text-[9px]" style={{ color: "var(--sys-text-muted)" }}>
-                      <span className={`inline-block w-2.5 h-2 rounded-sm ${l.color} opacity-70`} />
+                      <span className="inline-block w-2.5 h-2 rounded-sm" style={{ background: l.color, opacity: 0.7 }} />
                       {l.label}
                     </span>
                   ))}
@@ -954,12 +962,9 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
             }}
             data-testid="secao-correlacoes"
           >
-            <div className="flex items-center gap-2">
-              <GitBranch className="h-4 w-4" style={{ color: "var(--sys-text-muted)" }} />
-              <p className="text-sm font-semibold" style={{ color: "var(--mod-longevidade-text)" }}>
-                Correlações
-              </p>
-            </div>
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 600, color: "#8B9286", textTransform: "uppercase", letterSpacing: 1 }}>
+              Correlações
+            </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div
@@ -968,14 +973,14 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
                 data-testid="correlacao-calorias-meta"
               >
                 <p className="text-xs font-semibold" style={{ color: "var(--sys-text-secondary)" }}>
-                  Aderência Calórica — evolução diária
+                  Aderência calórica — evolução diária
                 </p>
                 <CorrelacaoCaloriasVsMeta registros={registros} />
                 <div className="flex gap-3 flex-wrap">
                   {[
-                    { color: "#22c55e", label: "≥ 90%" },
-                    { color: "#f59e0b", label: "70–89%" },
-                    { color: "#ef4444", label: "< 70%" },
+                    { color: "#4CA785", label: "≥ 90%" },
+                    { color: "#D9A441", label: "70–89%" },
+                    { color: "#D97952", label: "< 70%" },
                   ].map(l => (
                     <span key={l.label} className="flex items-center gap-1 text-[9px]" style={{ color: "var(--sys-text-muted)" }}>
                       <span className="inline-block w-2 h-2 rounded-sm" style={{ background: l.color }} />
@@ -997,7 +1002,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
                 data-testid="correlacao-proteina-massa-magra"
               >
                 <p className="text-xs font-semibold" style={{ color: "var(--sys-text-secondary)" }}>
-                  Proteína Relativa ↔ Massa Magra
+                  Proteína relativa ↔ massa magra
                 </p>
                 {composicao_corporal ? (
                   <ComposicaoCorporalChart cc={composicao_corporal} />
@@ -1023,7 +1028,7 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
                 data-testid="correlacao-carboidrato-glicemia"
               >
                 <p className="text-xs font-semibold" style={{ color: "var(--sys-text-secondary)" }}>
-                  Carboidrato ↔ Glicemia
+                  Carboidrato ↔ glicemia
                 </p>
                 {glicemia ? (
                   <GlicemiaCorrelacaoChart glicemia={glicemia} />
@@ -1042,13 +1047,10 @@ export function AbaNutricao({ pacienteId }: AbaNutricaoProps) {
           {registros.length > 0 && (
             <div className="space-y-3" data-testid="secao-linha-do-tempo">
               <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold" style={{ color: "var(--mod-longevidade-text)" }}>
-                  Linha do Tempo de Registros
+                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 16, fontWeight: 600, color: "#2F5641" }}>
+                  Linha do tempo de registros
                 </p>
-                <span
-                  className="text-[10px] px-2 py-0.5 rounded-full"
-                  style={{ background: "var(--mod-longevidade-bg-subtle)", color: "var(--sys-text-muted)", border: "1px solid var(--mod-longevidade-border)" }}
-                >
+                <span style={{ background: "#4A5899", color: "#FFFFFF", fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 600, borderRadius: 8, padding: "2px 10px", display: "inline-block" }}>
                   {registros.length} dias
                 </span>
               </div>

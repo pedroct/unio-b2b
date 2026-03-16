@@ -1,0 +1,430 @@
+# UNIO — Correção C25: Aba Nutrição Completa
+## Painel de Longevidade — Auditoria e Refinamento
+
+---
+
+**Prioridade:** Média-Alta
+**Tela:** Painel de Longevidade → Aba Nutrição (B2B web)
+**Contexto:** A aba Nutrição é a mais completa e visualmente rica do Painel, com KPIs, gráfico de evolução, correlações cruzadas e tabela de registros. O conteúdo está excelente — os ajustes são de refinamento para alinhar com os padrões UNIO já definidos nas outras abas.
+
+---
+
+## Análise Geral
+
+### O que está muito bom
+```
+✅ Conteúdo clínico denso e relevante (proteína relativa, aderência, macros, correlações)
+✅ Gráfico "Proteína Relativa — Evolução 30d" com faixas de referência coloridas
+✅ Seção "Correlações" com 3 gráficos cruzados — excelente para análise do profissional
+✅ Gráfico "Proteína Relativa ↔ Massa Magra" com eixo duplo — visão avançada
+✅ Gráfico "Carboidrato ↔ Glicemia" conectando nutrição e biometria
+✅ Tabela "Linha do tempo de registros" com aderência e status por dia
+✅ Donut de distribuição de macros (Proteína 24%, Carbo 49%, Gordura 27%)
+✅ Filtro de período (7d, 30d, 90d) no topo
+✅ Badge "Elevado" na proteína relativa (classificação funcional)
+✅ Barra de progresso na aderência calórica (101%)
+✅ Chevron de expansão na tabela (>) para detalhe por dia
+```
+
+### Desvios a corrigir
+```
+🔴 Labels de seção ausentes — "Correlações" usa ícone+bold em vez do padrão
+🔴 Cores dos gráficos: verdes genéricos em vez de tokens UNIO
+🔴 Badge "Elevado" em amarelo/verde — verificar se é o token correto
+🔴 Status na tabela ("Baixa", "Alta", "Moderada") em vermelho/verde — cores fora do padrão
+🔴 Cards de KPI sem accent bar do módulo
+⚠️ Tipografia dos gráficos parece system font
+⚠️ Legenda do gráfico de evolução com cores que não correspondem aos tokens
+⚠️ Donut de macros com cores que podem não ser os tokens exatos
+⚠️ Título "Linha do Tempo de Registros" em Title Case
+⚠️ "Período:" como label antes dos filtros — desnecessário
+```
+
+---
+
+## Bloco 1 — KPIs (4 cards superiores)
+
+### Correções
+
+**C25.1 — Filtro de período:**
+```
+ANTES:  "Período: [7d] [30d] [90d]"
+DEPOIS: Remover label "Período:" — os botões são autoexplicativos
+
+Filtro ativo:
+  Fundo:    #4A5899 (Deep Indigo)
+  Texto:    Inter SemiBold 13px, branco
+  Radius:   8px, padding 6px 14px
+
+Filtro inativo:
+  Fundo:    transparente
+  Borda:    1px #D4D9D0
+  Texto:    Inter Medium 13px, #8B9286
+  Hover:    borda #4A5899 30%
+```
+
+**C25.2 — Card "Proteína Relativa":**
+```
+Container:
+  Fundo: #FFFFFF | Border: 1px #E8EBE5 | Radius: 12px
+  Accent bar: 3px topo, #4A5899 (Deep Indigo)
+  Sombra: 0 1px 3px rgba(47,86,65,0.06)
+
+Título:    "Proteína relativa" — Inter SemiBold 14px, #2F5641
+           (sentence case, não "Proteína Relativa")
+Tooltip:   ⓘ em #8B9286, hover #4A5899
+Valor:     "2.50" — Inter Bold 28px, #2F5641
+Unidade:   "g/kg" — Inter Regular 14px, #8B9286
+
+Badge "Elevado":
+  Verificar classificação. Se > 2.2 g/kg = Elevado:
+  Fundo:   #D9A441 15% opacidade (warning — elevado é atenção, não positivo)
+  Texto:   Inter SemiBold 11px, #D9A441
+  Radius:  9999px, padding 3px 10px
+```
+
+**Nota sobre classificação de proteína relativa:**
+
+| Faixa | Label | Cor | Token |
+|-------|-------|-----|-------|
+| < 1.2 g/kg | Insuficiente | `#D97952` | accent |
+| 1.2–1.6 g/kg | Subótimo | `#D9A441` | warning |
+| 1.6–2.2 g/kg | Adequado | `#4CA785` | success |
+| > 2.2 g/kg | Elevado | `#D9A441` | warning (elevado pode indicar excesso) |
+
+**C25.3 — Card "Aderência Calórica":**
+```
+Título:    "Aderência calórica" — Inter SemiBold 14px, #2F5641
+Valor:     "101" — Inter Bold 28px, #2F5641
+Unidade:   "%" — Inter Regular 14px, #8B9286
+
+Barra de progresso:
+  Trilha:  #F5F3EE (bgSecondary), height 8px, radius 4px
+  Fill:    Cor baseada no valor:
+           < 70%:   #D97952 (accent) — baixa aderência
+           70–89%:  #D9A441 (warning) — moderada
+           90–110%: #4CA785 (success) — ideal
+           > 110%:  #D9A441 (warning) — excesso calórico
+  Width:   Proporcional (capped em 100% visual para >100%)
+```
+
+**C25.4 — Card "Refeições / dia":**
+```
+Título:    "Refeições por dia" — Inter SemiBold 14px, #2F5641
+           (NÃO "Refeições / dia" — usar texto, não barra)
+Valor:     "26.6" — Inter Bold 28px, #2F5641
+Subtítulo: "média 7d" — Inter Regular 12px, #8B9286
+```
+
+**C25.5 — Card "Distribuição de Macros":**
+```
+Título:    "Distribuição de macros" — Inter SemiBold 14px, #2F5641
+Tooltip:   ⓘ em #8B9286
+
+Donut chart:
+  Proteína:  cor #648D4A (primaryLight / modNutricao) — NÃO azul
+  Carbo:     cor #AD8C48 (secondary / dourado)
+  Gordura:   cor #D97952 (accent / terracota)
+
+  Essas cores mapeiam para a lógica nutricional do app mobile:
+  PROT = verde, CARB = dourado, GORD = terracota
+
+Legenda:
+  Cada item: dot 8px + "Proteína 24%" Inter Regular 12px, #5F6B5A
+  "Média 30d" — Inter Regular 11px, #8B9286
+```
+
+---
+
+## Bloco 2 — Gráfico "Proteína Relativa — Evolução 30d"
+
+### Correções
+
+**C25.6 — Título do gráfico:**
+```
+ANTES:  "📈 Proteína Relativa — Evolução 30d ⓘ"
+DEPOIS: "Proteína relativa — evolução 30 dias ⓘ"
+        Inter SemiBold 16px, #2F5641
+        Sem emoji 📈 — usar sentence case
+        "30d" → "30 dias" por extenso
+```
+
+**C25.7 — Faixas de referência:**
+
+As faixas coloridas no fundo do gráfico estão corretas no conceito. Alinhar cores com tokens:
+
+```
+< 1.2 g/kg (Insuficiente):  fill #D97952 com 6% opacidade
+1.2–1.6 g/kg (Subótimo):    fill #D9A441 com 6% opacidade
+1.6–2.2 g/kg (Adequado):    fill #4CA785 com 6% opacidade
+> 2.2 g/kg (Elevado):       fill #D9A441 com 6% opacidade
+```
+
+**C25.8 — Linha do gráfico:**
+```
+Cor da linha:   #648D4A (primaryLight — cor da nutrição)
+Stroke:         2px
+Pontos:         Circle 5px, cor varia com a zona do valor
+                Na zona adequada: #4CA785
+                Na zona subótima: #D9A441
+                Na zona insuficiente: #D97952
+
+Linha de referência (dashed):
+  1.6 g/kg (limite inferior adequado): dashed #4CA785 50% opacidade
+  2.2 g/kg (limite superior adequado): dashed #D9A441 50% opacidade
+```
+
+**C25.9 — Legenda do gráfico:**
+```
+Layout:        Horizontal, gap 20px, abaixo do gráfico
+Cada item:     Rect 10×10px cor + label
+               Inter Regular 12px, #5F6B5A
+
+Itens:
+  ▪ #D97952  "< 1.2 g/kg — Insuficiente"
+  ▪ #D9A441  "1.2–1.6 g/kg — Subótimo"
+  ▪ #4CA785  "1.6–2.2 g/kg — Adequado"
+  ▪ #D9A441  "> 2.2 g/kg — Elevado"
+```
+
+**C25.10 — Eixos do gráfico:**
+```
+Eixo Y:  Inter Regular 11px, #8B9286
+Eixo X:  Inter Regular 11px, #8B9286
+         Formato de data: "15/02", "16/02" — ok, compacto para 30 dias
+Grid:    Linhas horizontais dashed, #E8EBE5, 0.5px
+```
+
+---
+
+## Bloco 3 — Correlações
+
+### Correções
+
+**C25.11 — Título da seção:**
+```
+ANTES:  "↕ Correlações" (ícone + bold)
+DEPOIS: Label de seção padrão:
+        "CORRELAÇÕES" — Inter SemiBold 12px, #8B9286, uppercase, letter-spacing 1px
+        Sem ícone — o label de seção é organizacional
+```
+
+**C25.12 — Card "Aderência calórica — evolução diária":**
+```
+Título:    "Aderência calórica — evolução diária"
+           Inter SemiBold 14px, #2F5641, sentence case
+
+Barras do gráfico:
+  ≥ 90%:   #4CA785 (success — meta batida)
+  70–89%:  #D9A441 (warning — moderada)
+  < 70%:   #D97952 (accent — baixa)
+
+Legenda:
+  ▪ #4CA785  "≥ 90%"
+  ▪ #D9A441  "70–89%"
+  ▪ #D97952  "< 70%"
+```
+
+**C25.13 — Card "Proteína relativa ↔ Massa magra":**
+```
+Título:    "Proteína relativa ↔ massa magra"
+           Inter SemiBold 14px, #2F5641
+
+Linha proteína:   #648D4A (primaryLight / nutrição) — stroke 2px
+Linha massa magra: #3D7A8C (modCorpo) — stroke 2px
+Faixa ideal:      fill #4CA785 8% opacidade (1.6–2.2 g/kg)
+
+Legenda:
+  ▪ #648D4A  "Proteína / kg massa magra"
+  ▪ #3D7A8C  "Massa magra"
+  ▪ #4CA785  "Faixa ideal 1.6–2.2 g/kg"
+
+Eixo Y esquerdo: "g/kg" — para proteína
+Eixo Y direito:  "kg" — para massa magra
+Font eixos:      Inter Regular 11px, #8B9286
+```
+
+**C25.14 — Card "Carboidrato ↔ Glicemia":**
+```
+Título:    "Carboidrato ↔ glicemia"
+           Inter SemiBold 14px, #2F5641
+
+Mini KPIs no topo:
+  4 cards métricos inline:
+  Média:    "101.8 mg/dL" → "101,8 mg/dL" (vírgula brasileira)
+  Mínima:   "85 mg/dL"
+  Máxima:   "116 mg/dL"
+  Leituras: "32"
+  
+  Cada card:
+    Label:  Inter Regular 11px, #8B9286
+    Valor:  Inter SemiBold 16px, #2F5641
+    Unidade: Inter Regular 11px, #8B9286
+
+Barras (carboidrato):
+  Cor: #AD8C48 (secondary / dourado — cor do carbo no UNIO)
+
+Pontos/linha (glicemia):
+  Cor: depende da zona de glicose:
+    < 100: #4CA785 (normal)
+    100–125: #D9A441 (elevado)
+    > 125: #D97952 (alto)
+
+Legenda:
+  Cores de zona da glicemia:
+  ANTES:  "Hipoglicemia", "Normal jejum", "Pré-diabético", "Atenção"
+  DEPOIS: Alinhar com as 3 zonas definidas no C18:
+          ▪ #4CA785  "Normal (< 100 mg/dL)"
+          ▪ #D9A441  "Elevado (100–125 mg/dL)"
+          ▪ #D97952  "Alto (> 125 mg/dL)"
+          ▪ #AD8C48  "Carboidratos"
+
+  NÃO USAR "Hipoglicemia" nem "Pré-diabético" no B2B sem contexto.
+  O Painel é para profissionais, mas as labels devem ser consistentes
+  com o sistema de zonas UNIO. O profissional pode aprofundar no detalhe.
+```
+
+---
+
+## Bloco 4 — Linha do Tempo de Registros
+
+### Correções
+
+**C25.15 — Título:**
+```
+ANTES:  "Linha do Tempo de Registros [7 dias]"
+DEPOIS: "Linha do tempo de registros" — Inter SemiBold 16px, #2F5641
+        Badge "7 dias" ao lado: fundo #4A5899, texto branco, radius 8px
+        Sentence case no título
+```
+
+**C25.16 — Headers da tabela:**
+```
+ANTES:  "Data  Calorias  Proteína g  g/kg  Aderência  Status"
+DEPOIS: "Data  Calorias  Proteína  g/kg  Aderência  Status"
+        Inter Medium 12px, #8B9286, uppercase, letter-spacing 0.5px
+        Fundo: #F5F3EE
+        Border-bottom: 2px solid #E8EBE5
+
+"Proteína g" → "Proteína" (a unidade "g" já aparece nos valores)
+```
+
+**C25.17 — Valores da tabela:**
+```
+Data:       Inter Regular 14px, #5F6B5A — "16/03", "15/03", etc.
+Chevron:    ">" em #8B9286 — tap expande detalhe do dia
+Calorias:   Inter Regular 14px, #2F5641 — "527 kcal"
+Proteína:   Inter Regular 14px, #2F5641 — "25 g"
+g/kg:       Inter SemiBold 14px, cor da zona de proteína:
+            < 1.2: #D97952
+            1.2–1.6: #D9A441
+            1.6–2.2: #4CA785
+            > 2.2: #D9A441
+Aderência:  Inter Regular 14px, #2F5641 — "13%", "93%", etc.
+```
+
+**C25.18 — Coluna "Status" — cores e labels:**
+
+```
+ANTES:
+  "Baixa" em vermelho
+  "Alta" em vermelho/coral
+  "Moderada" em amarelo/coral
+
+DEPOIS (alinhar com sistema de aderência):
+  Status baseia-se na aderência calórica:
+
+  | Aderência | Label | Cor | Token |
+  |-----------|-------|-----|-------|
+  | < 70% | "Baixa" | #D97952 | accent |
+  | 70–89% | "Moderada" | #D9A441 | warning |
+  | 90–110% | "Ideal" | #4CA785 | success |
+  | > 110% | "Excedente" | #D9A441 | warning |
+
+  NÃO usar "Alta" para aderência > 110% — "Alta" soa positivo.
+  "Excedente" comunica que ultrapassou a meta sem julgamento.
+
+  Badge de status:
+    Fundo:    cor com 12% opacidade
+    Texto:    Inter SemiBold 12px, cor sólida
+    Radius:   9999px, padding 3px 10px
+```
+
+**C25.19 — Separador de milhar:**
+```
+ANTES:  "3707 kcal", "4892 kcal", "5516 kcal", "6432 kcal"
+DEPOIS: "3.707 kcal", "4.892 kcal", "5.516 kcal", "6.432 kcal"
+        Formato brasileiro com ponto como separador de milhar
+```
+
+**C25.20 — Valor de g/kg com vírgula:**
+```
+ANTES:  "2.50", "0.32", "2.39"
+DEPOIS: "2,50", "0,32", "2,39"
+        Formato brasileiro com vírgula decimal
+```
+
+---
+
+## Padrões de Cores para Gráficos Nutricionais
+
+Referência rápida para a LLM do frontend — usar exclusivamente estas cores em gráficos da aba Nutrição:
+
+```
+Proteína (linha/barra):    #648D4A (primaryLight / modNutricao)
+Carboidrato (linha/barra): #AD8C48 (secondary / dourado)
+Gordura (linha/barra):     #D97952 (accent / terracota)
+
+Estas são as mesmas cores dos macro badges no app mobile:
+  PROT = verde (#648D4A)
+  CARB = dourado (#AD8C48)
+  GORD = terracota (#D97952)
+
+Massa magra (correlação):  #3D7A8C (modCorpo)
+Glicemia (correlação):     Cor da zona (success/warning/accent)
+
+Faixas de referência:      Cor da zona com 6–8% opacidade
+Linhas de referência:      Cor da zona com 50% opacidade, dashed
+Grid do gráfico:           #E8EBE5, 0.5px, dashed
+Eixos:                     Inter Regular 11px, #8B9286
+```
+
+---
+
+## Checklist
+
+### KPIs
+```
+[ ] C25.1  — Remover label "Período:", filtro ativo #4A5899
+[ ] C25.2  — Card proteína: sentence case, accent bar #4A5899, badge warning
+[ ] C25.3  — Card aderência: barra com cor por faixa (success/warning/accent)
+[ ] C25.4  — "Refeições por dia" (sem barra), sentence case
+[ ] C25.5  — Donut macros: Proteína #648D4A, Carbo #AD8C48, Gordura #D97952
+```
+
+### Gráfico de evolução
+```
+[ ] C25.6  — Título sentence case, sem emoji, "30 dias" por extenso
+[ ] C25.7  — Faixas de referência com cores de token (6% opacidade)
+[ ] C25.8  — Linha #648D4A, pontos com cor da zona do valor
+[ ] C25.9  — Legenda com rects coloridos e labels descritivos
+[ ] C25.10 — Eixos Inter 11px #8B9286, grid dashed #E8EBE5
+```
+
+### Correlações
+```
+[ ] C25.11 — Label "CORRELAÇÕES" no padrão de seção (#8B9286 uppercase)
+[ ] C25.12 — Barras aderência: success/warning/accent por faixa
+[ ] C25.13 — Proteína #648D4A, massa magra #3D7A8C, faixa ideal #4CA785 8%
+[ ] C25.14 — Carbo #AD8C48, glicemia por zona, vírgula decimal, 3 zonas UNIO
+```
+
+### Tabela
+```
+[ ] C25.15 — Título sentence case + badge "7 dias" em #4A5899
+[ ] C25.16 — Headers: Inter 12px #8B9286, fundo #F5F3EE, "Proteína" sem "g"
+[ ] C25.17 — Valores g/kg com cor da zona de proteína
+[ ] C25.18 — Status: "Ideal"/#4CA785, "Moderada"/#D9A441, "Baixa"/#D97952, "Excedente"/#D9A441
+[ ] C25.19 — Separador de milhar: "3.707 kcal" (ponto)
+[ ] C25.20 — Decimal: "2,50 g/kg" (vírgula)
+```
