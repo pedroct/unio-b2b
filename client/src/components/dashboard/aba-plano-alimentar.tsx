@@ -38,6 +38,7 @@ import {
 import { EmptyState } from "@/components/empty-state";
 import { ModalDiasSemana } from "@/components/dashboard/modal-dias-semana";
 import { ModalNovaRefeicao } from "@/components/dashboard/modal-nova-refeicao";
+import { ModalNovoPlano } from "@/components/dashboard/modal-novo-plano";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { PlanoAlimentar, ResumoPlanoAlimentar, DiaSemana } from "@shared/schema";
@@ -95,6 +96,7 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
   const [diaSelecionado, setDiaSelecionado] = useState<DiaSemana>("segunda");
   const [modalDiasAberto, setModalDiasAberto] = useState(false);
   const [modalNovaRefeicaoAberta, setModalNovaRefeicaoAberta] = useState(false);
+  const [modalNovoPlanoAberto, setModalNovoPlanoAberto] = useState(false);
   const [editandoDescricao, setEditandoDescricao] = useState(false);
   const [novaDescricao, setNovaDescricao] = useState("");
   const { toast } = useToast();
@@ -195,12 +197,27 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
 
   if (!planosLista || planosLista.length === 0) {
     return (
-      <EmptyState
-        icon={<UtensilsCrossed className="h-12 w-12" />}
-        title="Sem plano alimentar"
-        description="Nenhum plano alimentar cadastrado. Crie um plano para começar a acompanhar a nutrição."
-        module="nutrition"
-      />
+      <>
+        <ModalNovoPlano
+          open={modalNovoPlanoAberto}
+          onOpenChange={setModalNovoPlanoAberto}
+          pacienteId={pacienteId}
+          diasOcupados={[]}
+          onSuccess={(plano) => setPlanoSelecionadoId(plano.id)}
+        />
+        <EmptyState
+          icon={<UtensilsCrossed className="h-12 w-12" />}
+          title="Sem plano alimentar"
+          description="Nenhum plano alimentar cadastrado. Crie um plano para começar a acompanhar a nutrição."
+          module="nutrition"
+          action={
+            <Button onClick={() => setModalNovoPlanoAberto(true)} data-testid="button-criar-primeiro-plano">
+              <Plus className="h-4 w-4 mr-2" />
+              Criar plano alimentar
+            </Button>
+          }
+        />
+      </>
     );
   }
 
@@ -261,36 +278,56 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
         />
       )}
 
-      {planosLista.length > 1 && (
-        <div className="flex items-center gap-3" data-testid="seletor-plano">
-          <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-            Plano:
-          </span>
-          <Select
-            value={planoId}
-            onValueChange={(val) => {
-              setPlanoSelecionadoId(val);
-              const novoPlano = planosLista.find((p) => p.id === val);
-              if (novoPlano && novoPlano.diasAtivos.length > 0) {
-                if (!novoPlano.diasAtivos.includes(diaSelecionado)) {
-                  setDiaSelecionado(novoPlano.diasAtivos[0]);
-                }
+      <ModalNovoPlano
+        open={modalNovoPlanoAberto}
+        onOpenChange={setModalNovoPlanoAberto}
+        pacienteId={pacienteId}
+        diasOcupados={planosLista.map((p) => p.diasAtivos)}
+        onSuccess={(novo) => {
+          setPlanoSelecionadoId(novo.id);
+        }}
+      />
+
+      <div className="flex items-center gap-3 flex-wrap" data-testid="seletor-plano">
+        <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+          Plano:
+        </span>
+        <Select
+          value={planoId}
+          onValueChange={(val) => {
+            setPlanoSelecionadoId(val);
+            const novoPlano = planosLista.find((p) => p.id === val);
+            if (novoPlano && novoPlano.diasAtivos.length > 0) {
+              if (!novoPlano.diasAtivos.includes(diaSelecionado)) {
+                setDiaSelecionado(novoPlano.diasAtivos[0]);
               }
-            }}
-          >
-            <SelectTrigger className="max-w-md" data-testid="select-plano">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {planosLista.map((p) => (
-                <SelectItem key={p.id} value={p.id} data-testid={`option-plano-${p.id}`}>
-                  {p.descricao}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+            }
+          }}
+        >
+          <SelectTrigger className="max-w-xs" data-testid="select-plano">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {planosLista.map((p) => (
+              <SelectItem key={p.id} value={p.id} data-testid={`option-plano-${p.id}`}>
+                {p.descricao}
+                {p.status === "rascunho" && (
+                  <span className="ml-1.5 text-xs text-muted-foreground">(rascunho)</span>
+                )}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setModalNovoPlanoAberto(true)}
+          data-testid="button-novo-plano"
+        >
+          <Plus className="h-3.5 w-3.5 mr-1.5" />
+          Novo plano
+        </Button>
+      </div>
 
       <div className="flex items-start gap-2" data-testid="campo-descricao-plano">
         {editandoDescricao ? (

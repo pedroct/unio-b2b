@@ -192,6 +192,7 @@ interface PlanoMockData {
 const planoDescricoes: Record<string, string> = {};
 const planoDiasAtivosMap: Record<string, DiaSemana[]> = {};
 const planoRefeicaoesExtras: Record<string, Refeicao[]> = {};
+const planosCriadosMap: Record<string, PlanoMockData[]> = {};
 
 function getPlanosMock(pacienteId: string): PlanoMockData[] {
   const plano1Id = `plano-${pacienteId}-1`;
@@ -349,6 +350,7 @@ export interface IStorage {
   getPatientTraining(patientId: string): Promise<TrainingSummary | undefined>;
   listarPlanosAlimentares(pacienteId: string): Promise<ResumoPlanoAlimentar[]>;
   getPlanoAlimentar(pacienteId: string, planoId: string, diaSemana: DiaSemana): Promise<PlanoAlimentar | undefined>;
+  criarPlanoAlimentar(pacienteId: string, descricao: string, diasAtivos: DiaSemana[]): Promise<ResumoPlanoAlimentar>;
   updateDiasAtivos(pacienteId: string, planoId: string, diasAtivos: DiaSemana[]): Promise<DiaSemana[]>;
   updateDescricaoPlano(pacienteId: string, planoId: string, descricao: string): Promise<string>;
   addRefeicao(pacienteId: string, planoId: string, refeicao: Omit<Refeicao, "id">): Promise<Refeicao | null>;
@@ -492,8 +494,10 @@ export class MemStorage implements IStorage {
     };
   }
   async listarPlanosAlimentares(pacienteId: string): Promise<ResumoPlanoAlimentar[]> {
-    const planos = getPlanosMock(pacienteId);
-    return planos.map((p) => ({
+    const mockPlanos = getPlanosMock(pacienteId);
+    const criadosPlanos = planosCriadosMap[pacienteId] || [];
+    const todos = [...mockPlanos, ...criadosPlanos];
+    return todos.map((p) => ({
       id: p.id,
       descricao: p.descricao,
       status: p.status,
@@ -503,7 +507,54 @@ export class MemStorage implements IStorage {
     }));
   }
 
+  async criarPlanoAlimentar(pacienteId: string, descricao: string, diasAtivos: DiaSemana[]): Promise<ResumoPlanoAlimentar> {
+    const id = `plano-${pacienteId}-${Date.now()}`;
+    const hoje = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const novoPlano: PlanoMockData = {
+      id,
+      descricao,
+      status: "rascunho",
+      diasAtivos,
+      dataCriacao: hoje,
+      refeicoes: [],
+      nutrientes: {
+        calorias: 0,
+        proteina: { gramas: 0, percentual: 0 },
+        carboidrato: { gramas: 0, percentual: 0 },
+        gordura: { gramas: 0, percentual: 0 },
+        fibra: 0,
+      },
+    };
+    if (!planosCriadosMap[pacienteId]) {
+      planosCriadosMap[pacienteId] = [];
+    }
+    planosCriadosMap[pacienteId].push(novoPlano);
+    return {
+      id: novoPlano.id,
+      descricao: novoPlano.descricao,
+      status: novoPlano.status,
+      diasAtivos: novoPlano.diasAtivos,
+      dataCriacao: novoPlano.dataCriacao,
+      calorias: novoPlano.nutrientes.calorias,
+    };
+  }
+
   async getPlanoAlimentar(pacienteId: string, planoId: string, diaSemana: DiaSemana): Promise<PlanoAlimentar | undefined> {
+    const criadosPlanos = planosCriadosMap[pacienteId] || [];
+    const planoCriado = criadosPlanos.find((p) => p.id === planoId);
+    if (planoCriado) {
+      return {
+        id: planoCriado.id,
+        pacienteId,
+        descricao: planoCriado.descricao,
+        status: planoCriado.status,
+        diaSemana,
+        diasAtivos: planoCriado.diasAtivos,
+        dataCriacao: planoCriado.dataCriacao,
+        refeicoes: planoCriado.refeicoes,
+        nutrientes: planoCriado.nutrientes,
+      };
+    }
     const planos = getPlanosMock(pacienteId);
     const plano = planos.find((p) => p.id === planoId);
     if (!plano) return undefined;
@@ -531,13 +582,19 @@ export class MemStorage implements IStorage {
   }
 
   async addRefeicao(pacienteId: string, planoId: string, refeicao: Omit<Refeicao, "id">): Promise<Refeicao | null> {
-    const planos = getPlanosMock(pacienteId);
-    const plano = planos.find((p) => p.id === planoId);
-    if (!plano) return null;
     const novaRefeicao: Refeicao = {
       id: `ref-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       ...refeicao,
     };
+    const criados = planosCriadosMap[pacienteId] || [];
+    const planoCriado = criados.find((p) => p.id === planoId);
+    if (planoCriado) {
+      planoCriado.refeicoes.push(novaRefeicao);
+      return novaRefeicao;
+    }
+    const planos = getPlanosMock(pacienteId);
+    const plano = planos.find((p) => p.id === planoId);
+    if (!plano) return null;
     if (!planoRefeicaoesExtras[planoId]) {
       planoRefeicaoesExtras[planoId] = [];
     }

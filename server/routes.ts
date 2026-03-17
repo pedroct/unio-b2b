@@ -191,6 +191,19 @@ export async function registerRoutes(
     return res.json(planos);
   });
 
+  app.post("/api/profissional/dashboard/pacientes/:id/planos-alimentares", async (req, res) => {
+    const { descricao, diasAtivos } = req.body;
+    if (!descricao || typeof descricao !== "string" || descricao.trim().length === 0) {
+      return res.status(400).json({ message: "descricao é obrigatória." });
+    }
+    const validos = ["segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo"];
+    const diasValidados = Array.isArray(diasAtivos)
+      ? [...new Set((diasAtivos as string[]).filter((d) => validos.includes(d)))]
+      : [];
+    const plano = await storage.criarPlanoAlimentar(req.params.id, descricao.trim(), diasValidados as any);
+    return res.status(201).json(plano);
+  });
+
   app.get("/api/profissional/dashboard/pacientes/:id/plano-alimentar", async (req, res) => {
     const planoId = req.query.planoId as string;
     const diaSemana = (req.query.diaSemana as string) || "segunda";
