@@ -94,7 +94,8 @@ export function normalizarAlimentoPlano(raw: any): AlimentoPlano {
     quantidade: safeParseFloat(raw.quantidade),
     unidade: raw.unidade ?? "g",
     grupo: raw.grupo,
-    alimentoTbcaId: raw.alimento_tbca_id ?? raw.alimentoTbcaId,
+    // staging usa alimento_id; também aceita alimento_tbca_id do formato anterior
+    alimentoTbcaId: raw.alimento_id ?? raw.alimento_tbca_id ?? raw.alimentoTbcaId,
   };
 }
 
@@ -125,12 +126,14 @@ export function normalizarPlanoAlimentar(raw: any): PlanoAlimentar {
 
   return {
     id: raw.id ?? "",
-    pacienteId: String(raw.paciente_id ?? raw.pacienteId ?? ""),
+    // staging usa cliente_id; mocks usam paciente_id ou pacienteId
+    pacienteId: String(raw.cliente_id ?? raw.paciente_id ?? raw.pacienteId ?? ""),
     descricao: raw.descricao ?? "",
     status: raw.status ?? "rascunho",
     diaSemana: raw.diaSemana ?? raw.dia_semana ?? ("segunda" as DiaSemana),
+    // staging não retorna diasAtivos — padrão []
     diasAtivos: raw.diasAtivos ?? raw.dias_ativos ?? [],
-    dataCriacao: raw.dataCriacao ?? raw.data_criacao ?? new Date().toISOString(),
+    dataCriacao: raw.dataCriacao ?? raw.data_criacao ?? "",
     refeicoes,
     nutrientes: raw.nutrientes ?? nutrientesFallback,
   };
@@ -162,7 +165,8 @@ export function montarPayloadRefeicao(
     observacao: observacao || undefined,
     alimentos: alimentos.map((a) => ({
       id: a.id,
-      alimento_tbca_id: a.alimentoTbcaId ?? a.id,
+      // staging usa alimento_id conforme AlimentoPlanoInSchema
+      alimento_id: a.alimentoTbcaId ?? a.id,
       quantidade: a.quantidade,
       unidade: a.unidade,
     })),

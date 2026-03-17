@@ -227,9 +227,15 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
 
   const outrosPlanos = planosLista.filter((p) => p.id !== planoId);
 
+  // Planos locais têm ID no padrão "plano-{pacienteId}-{numero}"
+  const isLocalPlan = planoId.startsWith(`plano-${pacienteId}-`);
+
   const diasVisiveis = DIAS_SEMANA.filter((dia) =>
     plano.diasAtivos.includes(dia.valor)
   );
+
+  // Para planos do staging (sem diasAtivos), exibe o conteúdo diretamente
+  const mostrarConteudo = diasVisiveis.length > 0 || !isLocalPlan;
 
   const pieData = [
     { name: "Proteína", value: plano.nutrientes.proteina.gramas, color: "#5B8C6F" },
@@ -370,14 +376,16 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
             >
               {plano.descricao}
             </p>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={iniciarEdicaoDescricao}
-              data-testid="button-editar-descricao"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
+            {isLocalPlan && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={iniciarEdicaoDescricao}
+                data-testid="button-editar-descricao"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -404,15 +412,17 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
           >
             {plano.status === "ativo" ? "Ativo" : "Rascunho"}
           </Badge>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setModalDiasAberto(true)}
-            data-testid="button-editar-dias"
-          >
-            <Pencil className="h-3.5 w-3.5 mr-1.5" />
-            Editar dias da semana
-          </Button>
+          {isLocalPlan && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setModalDiasAberto(true)}
+              data-testid="button-editar-dias"
+            >
+              <Pencil className="h-3.5 w-3.5 mr-1.5" />
+              Editar dias da semana
+            </Button>
+          )}
         </div>
       </div>
 
@@ -432,7 +442,7 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
         </div>
       </div>
 
-      {diasVisiveis.length === 0 && (
+      {!mostrarConteudo && (
         <Card data-testid="aviso-plano-inativo">
           <CardContent className="pt-6 text-center space-y-3">
             <UtensilsCrossed className="h-10 w-10 mx-auto text-muted-foreground/50" />
@@ -445,7 +455,7 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
         </Card>
       )}
 
-      {diasVisiveis.length > 0 && (
+      {mostrarConteudo && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center gap-2">

@@ -349,6 +349,7 @@ export interface IStorage {
   getPatientBiometry(patientId: string): Promise<BiometrySummary | undefined>;
   getPatientTraining(patientId: string): Promise<TrainingSummary | undefined>;
   listarPlanosAlimentares(pacienteId: string): Promise<ResumoPlanoAlimentar[]>;
+  listarPlanosAlimentaresCriados(pacienteId: string): Promise<ResumoPlanoAlimentar[]>;
   getPlanoAlimentar(pacienteId: string, planoId: string, diaSemana: DiaSemana): Promise<PlanoAlimentar | undefined>;
   criarPlanoAlimentar(pacienteId: string, descricao: string, diasAtivos: DiaSemana[]): Promise<ResumoPlanoAlimentar>;
   updateDiasAtivos(pacienteId: string, planoId: string, diasAtivos: DiaSemana[]): Promise<DiaSemana[]>;
@@ -498,6 +499,18 @@ export class MemStorage implements IStorage {
     const criadosPlanos = planosCriadosMap[pacienteId] || [];
     const todos = [...mockPlanos, ...criadosPlanos];
     return todos.map((p) => ({
+      id: p.id,
+      descricao: p.descricao,
+      status: p.status,
+      diasAtivos: p.diasAtivos,
+      dataCriacao: p.dataCriacao,
+      calorias: p.nutrientes.calorias,
+    }));
+  }
+
+  async listarPlanosAlimentaresCriados(pacienteId: string): Promise<ResumoPlanoAlimentar[]> {
+    const criados = planosCriadosMap[pacienteId] || [];
+    return criados.map((p) => ({
       id: p.id,
       descricao: p.descricao,
       status: p.status,

@@ -186,11 +186,38 @@ export async function registerRoutes(
     return res.json(training);
   });
 
+  // Helper: planos criados localmente têm IDs do padrão "plano-{pacienteId}-{numero ou timestamp}"
+  function isLocalPlanId(planoId: string, pacienteId: string): boolean {
+    return planoId.startsWith(`plano-${pacienteId}-`);
+  }
+
+  // GET /planos-alimentares — proxy para staging + merge com planos criados localmente
   app.get("/api/profissional/dashboard/pacientes/:id/planos-alimentares", async (req, res) => {
-    const planos = await storage.listarPlanosAlimentares(req.params.id);
-    return res.json(planos);
+    const token = extractBearerToken(req);
+    const pacienteId = req.params.id;
+
+    let stagingPlanos: any[] = [];
+    if (token) {
+      try {
+        const result = await stagingPassthrough(
+          `/api/profissional/dashboard/clientes/${pacienteId}/planos-alimentares`,
+          { bearerToken: token }
+        );
+        if (result.ok && Array.isArray(result.data)) {
+          stagingPlanos = result.data;
+        }
+      } catch (err: any) {
+        console.error("[planos-alimentares] staging error:", err.message);
+      }
+    }
+
+    // Planos criados localmente pelo profissional
+    const locaisLocais = await storage.listarPlanosAlimentaresCriados(pacienteId);
+    const merged = [...stagingPlanos, ...locaisLocais];
+    return res.json(merged);
   });
 
+  // POST /planos-alimentares — criação local (não existe no staging)
   app.post("/api/profissional/dashboard/pacientes/:id/planos-alimentares", async (req, res) => {
     const { descricao, diasAtivos } = req.body;
     if (!descricao || typeof descricao !== "string" || descricao.trim().length === 0) {
@@ -204,19 +231,43 @@ export async function registerRoutes(
     return res.status(201).json(plano);
   });
 
+  // GET /plano-alimentar — proxy para staging se for plano do staging, local se for plano criado
   app.get("/api/profissional/dashboard/pacientes/:id/plano-alimentar", async (req, res) => {
     const planoId = req.query.planoId as string;
     const diaSemana = (req.query.diaSemana as string) || "segunda";
+    const pacienteId = req.params.id;
+
     if (!planoId) {
       return res.status(400).json({ message: "planoId é obrigatório." });
     }
-    const plano = await storage.getPlanoAlimentar(req.params.id, planoId, diaSemana as any);
-    if (!plano) {
-      return res.status(404).json({ message: "Plano alimentar não encontrado." });
+
+    // Plano criado localmente
+    if (isLocalPlanId(planoId, pacienteId)) {
+      const plano = await storage.getPlanoAlimentar(pacienteId, planoId, diaSemana as any);
+      if (!plano) return res.status(404).json({ message: "Plano alimentar não encontrado." });
+      return res.json(plano);
     }
-    return res.json(plano);
+
+    // Plano do staging
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+
+    try {
+      const result = await stagingPassthrough(
+        `/api/profissional/dashboard/clientes/${pacienteId}/plano-alimentar`,
+        { bearerToken: token, params: { planoId } }
+      );
+      if (!result.ok) {
+        return res.status(result.status).json(result.data ?? { message: "Erro ao buscar plano." });
+      }
+      return res.json(result.data);
+    } catch (err: any) {
+      console.error("[plano-alimentar] staging error:", err.message);
+      return res.status(502).json({ message: "Erro ao conectar com o servidor." });
+    }
   });
 
+  // PUT .../dias — local (não existe no staging)
   app.put("/api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/dias", async (req, res) => {
     const { diasAtivos } = req.body;
     if (!Array.isArray(diasAtivos)) {
@@ -228,6 +279,7 @@ export async function registerRoutes(
     return res.json({ diasAtivos: updated });
   });
 
+  // PUT .../descricao — local (não existe no staging)
   app.put("/api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/descricao", async (req, res) => {
     const { descricao } = req.body;
     if (!descricao || typeof descricao !== "string" || descricao.trim().length === 0) {
@@ -237,6 +289,7 @@ export async function registerRoutes(
     return res.json({ descricao: updated });
   });
 
+  // POST .../refeicoes — proxy para staging se plano do staging; local se plano criado
   app.post("/api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/refeicoes", async (req, res) => {
     const { nome, horario, alimentos, observacao } = req.body;
     if (!nome || typeof nome !== "string" || nome.trim().length === 0) {
@@ -245,16 +298,57 @@ export async function registerRoutes(
     if (!horario || typeof horario !== "string") {
       return res.status(400).json({ message: "horario é obrigatório." });
     }
-    const refeicao = await storage.addRefeicao(req.params.id, req.params.planoId, {
-      nome: nome.trim(),
-      horario,
-      alimentos: Array.isArray(alimentos) ? alimentos : [],
-      observacao: observacao?.trim() || undefined,
-    });
-    if (!refeicao) {
-      return res.status(404).json({ message: "Plano alimentar não encontrado." });
+
+    const pacienteId = req.params.id;
+    const planoId = req.params.planoId;
+
+    // Plano criado localmente
+    if (isLocalPlanId(planoId, pacienteId)) {
+      const refeicao = await storage.addRefeicao(pacienteId, planoId, {
+        nome: nome.trim(),
+        horario,
+        alimentos: Array.isArray(alimentos) ? alimentos : [],
+        observacao: observacao?.trim() || undefined,
+      });
+      if (!refeicao) return res.status(404).json({ message: "Plano alimentar não encontrado." });
+      return res.status(201).json(refeicao);
     }
-    return res.status(201).json(refeicao);
+
+    // Plano do staging — usa alimento_id conforme spec
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+
+    try {
+      const alimentosStaging = Array.isArray(alimentos)
+        ? alimentos.map((a: any) => ({
+            id: a.id,
+            alimento_id: a.alimento_id ?? a.alimento_tbca_id ?? a.id,
+            quantidade: a.quantidade,
+            unidade: a.unidade,
+          }))
+        : [];
+
+      const result = await stagingPassthrough(
+        `/api/profissional/dashboard/clientes/${pacienteId}/planos-alimentares/${planoId}/refeicoes`,
+        {
+          method: "POST",
+          bearerToken: token,
+          body: {
+            nome: nome.trim(),
+            horario,
+            observacao: observacao?.trim() || undefined,
+            alimentos: alimentosStaging,
+          },
+        }
+      );
+      if (!result.ok) {
+        return res.status(result.status).json(result.data ?? { message: "Erro ao salvar refeição." });
+      }
+      return res.status(201).json(result.data);
+    } catch (err: any) {
+      console.error("[refeicoes] staging error:", err.message);
+      return res.status(502).json({ message: "Erro ao conectar com o servidor." });
+    }
   });
 
   app.get(["/api/painel-longevidade/clientes/:id/cockpit", "/api/longevidade/clientes/:id/cockpit"], async (req, res) => {
