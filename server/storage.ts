@@ -492,8 +492,6 @@ export class MemStorage implements IStorage {
     };
   }
   async listarPlanosAlimentares(pacienteId: string): Promise<ResumoPlanoAlimentar[]> {
-    const patient = patients.find((p) => p.id === pacienteId);
-    if (!patient) return [];
     const planos = getPlanosMock(pacienteId);
     return planos.map((p) => ({
       id: p.id,
@@ -506,8 +504,6 @@ export class MemStorage implements IStorage {
   }
 
   async getPlanoAlimentar(pacienteId: string, planoId: string, diaSemana: DiaSemana): Promise<PlanoAlimentar | undefined> {
-    const patient = patients.find((p) => p.id === pacienteId);
-    if (!patient) return undefined;
     const planos = getPlanosMock(pacienteId);
     const plano = planos.find((p) => p.id === planoId);
     if (!plano) return undefined;
@@ -535,8 +531,6 @@ export class MemStorage implements IStorage {
   }
 
   async addRefeicao(pacienteId: string, planoId: string, refeicao: Omit<Refeicao, "id">): Promise<Refeicao | null> {
-    const patient = patients.find((p) => p.id === pacienteId);
-    if (!patient) return null;
     const planos = getPlanosMock(pacienteId);
     const plano = planos.find((p) => p.id === planoId);
     if (!plano) return null;
