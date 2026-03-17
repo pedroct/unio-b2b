@@ -13,6 +13,9 @@ import type {
   Refeicao,
   DiaSemana,
 } from "@shared/schema";
+import { db } from "./db";
+import { planosAlimentares } from "./db-schema";
+import { eq, and } from "drizzle-orm";
 
 const professionals: Professional[] = [
   {
@@ -509,65 +512,84 @@ export class MemStorage implements IStorage {
   }
 
   async listarPlanosAlimentaresCriados(pacienteId: string): Promise<ResumoPlanoAlimentar[]> {
-    const criados = planosCriadosMap[pacienteId] || [];
-    return criados.map((p) => ({
-      id: p.id,
-      descricao: p.descricao,
-      status: p.status,
-      diasAtivos: p.diasAtivos,
-      dataCriacao: p.dataCriacao,
-      calorias: p.nutrientes.calorias,
+    const rows = await db
+      .select()
+      .from(planosAlimentares)
+      .where(eq(planosAlimentares.pacienteId, pacienteId));
+    return rows.map((r) => ({
+      id: r.id,
+      descricao: r.descricao,
+      status: r.status as "ativo" | "rascunho",
+      diasAtivos: (r.diasAtivos as DiaSemana[]) ?? [],
+      dataCriacao: r.dataCriacao instanceof Date
+        ? r.dataCriacao.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
+        : String(r.dataCriacao),
+      calorias: ((r.nutrientes as any)?.calorias) ?? 0,
     }));
   }
 
   async criarPlanoAlimentar(pacienteId: string, descricao: string, diasAtivos: DiaSemana[]): Promise<ResumoPlanoAlimentar> {
     const id = `plano-${pacienteId}-${Date.now()}`;
-    const hoje = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
-    const novoPlano: PlanoMockData = {
-      id,
-      descricao,
-      status: "rascunho",
-      diasAtivos,
-      dataCriacao: hoje,
-      refeicoes: [],
-      nutrientes: {
-        calorias: 0,
-        proteina: { gramas: 0, percentual: 0 },
-        carboidrato: { gramas: 0, percentual: 0 },
-        gordura: { gramas: 0, percentual: 0 },
-        fibra: 0,
-      },
+    const nutrientes = {
+      calorias: 0,
+      proteina: { gramas: 0, percentual: 0 },
+      carboidrato: { gramas: 0, percentual: 0 },
+      gordura: { gramas: 0, percentual: 0 },
+      fibra: 0,
     };
-    if (!planosCriadosMap[pacienteId]) {
-      planosCriadosMap[pacienteId] = [];
-    }
-    planosCriadosMap[pacienteId].push(novoPlano);
+    const [inserted] = await db
+      .insert(planosAlimentares)
+      .values({
+        id,
+        pacienteId,
+        descricao,
+        status: "rascunho",
+        diasAtivos: diasAtivos as any,
+        refeicoes: [] as any,
+        nutrientes: nutrientes as any,
+      })
+      .returning();
     return {
-      id: novoPlano.id,
-      descricao: novoPlano.descricao,
-      status: novoPlano.status,
-      diasAtivos: novoPlano.diasAtivos,
-      dataCriacao: novoPlano.dataCriacao,
-      calorias: novoPlano.nutrientes.calorias,
+      id: inserted.id,
+      descricao: inserted.descricao,
+      status: inserted.status as "ativo" | "rascunho",
+      diasAtivos: (inserted.diasAtivos as DiaSemana[]) ?? [],
+      dataCriacao: inserted.dataCriacao instanceof Date
+        ? inserted.dataCriacao.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
+        : String(inserted.dataCriacao),
+      calorias: 0,
     };
   }
 
   async getPlanoAlimentar(pacienteId: string, planoId: string, diaSemana: DiaSemana): Promise<PlanoAlimentar | undefined> {
-    const criadosPlanos = planosCriadosMap[pacienteId] || [];
-    const planoCriado = criadosPlanos.find((p) => p.id === planoId);
-    if (planoCriado) {
+    // Primeiro checa no banco local
+    const [row] = await db
+      .select()
+      .from(planosAlimentares)
+      .where(and(eq(planosAlimentares.id, planoId), eq(planosAlimentares.pacienteId, pacienteId)));
+    if (row) {
+      const dataCriacao = row.dataCriacao instanceof Date
+        ? row.dataCriacao.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
+        : String(row.dataCriacao);
       return {
-        id: planoCriado.id,
+        id: row.id,
         pacienteId,
-        descricao: planoCriado.descricao,
-        status: planoCriado.status,
+        descricao: row.descricao,
+        status: row.status as "ativo" | "rascunho",
         diaSemana,
-        diasAtivos: planoCriado.diasAtivos,
-        dataCriacao: planoCriado.dataCriacao,
-        refeicoes: planoCriado.refeicoes,
-        nutrientes: planoCriado.nutrientes,
+        diasAtivos: (row.diasAtivos as DiaSemana[]) ?? [],
+        dataCriacao,
+        refeicoes: (row.refeicoes as Refeicao[]) ?? [],
+        nutrientes: (row.nutrientes as NutrientesPlano) ?? {
+          calorias: 0,
+          proteina: { gramas: 0, percentual: 0 },
+          carboidrato: { gramas: 0, percentual: 0 },
+          gordura: { gramas: 0, percentual: 0 },
+          fibra: 0,
+        },
       };
     }
+    // Mock estático (planos de demonstração)
     const planos = getPlanosMock(pacienteId);
     const plano = planos.find((p) => p.id === planoId);
     if (!plano) return undefined;
@@ -585,11 +607,21 @@ export class MemStorage implements IStorage {
   }
 
   async updateDiasAtivos(pacienteId: string, planoId: string, diasAtivos: DiaSemana[]): Promise<DiaSemana[]> {
+    await db
+      .update(planosAlimentares)
+      .set({ diasAtivos: diasAtivos as any })
+      .where(and(eq(planosAlimentares.id, planoId), eq(planosAlimentares.pacienteId, pacienteId)));
+    // Mantém compatibilidade com mocks em memória
     planoDiasAtivosMap[planoId] = diasAtivos;
     return diasAtivos;
   }
 
   async updateDescricaoPlano(pacienteId: string, planoId: string, descricao: string): Promise<string> {
+    await db
+      .update(planosAlimentares)
+      .set({ descricao })
+      .where(and(eq(planosAlimentares.id, planoId), eq(planosAlimentares.pacienteId, pacienteId)));
+    // Mantém compatibilidade com mocks em memória
     planoDescricoes[planoId] = descricao;
     return descricao;
   }
@@ -599,12 +631,20 @@ export class MemStorage implements IStorage {
       id: `ref-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       ...refeicao,
     };
-    const criados = planosCriadosMap[pacienteId] || [];
-    const planoCriado = criados.find((p) => p.id === planoId);
-    if (planoCriado) {
-      planoCriado.refeicoes.push(novaRefeicao);
+    // Tenta atualizar no banco primeiro
+    const [row] = await db
+      .select()
+      .from(planosAlimentares)
+      .where(and(eq(planosAlimentares.id, planoId), eq(planosAlimentares.pacienteId, pacienteId)));
+    if (row) {
+      const refeicoes = [...((row.refeicoes as Refeicao[]) ?? []), novaRefeicao];
+      await db
+        .update(planosAlimentares)
+        .set({ refeicoes: refeicoes as any })
+        .where(eq(planosAlimentares.id, planoId));
       return novaRefeicao;
     }
+    // Fallback: mock estático em memória
     const planos = getPlanosMock(pacienteId);
     const plano = planos.find((p) => p.id === planoId);
     if (!plano) return null;

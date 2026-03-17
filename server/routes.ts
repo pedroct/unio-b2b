@@ -217,35 +217,20 @@ export async function registerRoutes(
     return res.json(merged);
   });
 
-  // POST /planos-alimentares — proxy para staging
+  // POST /planos-alimentares — criação local (staging não expõe endpoint POST para esta rota)
+  // O staging só permite GET para listagem de planos. Planos criados aqui são armazenados
+  // localmente e mesclados com os planos do staging na listagem.
   app.post("/api/profissional/dashboard/pacientes/:id/planos-alimentares", async (req, res) => {
-    const { descricao } = req.body;
+    const { descricao, diasAtivos } = req.body;
     if (!descricao || typeof descricao !== "string" || descricao.trim().length === 0) {
       return res.status(400).json({ message: "descricao é obrigatória." });
     }
-
-    const pacienteId = req.params.id;
-    const token = extractBearerToken(req);
-    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
-
-    try {
-      const result = await stagingPassthrough(
-        `/api/profissional/dashboard/clientes/${pacienteId}/planos-alimentares`,
-        {
-          method: "POST",
-          bearerToken: token,
-          body: { descricao: descricao.trim() },
-        }
-      );
-      if (!result.ok) {
-        console.error("[criar-plano] staging error:", result.status, result.data);
-        return res.status(result.status).json(result.data ?? { message: "Erro ao criar plano no servidor." });
-      }
-      return res.status(201).json(result.data);
-    } catch (err: any) {
-      console.error("[criar-plano] staging error:", err.message);
-      return res.status(502).json({ message: "Erro ao conectar com o servidor." });
-    }
+    const validos = ["segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo"];
+    const diasValidados = Array.isArray(diasAtivos)
+      ? [...new Set((diasAtivos as string[]).filter((d) => validos.includes(d)))]
+      : [];
+    const plano = await storage.criarPlanoAlimentar(req.params.id, descricao.trim(), diasValidados as any);
+    return res.status(201).json(plano);
   });
 
   // GET /plano-alimentar — proxy para staging se for plano do staging, local se for plano criado
