@@ -65,15 +65,17 @@ export function normalizarAlimentoTBCA(item: any): ResultadoBuscaNormalizado {
         : item.grupo_alimentar?.nome ?? undefined;
 
   return {
-    id: item.id,
+    // staging pode retornar id como número inteiro — convertemos para string
+    id: String(item.id),
     nome: item.descricao ?? item.nome ?? "",
     grupo,
     fonte: toUpperFonte(item.fonte_dados),
-    caloriasPor100g: null,
-    proteinaPor100g: null,
-    carboidratoPor100g: null,
-    gorduraPor100g: null,
-    fibraPor100g: null,
+    // staging não retorna macros por 100g na listagem — ficam null
+    caloriasPor100g: item.energia_kcal ?? item.calorias ?? null,
+    proteinaPor100g: item.proteinas ?? item.proteina ?? null,
+    carboidratoPor100g: item.carboidratos ?? item.carboidrato ?? null,
+    gorduraPor100g: item.lipideos ?? item.gorduras ?? item.gordura ?? null,
+    fibraPor100g: item.fibras ?? item.fibra ?? null,
     apresentacao: normalizarApresentacao(item.apresentacao),
   };
 }

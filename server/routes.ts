@@ -338,10 +338,11 @@ export async function registerRoutes(
     try {
       const alimentosStaging = Array.isArray(alimentos)
         ? alimentos.map((a: any) => ({
-            id: a.id,
+            // Não enviamos 'id' — o staging gera o ID do registro no banco.
+            // a.alimento_id vem de montarPayloadRefeicao (campo alimento_id do AlimentoPlano)
             alimento_id: a.alimento_id ?? a.alimento_tbca_id ?? a.id,
-            quantidade: a.quantidade,
-            unidade: a.unidade,
+            quantidade: Number(a.quantidade),
+            unidade: a.unidade ?? "g",
           }))
         : [];
 
@@ -582,13 +583,14 @@ export async function registerRoutes(
 
   app.post("/api/nutricao/catalogo/calcular", async (req, res) => {
     const { alimento_id, quantidade_consumida } = req.body;
-    if (!alimento_id || !quantidade_consumida) {
-      return res.status(422).json({ message: "alimento_id e quantidade_consumida são obrigatórios." });
+    const qtd = Number(quantidade_consumida);
+    if (!alimento_id || isNaN(qtd) || qtd <= 0) {
+      return res.status(422).json({ message: "alimento_id e quantidade_consumida (>0) são obrigatórios." });
     }
     try {
       const result = await stagingFetch("/api/nutricao/catalogo/calcular", {
         method: "POST",
-        body: { alimento_id, quantidade_consumida },
+        body: { alimento_id: String(alimento_id), quantidade_consumida: qtd },
       });
       return res.status(result.status).json(result.data);
     } catch (err: any) {

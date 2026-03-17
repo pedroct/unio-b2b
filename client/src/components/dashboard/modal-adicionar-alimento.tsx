@@ -43,11 +43,11 @@ function normalizarResultadosLegado(dados: any[]): ResultadoBusca[] {
   }));
 }
 
-function MacroCard({ label, valor, unidade }: { label: string; valor: number; unidade: string }) {
+function MacroCard({ label, valor, unidade }: { label: string; valor: number | string; unidade: string }) {
   return (
     <div className="flex flex-col items-center rounded-lg border bg-muted/30 px-2 py-2 min-w-0 overflow-hidden">
       <span className="text-[11px] text-muted-foreground truncate w-full text-center">{label}</span>
-      <span className="text-sm font-semibold tabular-nums">{formatNutrient(valor)}</span>
+      <span className="text-sm font-semibold tabular-nums">{formatNutrient(Number(valor))}</span>
       <span className="text-[10px] text-muted-foreground">{unidade}</span>
     </div>
   );
