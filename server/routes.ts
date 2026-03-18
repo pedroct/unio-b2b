@@ -118,23 +118,12 @@ export async function registerRoutes(
 
   app.get("/api/profissional/pacientes/:id", async (req, res) => {
     const token = extractBearerToken(req);
-    if (!token) {
-      return res.status(401).json({ message: "Token de autenticação ausente." });
-    }
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
     try {
-      const result = await stagingPassthrough("/api/profissional/clientes", {
+      const result = await stagingPassthrough(`/api/profissional/clientes/${req.params.id}`, {
         bearerToken: token,
       });
-      if (!result.ok) {
-        return res.status(result.status).json(result.data);
-      }
-      const patient = Array.isArray(result.data)
-        ? result.data.find((p: any) => String(p.id) === String(req.params.id))
-        : null;
-      if (!patient) {
-        return res.status(404).json({ message: "Paciente não encontrado." });
-      }
-      return res.json(patient);
+      return res.status(result.status).json(result.data);
     } catch (err: any) {
       console.error("[profissional/pacientes/:id] proxy error:", err.message);
       return res.status(502).json({ message: "Erro ao buscar dados do paciente." });
@@ -142,48 +131,89 @@ export async function registerRoutes(
   });
 
   app.get("/api/profissional/pacientes/:id/metas", async (req, res) => {
-    const goals = await storage.getPatientGoals(req.params.id);
-    if (!goals) {
-      return res.status(404).json({ message: "Metas não encontradas." });
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+    try {
+      const result = await stagingPassthrough(`/api/profissional/clientes/${req.params.id}/metas`, {
+        bearerToken: token,
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[profissional/pacientes/:id/metas GET] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao buscar metas." });
     }
-    return res.json(goals);
   });
 
   app.put("/api/profissional/pacientes/:id/metas", async (req, res) => {
-    const goals = await storage.updatePatientGoals(req.params.id, req.body);
-    return res.json(goals);
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+    try {
+      const result = await stagingPassthrough(`/api/profissional/clientes/${req.params.id}/metas`, {
+        method: "PUT",
+        bearerToken: token,
+        body: req.body,
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[profissional/pacientes/:id/metas PUT] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao salvar metas." });
+    }
   });
 
   app.get("/api/profissional/dashboard/pacientes/:id/overview", async (req, res) => {
-    const overview = await storage.getPatientOverview(req.params.id);
-    if (!overview) {
-      return res.status(404).json({ message: "Dados não encontrados." });
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+    try {
+      const result = await stagingPassthrough(`/api/profissional/dashboard/clientes/${req.params.id}/overview`, {
+        bearerToken: token,
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[dashboard/overview] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao buscar overview." });
     }
-    return res.json(overview);
   });
 
   app.get("/api/profissional/dashboard/pacientes/:id/nutricao", async (req, res) => {
-    const nutrition = await storage.getPatientNutrition(req.params.id);
-    if (!nutrition) {
-      return res.status(404).json({ message: "Dados não encontrados." });
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+    try {
+      const result = await stagingPassthrough(`/api/profissional/dashboard/clientes/${req.params.id}/nutricao`, {
+        bearerToken: token,
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[dashboard/nutricao] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao buscar dados nutricionais." });
     }
-    return res.json(nutrition);
   });
 
   app.get("/api/profissional/dashboard/pacientes/:id/biometria", async (req, res) => {
-    const biometry = await storage.getPatientBiometry(req.params.id);
-    if (!biometry) {
-      return res.status(404).json({ message: "Dados não encontrados." });
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+    try {
+      const result = await stagingPassthrough(`/api/profissional/dashboard/clientes/${req.params.id}/biometria`, {
+        bearerToken: token,
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[dashboard/biometria] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao buscar biometria." });
     }
-    return res.json(biometry);
   });
 
   app.get("/api/profissional/dashboard/pacientes/:id/treinamento", async (req, res) => {
-    const training = await storage.getPatientTraining(req.params.id);
-    if (!training) {
-      return res.status(404).json({ message: "Dados não encontrados." });
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+    try {
+      const result = await stagingPassthrough(`/api/profissional/dashboard/clientes/${req.params.id}/treinamento`, {
+        bearerToken: token,
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[dashboard/treinamento] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao buscar treinamento." });
     }
-    return res.json(training);
   });
 
   // Helper: planos criados localmente têm IDs do padrão "plano-{pacienteId}-{numero ou timestamp}"
