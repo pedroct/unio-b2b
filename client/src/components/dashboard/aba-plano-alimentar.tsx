@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatFoodName, formatNutrient, formatUnit, formatHorario } from "@/lib/formatters";
 import { normalizarPlanoAlimentar, normalizarResumoPlano } from "@/lib/api-normalizers";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -25,8 +24,6 @@ import {
   ArrowRightLeft,
   UtensilsCrossed,
   Flame,
-  Check,
-  X,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -36,11 +33,8 @@ import {
   Tooltip,
 } from "recharts";
 import { EmptyState } from "@/components/empty-state";
-import { ModalDiasSemana } from "@/components/dashboard/modal-dias-semana";
 import { ModalNovaRefeicao } from "@/components/dashboard/modal-nova-refeicao";
 import { ModalNovoPlano } from "@/components/dashboard/modal-novo-plano";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import type { PlanoAlimentar, ResumoPlanoAlimentar, DiaSemana } from "@shared/schema";
 import { DIAS_SEMANA } from "@shared/schema";
 
@@ -94,13 +88,8 @@ function PlanoAlimentarSkeleton() {
 export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
   const [planoSelecionadoId, setPlanoSelecionadoId] = useState<string>("");
   const [diaSelecionado, setDiaSelecionado] = useState<DiaSemana>("segunda");
-  const [modalDiasAberto, setModalDiasAberto] = useState(false);
   const [modalNovaRefeicaoAberta, setModalNovaRefeicaoAberta] = useState(false);
   const [modalNovoPlanoAberto, setModalNovoPlanoAberto] = useState(false);
-  const [editandoDescricao, setEditandoDescricao] = useState(false);
-  const [novaDescricao, setNovaDescricao] = useState("");
-  const { toast } = useToast();
-
   const { data: planosLista, isLoading: isLoadingLista } = useQuery<ResumoPlanoAlimentar[]>({
     queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "planos-alimentares"],
     queryFn: async () => {
@@ -136,59 +125,6 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
       return normalizarPlanoAlimentar(raw);
     },
     enabled: !!planoId,
-  });
-
-  const salvarDiasMutation = useMutation({
-    mutationFn: async (diasAtivos: DiaSemana[]) => {
-      const res = await apiRequest(
-        "PUT",
-        `/api/profissional/dashboard/pacientes/${pacienteId}/planos-alimentares/${planoId}/dias`,
-        { diasAtivos }
-      );
-      return res.json();
-    },
-    onSuccess: (_data, diasAtivos) => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "planos-alimentares"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "plano-alimentar"],
-      });
-      setModalDiasAberto(false);
-      if (diasAtivos.length > 0 && !diasAtivos.includes(diaSelecionado)) {
-        setDiaSelecionado(diasAtivos[0]);
-      }
-      toast({
-        title: "Dias atualizados",
-        description: diasAtivos.length > 0
-          ? `Plano alimentar ativo para ${diasAtivos.length} dia(s) da semana.`
-          : "Plano alimentar inativado. Nenhum dia selecionado.",
-      });
-    },
-  });
-
-  const salvarDescricaoMutation = useMutation({
-    mutationFn: async (descricao: string) => {
-      const res = await apiRequest(
-        "PUT",
-        `/api/profissional/dashboard/pacientes/${pacienteId}/planos-alimentares/${planoId}/descricao`,
-        { descricao }
-      );
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "planos-alimentares"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "plano-alimentar"],
-      });
-      setEditandoDescricao(false);
-      toast({
-        title: "Descrição atualizada",
-        description: "A descrição do plano alimentar foi salva com sucesso.",
-      });
-    },
   });
 
   const isLoading = isLoadingLista || isLoadingPlano;
@@ -227,15 +163,9 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
 
   const outrosPlanos = planosLista.filter((p) => p.id !== planoId);
 
-  // Planos locais têm ID no padrão "plano-{pacienteId}-{numero}"
-  const isLocalPlan = planoId.startsWith(`plano-${pacienteId}-`);
-
   const diasVisiveis = DIAS_SEMANA.filter((dia) =>
     plano.diasAtivos.includes(dia.valor)
   );
-
-  // Para planos do staging (sem diasAtivos), exibe o conteúdo diretamente
-  const mostrarConteudo = diasVisiveis.length > 0 || !isLocalPlan;
 
   const pieData = [
     { name: "Proteína", value: plano.nutrientes.proteina.gramas, color: "#5B8C6F" },
@@ -243,37 +173,8 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
     { name: "Gordura", value: plano.nutrientes.gordura.gramas, color: "#D97952" },
   ];
 
-  function iniciarEdicaoDescricao() {
-    setNovaDescricao(plano!.descricao);
-    setEditandoDescricao(true);
-  }
-
-  function confirmarDescricao() {
-    const desc = novaDescricao.trim();
-    if (desc && desc !== plano!.descricao) {
-      salvarDescricaoMutation.mutate(desc);
-    } else {
-      setEditandoDescricao(false);
-    }
-  }
-
-  function cancelarEdicaoDescricao() {
-    setEditandoDescricao(false);
-    setNovaDescricao("");
-  }
-
   return (
     <div className="space-y-6" data-testid="tab-plano-alimentar">
-      <ModalDiasSemana
-        open={modalDiasAberto}
-        onOpenChange={setModalDiasAberto}
-        diasAtivos={plano.diasAtivos}
-        plano={plano}
-        outrosPlanos={outrosPlanos}
-        onSalvar={(dias) => salvarDiasMutation.mutate(dias)}
-        isSaving={salvarDiasMutation.isPending}
-      />
-
       {modalNovaRefeicaoAberta && (
         <ModalNovaRefeicao
           open={modalNovaRefeicaoAberta}
@@ -336,58 +237,12 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
       </div>
 
       <div className="flex items-start gap-2" data-testid="campo-descricao-plano">
-        {editandoDescricao ? (
-          <div className="flex items-center gap-2 flex-1">
-            <Input
-              value={novaDescricao}
-              onChange={(e) => setNovaDescricao(e.target.value)}
-              className="flex-1"
-              placeholder="Descrição do plano alimentar"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === "Enter") confirmarDescricao();
-                if (e.key === "Escape") cancelarEdicaoDescricao();
-              }}
-              data-testid="input-descricao-plano"
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={confirmarDescricao}
-              disabled={salvarDescricaoMutation.isPending}
-              data-testid="button-confirmar-descricao"
-            >
-              <Check className="h-4 w-4 text-primary" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={cancelarEdicaoDescricao}
-              data-testid="button-cancelar-descricao"
-            >
-              <X className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <p
-              className="text-sm font-medium truncate"
-              data-testid="text-descricao-plano"
-            >
-              {plano.descricao}
-            </p>
-            {isLocalPlan && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={iniciarEdicaoDescricao}
-                data-testid="button-editar-descricao"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-            )}
-          </div>
-        )}
+        <p
+          className="text-sm font-medium truncate"
+          data-testid="text-descricao-plano"
+        >
+          {plano.descricao}
+        </p>
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -412,17 +267,6 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
           >
             {plano.status === "ativo" ? "Ativo" : "Rascunho"}
           </Badge>
-          {isLocalPlan && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setModalDiasAberto(true)}
-              data-testid="button-editar-dias"
-            >
-              <Pencil className="h-3.5 w-3.5 mr-1.5" />
-              Editar dias da semana
-            </Button>
-          )}
         </div>
       </div>
 
@@ -442,20 +286,6 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
         </div>
       </div>
 
-      {!mostrarConteudo && (
-        <Card data-testid="aviso-plano-inativo">
-          <CardContent className="pt-6 text-center space-y-3">
-            <UtensilsCrossed className="h-10 w-10 mx-auto text-muted-foreground/50" />
-            <p className="text-sm font-medium">Plano alimentar inativo</p>
-            <p className="text-xs text-muted-foreground">
-              Nenhum dia da semana está selecionado para este plano. Clique em
-              "Editar dias da semana" para ativar o plano selecionando pelo menos um dia.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {mostrarConteudo && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center gap-2">
@@ -683,7 +513,6 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
           </Card>
         </div>
       </div>
-      )}
     </div>
   );
 }
