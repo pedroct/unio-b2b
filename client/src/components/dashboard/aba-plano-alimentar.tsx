@@ -3,6 +3,16 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { formatFoodName, formatNutrient, formatUnit, formatHorario } from "@/lib/formatters";
 import { normalizarPlanoAlimentar, normalizarResumoPlano } from "@/lib/api-normalizers";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,8 +44,11 @@ import {
 } from "recharts";
 import { EmptyState } from "@/components/empty-state";
 import { ModalNovaRefeicao } from "@/components/dashboard/modal-nova-refeicao";
+import { ModalEditarRefeicao } from "@/components/dashboard/modal-editar-refeicao";
 import { ModalNovoPlano } from "@/components/dashboard/modal-novo-plano";
-import type { PlanoAlimentar, ResumoPlanoAlimentar, DiaSemana } from "@shared/schema";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import type { PlanoAlimentar, ResumoPlanoAlimentar, DiaSemana, Refeicao } from "@shared/schema";
 import { DIAS_SEMANA } from "@shared/schema";
 
 interface AbaPlanoAlimentarProps {
@@ -86,10 +99,13 @@ function PlanoAlimentarSkeleton() {
 }
 
 export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
+  const { toast } = useToast();
   const [planoSelecionadoId, setPlanoSelecionadoId] = useState<string>("");
   const [diaSelecionado, setDiaSelecionado] = useState<DiaSemana>("segunda");
   const [modalNovaRefeicaoAberta, setModalNovaRefeicaoAberta] = useState(false);
   const [modalNovoPlanoAberto, setModalNovoPlanoAberto] = useState(false);
+  const [refeicaoEditando, setRefeicaoEditando] = useState<Refeicao | null>(null);
+  const [refeicaoExcluindo, setRefeicaoExcluindo] = useState<Refeicao | null>(null);
   const { data: planosLista, isLoading: isLoadingLista } = useQuery<ResumoPlanoAlimentar[]>({
     queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "planos-alimentares"],
     enabled: !!pacienteId,
@@ -185,6 +201,63 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
           planoDescricao={plano.descricao}
         />
       )}
+
+      {refeicaoEditando && (
+        <ModalEditarRefeicao
+          open={!!refeicaoEditando}
+          onOpenChange={(open) => { if (!open) setRefeicaoEditando(null); }}
+          pacienteId={pacienteId}
+          planoId={planoId}
+          diaSelecionado={diaSelecionado}
+          refeicao={refeicaoEditando}
+          planoDescricao={plano.descricao}
+        />
+      )}
+
+      <AlertDialog
+        open={!!refeicaoExcluindo}
+        onOpenChange={(open) => { if (!open) setRefeicaoExcluindo(null); }}
+      >
+        <AlertDialogContent data-testid="dialog-confirmar-exclusao">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir refeição</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a refeição{" "}
+              <strong>{refeicaoExcluindo?.nome}</strong>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancelar-exclusao">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirmar-exclusao"
+              onClick={() => {
+                if (!refeicaoExcluindo) return;
+                const queryKey = [
+                  "/api/profissional/dashboard/pacientes",
+                  pacienteId,
+                  "plano-alimentar",
+                  planoId,
+                  diaSelecionado,
+                ];
+                queryClient.setQueryData(queryKey, (old: PlanoAlimentar | undefined) => {
+                  if (!old) return old;
+                  return {
+                    ...old,
+                    refeicoes: old.refeicoes.filter((r) => r.id !== refeicaoExcluindo.id),
+                  };
+                });
+                toast({ title: "Refeição excluída com sucesso" });
+                setRefeicaoExcluindo(null);
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <ModalNovoPlano
         open={modalNovoPlanoAberto}
@@ -329,6 +402,7 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
                       size="icon"
                       title="Editar refeição"
                       aria-label="Editar refeição"
+                      onClick={() => setRefeicaoEditando(refeicao)}
                       data-testid={`button-editar-refeicao-${refeicao.id}`}
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -348,6 +422,7 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
                       className="text-destructive"
                       title="Excluir refeição"
                       aria-label="Excluir refeição"
+                      onClick={() => setRefeicaoExcluindo(refeicao)}
                       data-testid={`button-excluir-refeicao-${refeicao.id}`}
                     >
                       <Trash2 className="h-3.5 w-3.5" />

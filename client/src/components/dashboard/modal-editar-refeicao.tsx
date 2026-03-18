@@ -1,0 +1,417 @@
+import { useState, useRef, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { UtensilsCrossed, Plus, X, Check, ChevronDown } from "lucide-react";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { HORARIOS_REFEICAO, DESCRICOES_REFEICAO_PADRAO } from "@shared/schema";
+import type { AlimentoPlano, Refeicao, PlanoAlimentar } from "@shared/schema";
+import { cn } from "@/lib/utils";
+import { ModalAdicionarAlimento } from "./modal-adicionar-alimento";
+
+interface ModalEditarRefeicaoProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  pacienteId: string;
+  planoId: string;
+  diaSelecionado: string;
+  refeicao: Refeicao;
+  planoDescricao: string;
+  onSuccess?: () => void;
+}
+
+interface FormData {
+  horario: string;
+  descricao: string;
+  alimentos: AlimentoPlano[];
+  observacao: string;
+}
+
+function DescricaoCombobox({
+  value,
+  onChange,
+  hasError,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  hasError?: boolean;
+}) {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [inputValue, setInputValue] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filtered = DESCRICOES_REFEICAO_PADRAO.filter((d) =>
+    d.toLowerCase().includes(inputValue.toLowerCase())
+  );
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className="relative">
+        <Input
+          ref={inputRef}
+          value={inputValue}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            onChange(e.target.value);
+            setDropdownOpen(true);
+          }}
+          onFocus={() => setDropdownOpen(true)}
+          placeholder="Selecione ou digite"
+          className={cn("pr-8", hasError && "border-destructive")}
+          data-testid="input-editar-descricao"
+        />
+        <button
+          type="button"
+          tabIndex={-1}
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          onClick={() => {
+            setDropdownOpen(!dropdownOpen);
+            inputRef.current?.focus();
+          }}
+          data-testid="toggle-editar-descricao-dropdown"
+        >
+          <ChevronDown className="h-4 w-4" />
+        </button>
+      </div>
+
+      {dropdownOpen && filtered.length > 0 && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md animate-in fade-in-0 zoom-in-95">
+          <ul className="max-h-[200px] overflow-y-auto py-1">
+            {filtered.map((desc) => (
+              <li key={desc}>
+                <button
+                  type="button"
+                  className={cn(
+                    "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                    value === desc && "bg-accent/50"
+                  )}
+                  onClick={() => {
+                    setInputValue(desc);
+                    onChange(desc);
+                    setDropdownOpen(false);
+                  }}
+                  data-testid={`option-editar-descricao-${desc.toLowerCase().replace(/\s+/g, "-")}`}
+                >
+                  <Check
+                    className={cn(
+                      "h-3.5 w-3.5 shrink-0",
+                      value === desc ? "opacity-100 text-primary" : "opacity-0"
+                    )}
+                  />
+                  {desc}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ModalEditarRefeicao({
+  open,
+  onOpenChange,
+  pacienteId,
+  planoId,
+  diaSelecionado,
+  refeicao,
+  planoDescricao,
+  onSuccess,
+}: ModalEditarRefeicaoProps) {
+  const { toast } = useToast();
+  const [form, setForm] = useState<FormData>({
+    horario: refeicao.horario,
+    descricao: refeicao.nome,
+    alimentos: refeicao.alimentos,
+    observacao: refeicao.observacao ?? "",
+  });
+  const [errors, setErrors] = useState<{ horario?: string; descricao?: string; alimentos?: string }>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [modalAlimentoAberta, setModalAlimentoAberta] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setForm({
+        horario: refeicao.horario,
+        descricao: refeicao.nome,
+        alimentos: refeicao.alimentos,
+        observacao: refeicao.observacao ?? "",
+      });
+      setErrors({});
+    }
+  }, [open, refeicao]);
+
+  const formCompleto = form.horario !== "" && form.descricao.trim() !== "" && form.alimentos.length > 0;
+
+  function validate(): boolean {
+    const newErrors: { horario?: string; descricao?: string; alimentos?: string } = {};
+    if (!form.horario) newErrors.horario = "Selecione um horário.";
+    if (!form.descricao.trim()) newErrors.descricao = "Informe o nome da refeição.";
+    if (form.alimentos.length === 0) newErrors.alimentos = "Adicione ao menos um alimento à refeição.";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
+
+  function handleSave() {
+    if (!validate()) return;
+    setIsSaving(true);
+
+    const queryKey = [
+      "/api/profissional/dashboard/pacientes",
+      pacienteId,
+      "plano-alimentar",
+      planoId,
+      diaSelecionado,
+    ];
+
+    queryClient.setQueryData(queryKey, (old: PlanoAlimentar | undefined) => {
+      if (!old) return old;
+      return {
+        ...old,
+        refeicoes: old.refeicoes.map((r) =>
+          r.id === refeicao.id
+            ? {
+                ...r,
+                nome: form.descricao,
+                horario: form.horario,
+                alimentos: form.alimentos,
+                observacao: form.observacao,
+              }
+            : r
+        ),
+      };
+    });
+
+    setIsSaving(false);
+    toast({ title: "Refeição atualizada com sucesso" });
+    onOpenChange(false);
+    onSuccess?.();
+  }
+
+  function handleRemoveAlimento(id: string) {
+    setForm((prev) => ({ ...prev, alimentos: prev.alimentos.filter((a) => a.id !== id) }));
+  }
+
+  function handleAlimentoAdicionado(alimento: AlimentoPlano) {
+    setForm((prev) => ({ ...prev, alimentos: [...prev.alimentos, alimento] }));
+    setErrors((prev) => ({ ...prev, alimentos: undefined }));
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto"
+        data-testid="modal-editar-refeicao"
+      >
+        <DialogHeader>
+          <DialogTitle className="font-serif text-xl" data-testid="text-modal-editar-titulo">
+            Editar refeição
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
+            {planoDescricao}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-5 py-2">
+          <div className="grid grid-cols-[140px_1fr] gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="editar-horario" className="text-sm font-medium">
+                Horário
+              </Label>
+              <Select
+                value={form.horario || undefined}
+                onValueChange={(v) => {
+                  setForm((prev) => ({ ...prev, horario: v }));
+                  if (v) setErrors((prev) => ({ ...prev, horario: undefined }));
+                }}
+              >
+                <SelectTrigger
+                  id="editar-horario"
+                  className={cn(errors.horario && "border-destructive")}
+                  data-testid="select-editar-horario"
+                >
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[240px]">
+                  {HORARIOS_REFEICAO.map((h) => (
+                    <SelectItem key={h} value={h} data-testid={`option-editar-horario-${h}`}>
+                      {h}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.horario && (
+                <p className="text-xs text-destructive mt-1" data-testid="error-editar-horario">
+                  {errors.horario}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Nome da refeição</Label>
+              <DescricaoCombobox
+                value={form.descricao}
+                onChange={(val) => {
+                  setForm((prev) => ({ ...prev, descricao: val }));
+                  if (val.trim()) setErrors((prev) => ({ ...prev, descricao: undefined }));
+                }}
+                hasError={!!errors.descricao}
+              />
+              {errors.descricao && (
+                <p className="text-xs text-destructive mt-1" data-testid="error-editar-descricao">
+                  {errors.descricao}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Selecione da lista ou digite um nome personalizado
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Alimentos selecionados</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setModalAlimentoAberta(true)}
+                data-testid="button-editar-adicionar-alimento"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                Adicionar alimento
+              </Button>
+            </div>
+
+            {form.alimentos.length === 0 ? (
+              <div
+                className={cn(
+                  "flex flex-col items-center justify-center rounded-lg border border-dashed py-8 text-muted-foreground",
+                  errors.alimentos && "border-destructive"
+                )}
+                data-testid="empty-editar-alimentos"
+              >
+                <UtensilsCrossed className="h-8 w-8 mb-2 opacity-40" />
+                <span className="text-sm">Adicione alimentos usando o botão acima</span>
+                {errors.alimentos && (
+                  <p className="text-xs text-destructive mt-2" data-testid="error-editar-alimentos">
+                    {errors.alimentos}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="rounded-lg border overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-xs text-muted-foreground bg-muted/30">
+                      <th className="px-3 py-2 text-left font-medium">Alimento</th>
+                      <th className="px-2 py-2 text-center font-medium w-14">Qtd.</th>
+                      <th className="px-3 py-2 text-left font-medium">Unidade</th>
+                      <th className="w-9"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {form.alimentos.map((alimento) => (
+                      <tr key={alimento.id} data-testid={`item-editar-alimento-${alimento.id}`}>
+                        <td className="px-3 py-2 text-foreground">{alimento.nome}</td>
+                        <td className="px-2 py-2 text-center tabular-nums">{alimento.quantidade}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{alimento.unidade}</td>
+                        <td className="px-1 py-2">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => handleRemoveAlimento(alimento.id)}
+                            data-testid={`button-editar-remover-alimento-${alimento.id}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="editar-observacao" className="text-sm font-medium">
+              Observação
+            </Label>
+            <Textarea
+              id="editar-observacao"
+              value={form.observacao}
+              onChange={(e) => setForm((prev) => ({ ...prev, observacao: e.target.value }))}
+              placeholder="Orientações ou observações sobre esta refeição"
+              rows={3}
+              data-testid="textarea-editar-observacao"
+            />
+            <p className="text-xs text-muted-foreground">Visível para o cliente no aplicativo</p>
+          </div>
+        </div>
+
+        <DialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-0">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+            disabled={isSaving}
+            data-testid="button-cancelar-editar-refeicao"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSave}
+            disabled={!formCompleto || isSaving}
+            data-testid="button-salvar-editar-refeicao"
+          >
+            {isSaving ? "Salvando..." : "Salvar alterações"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+
+      <ModalAdicionarAlimento
+        open={modalAlimentoAberta}
+        onOpenChange={setModalAlimentoAberta}
+        refeicaoNome={form.descricao || "Refeição"}
+        onAdicionarAlimento={handleAlimentoAdicionado}
+      />
+    </Dialog>
+  );
+}
