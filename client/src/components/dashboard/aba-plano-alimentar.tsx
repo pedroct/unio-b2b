@@ -117,7 +117,7 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
     }
   }, [planoId, planoResumo]);
 
-  const { data: plano, isLoading: isLoadingPlano } = useQuery<PlanoAlimentar>({
+  const { data: plano, isLoading: isLoadingPlano, isFetching: isFetchingPlano } = useQuery<PlanoAlimentar>({
     queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "plano-alimentar", planoId, diaSelecionado],
     queryFn: async () => {
       const token = (() => {
@@ -140,7 +140,6 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
     },
     enabled: !!planoId,
     staleTime: 0,
-    gcTime: 0,
   });
 
   const isLoading = isLoadingLista || isLoadingPlano;
@@ -499,8 +498,11 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
         <div className="space-y-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
                 Resumo de nutrientes
+                {isFetchingPlano && (
+                  <span className="inline-block h-3 w-3 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
