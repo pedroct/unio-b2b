@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { formatFoodName, formatNutrient, formatUnit, formatHorario } from "@/lib/formatters";
-import { normalizarPlanoAlimentar, normalizarResumoPlano } from "@/lib/api-normalizers";
+import { normalizarPlanoAlimentar, normalizarResumoPlano, calcularNutrientesPlano } from "@/lib/api-normalizers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -135,56 +135,11 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
       if (!res.ok) throw new Error("Erro ao carregar plano alimentar");
       const raw = await res.json();
       const planoNorm = normalizarPlanoAlimentar(raw);
-
-      // Coleta todos os alimentos com UUID e quantidade válidos
-      const todosFoods = planoNorm.refeicoes.flatMap((ref) =>
-        ref.alimentos
-          .filter((a) => a.alimentoTbcaId && a.quantidade > 0)
-          .map((a) => ({ alimento_id: a.alimentoTbcaId!, quantidade: a.quantidade }))
-      );
-
-      if (todosFoods.length === 0) return planoNorm;
-
-      // Chama /calcular para cada alimento em paralelo (endpoint existente)
-      const resultados = await Promise.all(
-        todosFoods.map((f) =>
-          fetch("/api/nutricao/catalogo/calcular", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", ...headers },
-            body: JSON.stringify({ alimento_id: f.alimento_id, quantidade_consumida: f.quantidade }),
-          })
-            .then((r) => (r.ok ? r.json() : null))
-            .catch(() => null)
-        )
-      );
-
-      // Agrega os macros de todos os alimentos
-      let calorias = 0, proteina = 0, carboidrato = 0, gordura = 0, fibra = 0;
-      for (const dado of resultados) {
-        const m = dado?.resumo_macros;
-        if (!m) continue;
-        calorias    += Number(m.calorias    ?? m.energia_kcal ?? 0);
-        proteina    += Number(m.proteinas   ?? m.proteina_g   ?? 0);
-        carboidrato += Number(m.carboidratos ?? m.carboidrato_g ?? 0);
-        gordura     += Number(m.gorduras    ?? m.lipideos_g   ?? 0);
-        fibra       += Number(m.fibras      ?? m.fibra_g      ?? 0);
-      }
-
-      const totalMacros = proteina + carboidrato + gordura;
-      const pct = (g: number) => totalMacros > 0 ? Math.round((g / totalMacros) * 100) : 0;
-
-      return {
-        ...planoNorm,
-        nutrientes: {
-          calorias: Math.round(calorias),
-          proteina:    { gramas: Math.round(proteina * 10) / 10,    percentual: pct(proteina) },
-          carboidrato: { gramas: Math.round(carboidrato * 10) / 10, percentual: pct(carboidrato) },
-          gordura:     { gramas: Math.round(gordura * 10) / 10,     percentual: pct(gordura) },
-          fibra: Math.round(fibra * 10) / 10,
-        },
-      };
+      const nutrientes = await calcularNutrientesPlano(planoNorm);
+      return { ...planoNorm, nutrientes };
     },
     enabled: !!planoId,
+    staleTime: 0,
   });
 
   const isLoading = isLoadingLista || isLoadingPlano;
@@ -292,6 +247,15 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
                     refeicoes: old.refeicoes.filter((r) => r.id !== refeicaoExcluindo.id),
                   };
                 });
+                // Recalcula nutrientes após excluir refeição
+                const planoAtualizado = queryClient.getQueryData<PlanoAlimentar>(queryKey);
+                if (planoAtualizado) {
+                  calcularNutrientesPlano(planoAtualizado).then((nutrientes) => {
+                    queryClient.setQueryData(queryKey, (old: PlanoAlimentar | undefined) =>
+                      old ? { ...old, nutrientes } : old
+                    );
+                  });
+                }
                 toast({ title: "Refeição excluída com sucesso" });
                 setRefeicaoExcluindo(null);
               }}

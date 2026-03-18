@@ -154,6 +154,68 @@ export function normalizarResumoPlano(raw: any): ResumoPlanoAlimentar {
   };
 }
 
+function getAuthToken(): string | null {
+  try {
+    const s = localStorage.getItem("unio_auth");
+    return s ? JSON.parse(s).tokens?.access ?? null : null;
+  } catch { return null; }
+}
+
+// Calcula os nutrientes totais de um plano chamando /calcular para cada alimento.
+// Usado após qualquer alteração local no plano (editar/excluir refeição).
+export async function calcularNutrientesPlano(plano: PlanoAlimentar): Promise<NutrientesPlano> {
+  const zero: NutrientesPlano = {
+    calorias: 0,
+    proteina:    { gramas: 0, percentual: 0 },
+    carboidrato: { gramas: 0, percentual: 0 },
+    gordura:     { gramas: 0, percentual: 0 },
+    fibra: 0,
+  };
+
+  const foods = plano.refeicoes.flatMap((r) =>
+    r.alimentos.filter((a) => a.alimentoTbcaId && a.quantidade > 0)
+  );
+  if (foods.length === 0) return zero;
+
+  const token = getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const resultados = await Promise.all(
+    foods.map((f) =>
+      fetch("/api/nutricao/catalogo/calcular", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ alimento_id: f.alimentoTbcaId, quantidade_consumida: f.quantidade }),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null)
+    )
+  );
+
+  let calorias = 0, proteina = 0, carboidrato = 0, gordura = 0, fibra = 0;
+  for (const dado of resultados) {
+    const m = dado?.resumo_macros;
+    if (!m) continue;
+    calorias    += Number(m.calorias    ?? m.energia_kcal  ?? 0);
+    proteina    += Number(m.proteinas   ?? m.proteina_g    ?? 0);
+    carboidrato += Number(m.carboidratos ?? m.carboidrato_g ?? 0);
+    gordura     += Number(m.gorduras    ?? m.lipideos_g    ?? 0);
+    fibra       += Number(m.fibras      ?? m.fibra_g       ?? 0);
+  }
+
+  const totalMacros = proteina + carboidrato + gordura;
+  const pct = (g: number) => totalMacros > 0 ? Math.round((g / totalMacros) * 100) : 0;
+
+  return {
+    calorias: Math.round(calorias),
+    proteina:    { gramas: Math.round(proteina * 10) / 10,    percentual: pct(proteina) },
+    carboidrato: { gramas: Math.round(carboidrato * 10) / 10, percentual: pct(carboidrato) },
+    gordura:     { gramas: Math.round(gordura * 10) / 10,     percentual: pct(gordura) },
+    fibra: Math.round(fibra * 10) / 10,
+  };
+}
+
 export function montarPayloadRefeicao(
   nome: string,
   horario: string,

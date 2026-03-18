@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { UtensilsCrossed, Plus, X, Check, ChevronDown } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
+import { calcularNutrientesPlano } from "@/lib/api-normalizers";
 import { useToast } from "@/hooks/use-toast";
 import { HORARIOS_REFEICAO, DESCRICOES_REFEICAO_PADRAO } from "@shared/schema";
 import type { AlimentoPlano, Refeicao, PlanoAlimentar } from "@shared/schema";
@@ -214,6 +215,16 @@ export function ModalEditarRefeicao({
         ),
       };
     });
+
+    // Recalcula nutrientes após editar refeição
+    const planoAtualizado = queryClient.getQueryData<PlanoAlimentar>(queryKey);
+    if (planoAtualizado) {
+      calcularNutrientesPlano(planoAtualizado).then((nutrientes) => {
+        queryClient.setQueryData(queryKey, (old: PlanoAlimentar | undefined) =>
+          old ? { ...old, nutrientes } : old
+        );
+      });
+    }
 
     setIsSaving(false);
     toast({ title: "Refeição atualizada com sucesso" });
