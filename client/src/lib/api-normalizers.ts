@@ -149,6 +149,7 @@ export function normalizarResumoPlano(raw: any): ResumoPlanoAlimentar {
     diasAtivos: raw.diasAtivos ?? raw.dias_ativos ?? [],
     dataCriacao: raw.dataCriacao ?? raw.data_criacao ?? new Date().toISOString(),
     calorias: safeParseFloat(raw.calorias),
+    totalRefeicoes: Array.isArray(raw.refeicoes) ? raw.refeicoes.length : 0,
   };
 }
 

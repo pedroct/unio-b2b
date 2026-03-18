@@ -15,6 +15,7 @@ import PatientDashboardPage from "@/pages/patient-dashboard";
 import PatientSettingsPage from "@/pages/patient-settings";
 import PrescricaoAlimentarPage from "@/pages/prescricao-alimentar";
 import PrescricaoAlimentarListaPage from "@/pages/prescricao-alimentar-lista";
+import PrescricaoAlimentarPlanosPage from "@/pages/prescricao-alimentar-planos";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const style = {
@@ -69,7 +70,8 @@ function AppRoutes() {
         <Route path="/clientes" component={PatientsPage} />
         <Route path="/clientes/:id/dashboard" component={PatientDashboardPage} />
         <Route path="/clientes/:id/configuracoes" component={PatientSettingsPage} />
-        <Route path="/prescricao-alimentar/:pacienteId" component={PrescricaoAlimentarPage} />
+        <Route path="/prescricao-alimentar/:pacienteId/plano/:planoId" component={PrescricaoAlimentarPage} />
+        <Route path="/prescricao-alimentar/:pacienteId" component={PrescricaoAlimentarPlanosPage} />
         <Route path="/prescricao-alimentar" component={PrescricaoAlimentarListaPage} />
         <Route path="/dashboard" component={PatientsPage} />
         <Route path="/configuracoes">

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AbaPlanoAlimentar } from "@/components/dashboard/aba-plano-alimentar";
@@ -21,8 +21,9 @@ function HeaderSkeleton() {
 }
 
 export default function PrescricaoAlimentarPage() {
-  const [, params] = useRoute("/prescricao-alimentar/:pacienteId");
+  const [, params] = useRoute("/prescricao-alimentar/:pacienteId/plano/:planoId");
   const pacienteId = params?.pacienteId || "";
+  const planoId = params?.planoId || "";
 
   const { data: patient, isLoading } = useQuery<Patient>({
     queryKey: ["/api/profissional/pacientes", pacienteId],
@@ -36,7 +37,7 @@ export default function PrescricaoAlimentarPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6" data-testid="page-prescricao-alimentar">
       <div className="flex items-center gap-3">
-        <Link href="/clientes">
+        <Link href={`/prescricao-alimentar/${pacienteId}`}>
           <Button variant="ghost" size="icon" data-testid="button-back-prescricao">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -47,6 +48,7 @@ export default function PrescricaoAlimentarPage() {
         ) : patient ? (
           <div className="flex items-center gap-4 flex-1">
             <Avatar className="h-10 w-10">
+              {patient.avatarUrl && <AvatarImage src={patient.avatarUrl} alt={patient.name} />}
               <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-sm">
                 {initials}
               </AvatarFallback>
@@ -68,7 +70,9 @@ export default function PrescricaoAlimentarPage() {
         ) : null}
       </div>
 
-      {pacienteId && <AbaPlanoAlimentar pacienteId={pacienteId} />}
+      {pacienteId && (
+        <AbaPlanoAlimentar pacienteId={pacienteId} initialPlanoId={planoId} />
+      )}
     </div>
   );
 }

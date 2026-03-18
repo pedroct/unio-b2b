@@ -53,6 +53,7 @@ import { DIAS_SEMANA } from "@shared/schema";
 
 interface AbaPlanoAlimentarProps {
   pacienteId: string;
+  initialPlanoId?: string;
 }
 
 
@@ -98,9 +99,9 @@ function PlanoAlimentarSkeleton() {
   );
 }
 
-export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
+export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimentarProps) {
   const { toast } = useToast();
-  const [planoSelecionadoId, setPlanoSelecionadoId] = useState<string>("");
+  const [planoSelecionadoId, setPlanoSelecionadoId] = useState<string>(initialPlanoId ?? "");
   const [diaSelecionado, setDiaSelecionado] = useState<DiaSemana>("segunda");
   const [modalNovaRefeicaoAberta, setModalNovaRefeicaoAberta] = useState(false);
   const [modalNovoPlanoAberto, setModalNovoPlanoAberto] = useState(false);

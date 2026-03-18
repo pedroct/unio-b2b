@@ -270,6 +270,7 @@ export interface ResumoPlanoAlimentar {
   diasAtivos: DiaSemana[];
   dataCriacao: string;
   calorias: number;
+  totalRefeicoes: number;
 }
 
 export type ClassificacaoScore = "excellent" | "good" | "attention" | "risk";
