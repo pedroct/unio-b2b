@@ -1,0 +1,317 @@
+# Contrato de API — Confirmação de Alimentos do Plano Alimentar
+
+> **Módulo:** Nutrição — Plano Alimentar
+> **Namespace:** `/api/nutricao`
+> **Data:** 2026-03-18
+> **Canais:** B2C (Mobile/Web) · B2B (Web)
+
+---
+
+## 🔒 Autenticação
+
+Todos os endpoints exigem JWT:
+
+- **Header:** `Authorization: Bearer <token_jwt>`
+- **Erro:** `401 Unauthorized`
+
+---
+
+## Contexto — O Problema Resolvido
+
+Antes desta feature, ao pesar e registrar um alimento via balança, o sistema **não sabia** que aquele registro pertencia a um alimento específico do plano alimentar prescrito. O cliente pesava a banana, o registro era salvo, mas a refeição do plano continuava sem nenhuma marcação de "concluído".
+
+**Agora**, o cliente pode:
+1. Pesar o alimento → gerar um `RegistroAlimentar`
+2. Confirmar que aquele registro satisfaz um alimento do plano → gerar uma `ConfirmacaoAlimentoPlano`
+3. Consultar o progresso da refeição no dia → saber quantos alimentos foram confirmados
+
+---
+
+## 🏗️ Hierarquia de Dados
+
+```
+PlanoAlimentar
+  └── RefeicaoPlano
+        └── AlimentoPlano  ← alimento prescrito (ex: "Banana, 100g")
+              └── ConfirmacaoAlimentoPlano  ← confirmação do dia (ex: "pesado 104g em 18/03")
+                    └── RegistroAlimentar (opcional)  ← o que foi efetivamente pesado
+```
+
+---
+
+## 📌 Endpoint 1 — Confirmar Alimento Pesado do Plano *(NOVO)*
+
+```
+POST /api/nutricao/planos-alimentares/{cliente_id}/{plano_id}/refeicoes/{refeicao_id}/alimentos/{alimento_plano_id}/confirmar
+```
+
+Registra que o cliente confirmou (pesou/consumiu) um alimento prescrito em sua refeição para uma data específica.
+
+> ✅ **Múltiplas confirmações do mesmo alimento no mesmo dia são permitidas** (ex: 58g às 8h + 46g às 9h). O endpoint de progresso soma automaticamente as quantidades.
+
+### Parâmetros de Path
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `cliente_id` | `integer` | ID do cliente. |
+| `plano_id` | `string` (UUID) | ID do plano alimentar. |
+| `refeicao_id` | `string` (UUID) | ID da refeição dentro do plano. |
+| `alimento_plano_id` | `string` (UUID ou string) | ID do alimento dentro da refeição (campo `id` de `AlimentoPlano`). |
+
+### Body (JSON)
+
+```json
+{
+  "registro_id": 4820,
+  "data_referencia": "2026-03-18",
+  "status": "confirmado"
+}
+```
+
+| Campo | Tipo | Obrigatório | Valores | Descrição |
+|-------|------|:-----------:|---------|-----------|
+| `registro_id` | `integer` | Não | — | ID do `RegistroAlimentar` gerado ao pesar. Se omitido, a confirmação é manual (sem pesagem). |
+| `data_referencia` | `string` | ✅ | `"YYYY-MM-DD"` | Data em que o plano está sendo seguido. |
+| `status` | `string` | Não | `"confirmado"`, `"parcial"`, `"pulado"` | Default: `"confirmado"`. |
+
+**Semântica de `status`:**
+
+| Valor | Quando usar |
+|-------|------------|
+| `"confirmado"` | Alimento consumido (quantidade próxima ou maior que a prescrita) |
+| `"parcial"` | Alimento consumido, mas em quantidade menor que a prescrita |
+| `"pulado"` | Alimento explicitamente não consumido no dia |
+
+### Resposta de Sucesso: `201 Created`
+
+```json
+{
+  "id": 1,
+  "alimento_plano_id": "d19c18f1-...",
+  "alimento_nome": "Banana (ouro, prata, d'água, da terra, etc.)",
+  "quantidade_prescrita": "100.00",
+  "quantidade_consumida": 104.73,
+  "status": "confirmado",
+  "data_referencia": "2026-03-18",
+  "confirmado_em": "2026-03-18T12:15:43.616195+00:00"
+}
+```
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | `integer` | ID da confirmação criada. |
+| `alimento_plano_id` | `string` | ID do alimento do plano que foi confirmado. |
+| `alimento_nome` | `string` | Nome descritivo do alimento. |
+| `quantidade_prescrita` | `string` | Quantidade prescrita no plano (string decimal). |
+| `quantidade_consumida` | `float \| null` | Quantidade do `RegistroAlimentar` vinculado. `null` se confirmação manual. |
+| `status` | `string` | Status da confirmação. |
+| `data_referencia` | `string` | Data do dia seguido (`"YYYY-MM-DD"`). |
+| `confirmado_em` | `string` | ISO 8601 — timestamp exato da confirmação. |
+
+### Respostas de Erro
+
+| Código | Situação |
+|--------|----------|
+| `400` | `status` inválido. |
+| `404` | Plano, refeição ou alimento não encontrado, ou usuário sem permissão. |
+
+---
+
+## 📌 Endpoint 2 — Progresso da Refeição no Dia *(NOVO)*
+
+```
+GET /api/nutricao/planos-alimentares/{cliente_id}/{plano_id}/refeicoes/{refeicao_id}/progresso?data=2026-03-18
+```
+
+Retorna o status de cada alimento da refeição para uma data específica: quais foram confirmados, parciais, pulados ou ainda pendentes.
+
+> **Agregação automática:** Se o mesmo alimento foi pesado em múltiplos momentos no dia, as quantidades são **somadas** (ex: 58g + 46g = 104g consumidos).
+
+### Parâmetros de Path
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `cliente_id` | `integer` | ID do cliente. |
+| `plano_id` | `string` (UUID) | ID do plano alimentar. |
+| `refeicao_id` | `string` (UUID) | ID da refeição dentro do plano. |
+
+### Query Parameters
+
+| Parâmetro | Tipo | Obrigatório | Exemplo | Descrição |
+|-----------|------|:-----------:|---------|-----------|
+| `data` | `string` | ✅ | `"2026-03-18"` | Data de referência no formato `YYYY-MM-DD`. |
+
+### Resposta de Sucesso: `200 OK`
+
+```json
+{
+  "refeicao_id": "243d613b-...",
+  "nome": "Café da manhã",
+  "data_referencia": "2026-03-18",
+  "total_alimentos": 3,
+  "confirmados": 1,
+  "pendentes": 2,
+  "progresso_pct": 33,
+  "alimentos": [
+    {
+      "alimento_plano_id": "d19c18f1-...",
+      "alimento_nome": "Banana (ouro, prata, d'água, da terra, etc.)",
+      "quantidade_prescrita": "100.00",
+      "unidade": "g",
+      "status": "confirmado",
+      "quantidade_consumida": 104.73,
+      "confirmado_em": "2026-03-18T12:15:43.616195+00:00"
+    },
+    {
+      "alimento_plano_id": "a2c1f3d8-...",
+      "alimento_nome": "Aveia em Flocos",
+      "quantidade_prescrita": "40.00",
+      "unidade": "g",
+      "status": "pendente",
+      "quantidade_consumida": null,
+      "confirmado_em": null
+    },
+    {
+      "alimento_plano_id": "f8e7c2b1-...",
+      "alimento_nome": "Ovo de galinha, inteiro, cozido",
+      "quantidade_prescrita": "60.00",
+      "unidade": "g",
+      "status": "pendente",
+      "quantidade_consumida": null,
+      "confirmado_em": null
+    }
+  ]
+}
+```
+
+### Campos da Resposta
+
+**Nível superior:**
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `refeicao_id` | `string` | ID da refeição. |
+| `nome` | `string` | Nome da refeição (ex: "Café da manhã"). |
+| `data_referencia` | `string` | Data consultada. |
+| `total_alimentos` | `integer` | Total de alimentos prescritos na refeição. |
+| `confirmados` | `integer` | Quantos foram confirmados ou parcialmente consumidos (exclui "pulado"). |
+| `pendentes` | `integer` | Quantos ainda não têm nenhuma confirmação no dia. |
+| `progresso_pct` | `integer` | Percentual de conclusão (0–100). Usar para barra de progresso. |
+
+**Cada item em `alimentos`:**
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `alimento_plano_id` | `string` | ID do alimento do plano. Usar nas chamadas de confirmação. |
+| `alimento_nome` | `string` | Nome descritivo do alimento. |
+| `quantidade_prescrita` | `string` | Quantidade prescrita (decimal como string). |
+| `unidade` | `string` | Unidade da quantidade prescrita (`"g"`, `"ml"`, etc.). |
+| `status` | `string` | `"pendente"`, `"confirmado"`, `"parcial"` ou `"pulado"`. |
+| `quantidade_consumida` | `float \| null` | Soma de todas as pesagens do dia para este alimento. `null` se pendente ou pulado sem registro. |
+| `confirmado_em` | `string \| null` | Timestamp ISO 8601 da confirmação mais recente. `null` se pendente. |
+
+### Resposta de Erro: `404 Not Found`
+
+Plano, refeição não encontrados, ou usuário sem permissão.
+
+---
+
+## 🔄 Fluxo Completo Recomendado (Mobile/B2C)
+
+```
+1. Carregar refeição do plano com progresso do dia
+   GET .../refeicoes/{refeicao_id}/progresso?data=2026-03-18
+   → Exibe lista: "🍌 Banana ⏳ | 🌾 Aveia ⏳ | 🥚 Ovo ⏳"
+
+2. Cliente seleciona "Banana" e pesa na balança BLE
+   → Peso lido: 104.73g
+   → App exibe macros em tempo real (ver guia_integracao_registro_alimento.md)
+
+3. Cliente confirma:
+   a) Registrar o consumo no diário:
+      POST /api/nutricao/diario/registrar
+      { "alimento_catalogo_id": "9561e5ec-...", "quantidade": 104.73 }
+      → Resposta: { "id": 4820, ... }
+
+   b) Confirmar no plano:
+      POST .../alimentos/{alimento_plano_id}/confirmar
+      { "registro_id": 4820, "data_referencia": "2026-03-18", "status": "confirmado" }
+      → Resposta: { "id": 1, "status": "confirmado", "quantidade_consumida": 104.73 }
+
+4. Atualizar a UI:
+   → "🍌 Banana ✅ 104,73g | 🌾 Aveia ⏳ | 🥚 Ovo ⏳"
+   → progresso_pct: 33%
+
+5. Refeição completa → progresso_pct: 100%
+   → "☀️ Café da manhã ✅"
+```
+
+---
+
+## 🔄 Fluxo — Pesagem Parcial (Múltiplas Confirmações)
+
+```
+8h00 → Pesou 58g de banana
+  → POST /diario/registrar → registro_id=4820
+  → POST .../confirmar { registro_id: 4820, status: "parcial" }
+
+9h00 → Pesou mais 46g de banana
+  → POST /diario/registrar → registro_id=4821
+  → POST .../confirmar { registro_id: 4821, status: "confirmado" }
+
+GET .../progresso?data=2026-03-18
+→ Banana: status="confirmado", quantidade_consumida=104.73
+           (58 + 46 = 104.73g — somados automaticamente)
+```
+
+---
+
+## 🔄 Fluxo — Confirmar sem Pesagem (Manual)
+
+```
+Cliente quer marcar um alimento como "pulado" sem ter pesado:
+  POST .../confirmar
+  { "data_referencia": "2026-03-18", "status": "pulado" }
+  (registro_id omitido)
+  → Resposta: { "status": "pulado", "quantidade_consumida": null }
+```
+
+---
+
+## 🗺️ Visão Geral — Endpoints de Plano Alimentar (Completo)
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `GET` | `/planos-alimentares/{cliente_id}` | Lista planos do cliente |
+| `POST` | `/planos-alimentares/{cliente_id}` | Cria plano |
+| `GET` | `/planos-alimentares/{cliente_id}/{plano_id}` | Detalhes do plano |
+| `PATCH` | `/planos-alimentares/{cliente_id}/{plano_id}` | Edita plano parcialmente |
+| `DELETE` | `/planos-alimentares/{cliente_id}/{plano_id}` | Remove plano |
+| `POST` | `/planos-alimentares/{cliente_id}/{plano_id}/refeicoes` | Adiciona refeição |
+| `POST` | `.../{refeicao_id}/alimentos/{alimento_plano_id}/confirmar` | ✅ **NOVO** — Confirmar alimento pesado |
+| `GET` | `.../{refeicao_id}/progresso?data=YYYY-MM-DD` | ✅ **NOVO** — Progresso da refeição no dia |
+
+---
+
+## 🚨 Códigos HTTP
+
+| Código | Quando ocorre |
+|--------|---------------|
+| `200` | GET progresso retornou com sucesso. |
+| `201` | Confirmação criada com sucesso. |
+| `400` | `status` inválido no body. |
+| `401` | Token JWT ausente, expirado ou inválido. |
+| `404` | Plano, refeição ou alimento não encontrado ou sem permissão. |
+
+---
+
+> **Instruções para a LLM de Frontend:**
+> - O fluxo tem **2 chamadas** após a pesagem: primeiro `POST /diario/registrar`, depois `POST .../confirmar` com o `registro_id` retornado.
+> - `registro_id` é **opcional** — omita para confirmar sem pesagem ou para marcar como "pulado".
+> - `data_referencia` é sempre `"YYYY-MM-DD"` (apenas a data, sem hora).
+> - `progresso_pct` é um inteiro de 0 a 100 — usar diretamente em barras de progresso.
+> - `quantidade_consumida` no progresso é a **soma** de todas as pesagens do dia para aquele alimento.
+> - Items com `status: "pulado"` **não contam** para `confirmados` nem para `progresso_pct`.
+> - Após uma confirmação bem-sucedida, recarregar o endpoint de progresso para atualizar a UI (ou atualizar o estado local pelo `alimento_plano_id`).
+> - O `alimento_plano_id` vem do campo `id` dentro do array `alimentos` de cada refeição na resposta do `GET /planos-alimentares/{cliente_id}/{plano_id}`.
+> - `confirmado_em` e `data_referencia` respeitam o timezone do servidor (UTC) — converter para exibição local se necessário.

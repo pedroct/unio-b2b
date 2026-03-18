@@ -588,6 +588,29 @@ export interface RespostaNutricao {
   composicao_corporal?: NutricaoComposicaoCorporal;
 }
 
+export type StatusConfirmacao = "pendente" | "confirmado" | "parcial" | "pulado";
+
+export interface ItemProgressoAlimento {
+  alimento_plano_id: string;
+  alimento_nome: string;
+  quantidade_prescrita: string;
+  unidade: string;
+  status: StatusConfirmacao;
+  quantidade_consumida: number | null;
+  confirmado_em: string | null;
+}
+
+export interface ProgressoRefeicao {
+  refeicao_id: string;
+  nome: string;
+  data_referencia: string;
+  total_alimentos: number;
+  confirmados: number;
+  pendentes: number;
+  progresso_pct: number;
+  alimentos: ItemProgressoAlimento[];
+}
+
 export const BRAZILIAN_STATES = [
   "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO",
   "MA", "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR",

@@ -420,6 +420,52 @@ export async function registerRoutes(
     }
   });
 
+  // GET progresso da refeição no dia
+  app.get(
+    "/api/nutricao/planos-alimentares/:clienteId/:planoId/refeicoes/:refeicaoId/progresso",
+    async (req, res) => {
+      const token = extractBearerToken(req);
+      if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+
+      const { clienteId, planoId, refeicaoId } = req.params;
+      const data = req.query.data as string;
+      if (!data) return res.status(400).json({ message: "Parâmetro 'data' é obrigatório." });
+
+      try {
+        const result = await stagingPassthrough(
+          `/api/nutricao/planos-alimentares/${clienteId}/${planoId}/refeicoes/${refeicaoId}/progresso?data=${data}`,
+          { bearerToken: token }
+        );
+        return res.status(result.status).json(result.data);
+      } catch (err: any) {
+        console.error("[progresso-refeicao] staging exception:", err.message);
+        return res.status(502).json({ message: "Erro ao buscar progresso." });
+      }
+    }
+  );
+
+  // POST confirmar alimento do plano (manual — sem registro_id, com data_referencia e status)
+  app.post(
+    "/api/nutricao/planos-alimentares/:clienteId/:planoId/refeicoes/:refeicaoId/alimentos/:alimentoPlanoId/confirmar",
+    async (req, res) => {
+      const token = extractBearerToken(req);
+      if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+
+      const { clienteId, planoId, refeicaoId, alimentoPlanoId } = req.params;
+
+      try {
+        const result = await stagingPassthrough(
+          `/api/nutricao/planos-alimentares/${clienteId}/${planoId}/refeicoes/${refeicaoId}/alimentos/${alimentoPlanoId}/confirmar`,
+          { method: "POST", bearerToken: token, body: req.body }
+        );
+        return res.status(result.status).json(result.data);
+      } catch (err: any) {
+        console.error("[confirmar-alimento] staging exception:", err.message);
+        return res.status(502).json({ message: "Erro ao confirmar alimento." });
+      }
+    }
+  );
+
   app.get(["/api/painel-longevidade/clientes/:id/cockpit", "/api/longevidade/clientes/:id/cockpit"], async (req, res) => {
     const token = extractBearerToken(req);
     if (!token) {
