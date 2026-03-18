@@ -206,7 +206,7 @@ export const FONTES_ALIMENTO: { valor: FonteAlimento; rotulo: string; disponivel
   { valor: "IBGE", rotulo: "IBGE", disponivel: true, tooltip: "Pesquisa de Orçamentos Familiares — IBGE" },
   { valor: "USDA", rotulo: "USDA", disponivel: true, tooltip: "USDA Foundation Foods" },
   { valor: "SUPLEMENTOS", rotulo: "Suplementos", disponivel: false },
-  { valor: "MEUS_ALIMENTOS", rotulo: "Meus alimentos", disponivel: false },
+  { valor: "MEUS_ALIMENTOS", rotulo: "Meus alimentos", disponivel: true },
 ];
 
 export interface ApresentacaoAlimento {

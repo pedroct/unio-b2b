@@ -1,7 +1,7 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { stagingFetch, stagingPassthrough } from "./staging-proxy";
+import { stagingPassthrough } from "./staging-proxy";
 
 function extractBearerToken(req: Request): string | undefined {
   const auth = req.headers.authorization;
@@ -215,11 +215,6 @@ export async function registerRoutes(
       return res.status(502).json({ message: "Erro ao buscar treinamento." });
     }
   });
-
-  // Helper: planos criados localmente têm IDs do padrão "plano-{pacienteId}-{numero ou timestamp}"
-  function isLocalPlanId(planoId: string, pacienteId: string): boolean {
-    return planoId.startsWith(`plano-${pacienteId}-`);
-  }
 
   // ─── Planos Alimentares — tudo via staging /api/nutricao ───────────────────
   // Contrato: /api/nutricao/planos-alimentares/{cliente_id}
@@ -493,9 +488,13 @@ export async function registerRoutes(
     }
   });
 
+  // ─── Catálogo Nutricional — todos exigem JWTAuth, usamos token do usuário ────
+
   app.get("/api/nutricao/catalogo/fontes", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
     try {
-      const result = await stagingFetch("/api/nutricao/catalogo/fontes");
+      const result = await stagingPassthrough("/api/nutricao/catalogo/fontes", { bearerToken: token });
       return res.status(result.status).json(result.data);
     } catch (err: any) {
       console.error("[proxy] /catalogo/fontes error:", err.message);
@@ -504,8 +503,10 @@ export async function registerRoutes(
   });
 
   app.get("/api/nutricao/catalogo/grupos", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
     try {
-      const result = await stagingFetch("/api/nutricao/catalogo/grupos");
+      const result = await stagingPassthrough("/api/nutricao/catalogo/grupos", { bearerToken: token });
       return res.status(result.status).json(result.data);
     } catch (err: any) {
       console.error("[proxy] /catalogo/grupos error:", err.message);
@@ -514,8 +515,10 @@ export async function registerRoutes(
   });
 
   app.get("/api/nutricao/catalogo/tipos", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
     try {
-      const result = await stagingFetch("/api/nutricao/catalogo/tipos");
+      const result = await stagingPassthrough("/api/nutricao/catalogo/tipos", { bearerToken: token });
       return res.status(result.status).json(result.data);
     } catch (err: any) {
       console.error("[proxy] /catalogo/tipos error:", err.message);
@@ -524,8 +527,12 @@ export async function registerRoutes(
   });
 
   app.get("/api/nutricao/catalogo/nutrientes", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
     try {
-      const result = await stagingFetch("/api/nutricao/catalogo/nutrientes");
+      const params: Record<string, string> = {};
+      if (req.query.categoria) params.categoria = req.query.categoria as string;
+      const result = await stagingPassthrough("/api/nutricao/catalogo/nutrientes", { bearerToken: token, params });
       return res.status(result.status).json(result.data);
     } catch (err: any) {
       console.error("[proxy] /catalogo/nutrientes error:", err.message);
@@ -533,9 +540,27 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/nutricao/catalogo/alimentos/codigo/:codigo", async (req, res) => {
+  // GET /alimentos/meus — alimentos cadastrados pelo próprio profissional
+  app.get("/api/nutricao/catalogo/alimentos/meus", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
     try {
-      const result = await stagingFetch(`/api/nutricao/catalogo/alimentos/codigo/${req.params.codigo}`);
+      const params: Record<string, string> = {};
+      if (req.query.limite) params.limite = req.query.limite as string;
+      if (req.query.offset) params.offset = req.query.offset as string;
+      const result = await stagingPassthrough("/api/nutricao/catalogo/alimentos/meus", { bearerToken: token, params });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[proxy] /catalogo/alimentos/meus error:", err.message);
+      return res.status(502).json({ message: "Erro ao conectar com o servidor." });
+    }
+  });
+
+  app.get("/api/nutricao/catalogo/alimentos/codigo/:codigo", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+    try {
+      const result = await stagingPassthrough(`/api/nutricao/catalogo/alimentos/codigo/${req.params.codigo}`, { bearerToken: token });
       return res.status(result.status).json(result.data);
     } catch (err: any) {
       console.error("[proxy] /catalogo/alimentos/codigo/:codigo error:", err.message);
@@ -544,8 +569,10 @@ export async function registerRoutes(
   });
 
   app.get("/api/nutricao/catalogo/alimentos/:id", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
     try {
-      const result = await stagingFetch(`/api/nutricao/catalogo/alimentos/${req.params.id}`);
+      const result = await stagingPassthrough(`/api/nutricao/catalogo/alimentos/${req.params.id}`, { bearerToken: token });
       return res.status(result.status).json(result.data);
     } catch (err: any) {
       console.error("[proxy] /catalogo/alimentos/:id error:", err.message);
@@ -554,6 +581,8 @@ export async function registerRoutes(
   });
 
   app.get("/api/nutricao/catalogo/alimentos", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
     const busca = (req.query.busca as string) || "";
     if (!busca) {
       return res.json({ items: [], total: 0, limite: 50, offset: 0 });
@@ -565,7 +594,7 @@ export async function registerRoutes(
     if (req.query.limite) params.limite = req.query.limite as string;
     if (req.query.offset) params.offset = req.query.offset as string;
     try {
-      const result = await stagingFetch("/api/nutricao/catalogo/alimentos", { params });
+      const result = await stagingPassthrough("/api/nutricao/catalogo/alimentos", { bearerToken: token, params });
       const data = result.data;
       const normalized = Array.isArray(data)
         ? { items: data, total: data.length, limite: parseInt(params.limite || "50"), offset: parseInt(params.offset || "0") }
@@ -578,14 +607,17 @@ export async function registerRoutes(
   });
 
   app.post("/api/nutricao/catalogo/calcular", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
     const { alimento_id, quantidade_consumida } = req.body;
     const qtd = Number(quantidade_consumida);
     if (!alimento_id || isNaN(qtd) || qtd <= 0) {
       return res.status(422).json({ message: "alimento_id e quantidade_consumida (>0) são obrigatórios." });
     }
     try {
-      const result = await stagingFetch("/api/nutricao/catalogo/calcular", {
+      const result = await stagingPassthrough("/api/nutricao/catalogo/calcular", {
         method: "POST",
+        bearerToken: token,
         body: { alimento_id: String(alimento_id), quantidade_consumida: qtd },
       });
       return res.status(result.status).json(result.data);
