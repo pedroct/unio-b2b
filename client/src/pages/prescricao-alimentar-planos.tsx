@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
 import {
   ArrowLeft,
@@ -39,8 +39,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
 import { ModalNovoPlano } from "@/components/dashboard/modal-novo-plano";
 import { normalizarResumoPlano } from "@/lib/api-normalizers";
-import { queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 import type { Patient, ResumoPlanoAlimentar } from "@shared/schema";
 
 const DIAS_ABREV: Record<string, string> = {
@@ -73,21 +74,25 @@ interface ModalEditarPlanoProps {
   onOpenChange: (open: boolean) => void;
   plano: ResumoPlanoAlimentar;
   pacienteId: string;
-  onSave: (novaDescricao: string) => void;
+  onSave: (descricao: string, status: "ativo" | "rascunho") => void;
+  isSaving: boolean;
 }
 
-function ModalEditarPlano({ open, onOpenChange, plano, onSave }: ModalEditarPlanoProps) {
+function ModalEditarPlano({ open, onOpenChange, plano, onSave, isSaving }: ModalEditarPlanoProps) {
   const [descricao, setDescricao] = useState(plano.descricao);
+  const [status, setStatus] = useState<"ativo" | "rascunho">(plano.status);
 
   useEffect(() => {
-    if (open) setDescricao(plano.descricao);
-  }, [open, plano.descricao]);
+    if (open) {
+      setDescricao(plano.descricao);
+      setStatus(plano.status);
+    }
+  }, [open, plano.descricao, plano.status]);
 
   function handleSave() {
     const trimmed = descricao.trim();
     if (!trimmed) return;
-    onSave(trimmed);
-    onOpenChange(false);
+    onSave(trimmed, status);
   }
 
   return (
@@ -96,10 +101,11 @@ function ModalEditarPlano({ open, onOpenChange, plano, onSave }: ModalEditarPlan
         <DialogHeader>
           <DialogTitle className="font-serif text-xl">Editar plano</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Altere o nome deste plano alimentar.
+            Altere o nome e o status deste plano alimentar.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3 py-2">
+
+        <div className="space-y-4 py-2">
           <div className="space-y-1.5">
             <Label htmlFor="editar-plano-descricao" className="text-sm font-medium">
               Nome do plano
@@ -108,17 +114,43 @@ function ModalEditarPlano({ open, onOpenChange, plano, onSave }: ModalEditarPlan
               id="editar-plano-descricao"
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+              onKeyDown={(e) => { if (e.key === "Enter" && !isSaving) handleSave(); }}
               placeholder="Ex: Dieta Low Carb"
+              disabled={isSaving}
               data-testid="input-editar-plano-descricao"
             />
           </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium">Status</Label>
+            <div className="flex gap-2" data-testid="toggle-status-plano">
+              {(["rascunho", "ativo"] as const).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setStatus(s)}
+                  disabled={isSaving}
+                  className={cn(
+                    "flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors capitalize",
+                    status === s
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground hover:bg-muted"
+                  )}
+                  data-testid={`option-status-${s}`}
+                >
+                  {s === "ativo" ? "Ativo" : "Rascunho"}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
+
         <DialogFooter>
           <Button
             type="button"
             variant="ghost"
             onClick={() => onOpenChange(false)}
+            disabled={isSaving}
             data-testid="button-cancelar-editar-plano"
           >
             Cancelar
@@ -126,10 +158,10 @@ function ModalEditarPlano({ open, onOpenChange, plano, onSave }: ModalEditarPlan
           <Button
             type="button"
             onClick={handleSave}
-            disabled={!descricao.trim()}
+            disabled={!descricao.trim() || isSaving}
             data-testid="button-salvar-editar-plano"
           >
-            Salvar
+            {isSaving ? "Salvando..." : "Salvar"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -164,33 +196,63 @@ export default function PrescricaoAlimentarPlanosPage() {
     select: (raw: any) => (Array.isArray(raw) ? raw : []).map(normalizarResumoPlano),
   });
 
+  const editarMutation = useMutation({
+    mutationFn: async ({
+      planoId,
+      descricao,
+      status,
+    }: {
+      planoId: string;
+      descricao: string;
+      status: "ativo" | "rascunho";
+    }) => {
+      const res = await apiRequest(
+        "PATCH",
+        `/api/profissional/dashboard/pacientes/${pacienteId}/planos-alimentares/${planoId}`,
+        { descricao, status }
+      );
+      if (!res.ok) throw new Error("Erro ao editar plano.");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: planosQueryKey });
+      toast({ title: "Plano atualizado com sucesso" });
+      setPlanoEditando(null);
+    },
+    onError: () => {
+      toast({
+        title: "Erro ao atualizar plano",
+        description: "Não foi possível salvar as alterações. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const excluirMutation = useMutation({
+    mutationFn: async (planoId: string) => {
+      const res = await apiRequest(
+        "DELETE",
+        `/api/profissional/dashboard/pacientes/${pacienteId}/planos-alimentares/${planoId}`
+      );
+      if (!res.ok && res.status !== 204) throw new Error("Erro ao excluir plano.");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: planosQueryKey });
+      toast({ title: "Plano excluído com sucesso" });
+      setPlanoExcluindo(null);
+    },
+    onError: () => {
+      toast({
+        title: "Erro ao excluir plano",
+        description: "Não foi possível remover o plano. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const initials = patient?.name
     ? patient.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
     : "";
-
-  function handleEditarPlano(novaDescricao: string) {
-    if (!planoEditando) return;
-    queryClient.setQueryData(planosQueryKey, (old: ResumoPlanoAlimentar[] | undefined) => {
-      if (!old) return old;
-      return old.map((p) =>
-        p.id === planoEditando.id ? { ...p, descricao: novaDescricao } : p
-      );
-    });
-    toast({ title: "Plano atualizado com sucesso" });
-    setPlanoEditando(null);
-  }
-
-  function handleExcluirPlano() {
-    if (!planoExcluindo) return;
-    queryClient.setQueryData(planosQueryKey, (old: ResumoPlanoAlimentar[] | undefined) => {
-      if (!old) return old;
-      return old.filter((p) => p.id !== planoExcluindo.id);
-    });
-    toast({ title: "Plano excluído com sucesso" });
-    setPlanoExcluindo(null);
-  }
-
-  const isLoading = isLoadingPatient || isLoadingPlanos;
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6" data-testid="page-prescricao-planos">
@@ -254,7 +316,10 @@ export default function PrescricaoAlimentarPlanosPage() {
           description="Crie o primeiro plano alimentar para este cliente."
           module="nutrition"
           action={
-            <Button onClick={() => setModalNovoPlanoAberto(true)} data-testid="button-criar-primeiro-plano">
+            <Button
+              onClick={() => setModalNovoPlanoAberto(true)}
+              data-testid="button-criar-primeiro-plano"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Criar plano alimentar
             </Button>
@@ -289,7 +354,7 @@ export default function PrescricaoAlimentarPlanosPage() {
                           className="text-xs capitalize shrink-0"
                           data-testid={`badge-plano-status-${plano.id}`}
                         >
-                          {plano.status}
+                          {plano.status === "ativo" ? "Ativo" : "Rascunho"}
                         </Badge>
                       </div>
 
@@ -318,7 +383,7 @@ export default function PrescricaoAlimentarPlanosPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        title="Editar nome do plano"
+                        title="Editar plano"
                         onClick={(e) => {
                           e.stopPropagation();
                           setPlanoEditando(plano);
@@ -377,7 +442,10 @@ export default function PrescricaoAlimentarPlanosPage() {
           onOpenChange={(open) => { if (!open) setPlanoEditando(null); }}
           plano={planoEditando}
           pacienteId={pacienteId}
-          onSave={handleEditarPlano}
+          isSaving={editarMutation.isPending}
+          onSave={(descricao, status) =>
+            editarMutation.mutate({ planoId: planoEditando.id, descricao, status })
+          }
         />
       )}
 
@@ -391,19 +459,23 @@ export default function PrescricaoAlimentarPlanosPage() {
             <AlertDialogDescription>
               Tem certeza que deseja excluir o plano{" "}
               <strong>{planoExcluindo?.descricao}</strong>? Todas as refeições
-              cadastradas serão perdidas.
+              cadastradas serão removidas permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancelar-exclusao-plano">
+            <AlertDialogCancel
+              disabled={excluirMutation.isPending}
+              data-testid="button-cancelar-exclusao-plano"
+            >
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={excluirMutation.isPending}
               data-testid="button-confirmar-exclusao-plano"
-              onClick={handleExcluirPlano}
+              onClick={() => planoExcluindo && excluirMutation.mutate(planoExcluindo.id)}
             >
-              Excluir
+              {excluirMutation.isPending ? "Excluindo..." : "Excluir"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

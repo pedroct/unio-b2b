@@ -285,6 +285,66 @@ export async function registerRoutes(
     }
   });
 
+  // PATCH /planos-alimentares/:planoId — edição parcial (descricao, status, dias_ativos)
+  app.patch("/api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+
+    const pacienteId = req.params.id;
+    const planoId = req.params.planoId;
+    const validos = ["segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo"];
+
+    const body: Record<string, unknown> = {};
+    if (typeof req.body.descricao === "string" && req.body.descricao.trim()) {
+      body.descricao = req.body.descricao.trim();
+    }
+    if (req.body.status === "ativo" || req.body.status === "rascunho") {
+      body.status = req.body.status;
+    }
+    if (Array.isArray(req.body.dias_ativos)) {
+      body.dias_ativos = [...new Set((req.body.dias_ativos as string[]).filter((d) => validos.includes(d)))];
+    }
+
+    if (Object.keys(body).length === 0) {
+      return res.status(400).json({ message: "Nenhum campo válido para atualizar." });
+    }
+
+    try {
+      const result = await stagingPassthrough(
+        `/api/nutricao/planos-alimentares/${pacienteId}/${planoId}`,
+        { method: "PATCH", bearerToken: token, body }
+      );
+      if (!result.ok) {
+        return res.status(result.status).json(result.data ?? { message: "Erro ao editar plano." });
+      }
+      return res.json(result.data);
+    } catch (err: any) {
+      console.error("[patch-plano] staging exception:", err.message);
+      return res.status(502).json({ message: "Erro ao conectar com o servidor." });
+    }
+  });
+
+  // DELETE /planos-alimentares/:planoId — remoção permanente (204 No Content)
+  app.delete("/api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+
+    const pacienteId = req.params.id;
+    const planoId = req.params.planoId;
+
+    try {
+      const result = await stagingPassthrough(
+        `/api/nutricao/planos-alimentares/${pacienteId}/${planoId}`,
+        { method: "DELETE", bearerToken: token }
+      );
+      if (result.status === 204) return res.status(204).end();
+      return res.status(result.status).json(result.data ?? { message: "Erro ao excluir plano." });
+    } catch (err: any) {
+      console.error("[delete-plano] staging exception:", err.message);
+      return res.status(502).json({ message: "Erro ao conectar com o servidor." });
+    }
+  });
+
   // GET /plano-alimentar — detalhe via staging GET /{cliente_id}/{plano_id}
   app.get("/api/profissional/dashboard/pacientes/:id/plano-alimentar", async (req, res) => {
     const planoId = req.query.planoId as string;

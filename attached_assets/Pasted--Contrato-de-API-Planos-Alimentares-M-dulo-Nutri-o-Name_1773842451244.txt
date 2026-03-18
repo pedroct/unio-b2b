@@ -1,0 +1,305 @@
+# Contrato de API — Planos Alimentares
+
+> **Módulo:** Nutrição  
+> **Namespace:** `/api/nutricao`  
+> **Data:** 2026-03-18  
+> **Canais:** B2C (Mobile/Web) · B2B (Painel Profissional)
+
+---
+
+## 🔒 Autenticação (Todos os Endpoints)
+
+Todos os endpoints exigem autenticação JWT.
+
+- **Header:** `Authorization`
+- **Valor:** `Bearer <token_jwt>`
+- **Erro se ausente/inválido:** `401 Unauthorized`
+
+---
+
+## 👥 Lógica de Permissão por Canal
+
+O `{cliente_id}` é sempre o **ID numérico do cliente** (usuário final). O controle de acesso é determinado automaticamente pelo token JWT:
+
+| Quem acessa | Condição de acesso |
+|-------------|-------------------|
+| **O próprio cliente** | `token.user_id == cliente_id` — acessa seus próprios planos |
+| **Profissional** | Deve haver vínculo ativo (`RelacaoClienteProfissional`) entre o profissional e o cliente |
+| **Intruso** | Recebe `404 Not Found` — nunca `403`, para não revelar existência do recurso |
+
+> **Importante para o frontend B2C:** o cliente faz a requisição passando o **seu próprio `id`** como `{cliente_id}`. Não há rota separada — o mesmo endpoint serve profissionais e clientes.
+
+---
+
+## 📦 Schema de Resposta — Plano Alimentar
+
+Todos os endpoints que retornam um plano usam este schema:
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "cliente_id": 42,
+  "profissional_id": 7,
+  "descricao": "Dieta Hiperproteica",
+  "status": "ativo",
+  "refeicoes": [
+    {
+      "id": "a3f1c900-...",
+      "nome": "Almoço",
+      "horario": "12:30:00",
+      "observacao": "Sem pele",
+      "alimentos": [
+        {
+          "id": "uuid",
+          "alimento_id": "uuid-do-alimento",
+          "quantidade": "150.00",
+          "unidade": "g"
+        }
+      ]
+    }
+  ]
+}
+```
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | `string` (UUID) | Identificador único do plano. Usar em todas as rotas com `{plano_id}`. |
+| `cliente_id` | `integer` | ID do cliente dono do plano. |
+| `profissional_id` | `integer` | ID do profissional que criou o plano. |
+| `descricao` | `string` | Nome/descrição do plano. |
+| `status` | `string` | `"ativo"` ou `"rascunho"`. |
+| `refeicoes` | `array` | Lista de refeições vinculadas ao plano (pode ser `[]`). |
+
+---
+
+## 📌 Endpoint 1 — Listar Planos Alimentares
+
+```
+GET /api/nutricao/planos-alimentares/{cliente_id}
+```
+
+Lista todos os planos alimentares de um cliente.
+
+### Parâmetros de Path
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `cliente_id` | `integer` | ID do cliente. |
+
+### Resposta de Sucesso: `200 OK`
+
+```json
+[
+  {
+    "id": "uuid",
+    "cliente_id": 42,
+    "profissional_id": 7,
+    "descricao": "Dieta Hiperproteica",
+    "status": "ativo",
+    "refeicoes": []
+  }
+]
+```
+
+> Retorna lista vazia `[]` se o usuário não tiver permissão de acesso (sem revelar existência do recurso).
+
+---
+
+## 📌 Endpoint 2 — Criar Plano Alimentar
+
+```
+POST /api/nutricao/planos-alimentares/{cliente_id}
+```
+
+Cria um novo plano alimentar base para o cliente.
+
+### Parâmetros de Path
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `cliente_id` | `integer` | ID do cliente que receberá o plano. |
+
+### Body (JSON)
+
+```json
+{
+  "descricao": "Dieta Hipocalórica",
+  "dias_ativos": ["segunda", "terca", "quarta", "quinta", "sexta"],
+  "status": "rascunho"
+}
+```
+
+| Campo | Tipo | Obrigatório | Padrão | Descrição |
+|-------|------|:-----------:|:------:|-----------|
+| `descricao` | `string` | ✅ Sim | — | Nome/descrição do plano. |
+| `dias_ativos` | `array[string]` | Não | `[]` | Dias da semana em que o plano é aplicado. |
+| `status` | `string` | Não | `"ativo"` | `"ativo"` ou `"rascunho"`. |
+
+**Valores aceitos em `dias_ativos`:** `"segunda"`, `"terca"`, `"quarta"`, `"quinta"`, `"sexta"`, `"sabado"`, `"domingo"`.
+
+### Resposta de Sucesso: `201 Created`
+
+Retorna o objeto completo do plano criado (ver schema acima). As `refeicoes` estarão vazias `[]`.
+
+---
+
+## 📌 Endpoint 3 — Detalhes do Plano Alimentar
+
+```
+GET /api/nutricao/planos-alimentares/{cliente_id}/{plano_id}
+```
+
+Retorna um plano específico com todas as suas refeições e alimentos vinculados.
+
+### Parâmetros de Path
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `cliente_id` | `integer` | ID do cliente. |
+| `plano_id` | `string` (UUID) | ID do plano alimentar. |
+
+### Resposta de Sucesso: `200 OK`
+
+Retorna o objeto completo do plano (ver schema acima).
+
+### Resposta de Erro: `404 Not Found`
+
+Quando o plano não existe ou o usuário não tem permissão de acesso.
+
+---
+
+## 📌 Endpoint 4 — Adicionar Refeição no Plano
+
+```
+POST /api/nutricao/planos-alimentares/{cliente_id}/{plano_id}/refeicoes
+```
+
+Cria uma refeição dentro de um plano e vincula os alimentos.
+
+### Body (JSON)
+
+```json
+{
+  "nome": "Almoço",
+  "horario": "12:30:00",
+  "observacao": "Sem pele e sem gordura",
+  "alimentos": [
+    {
+      "id": "uuid-gerado-pelo-frontend",
+      "alimento_id": "uuid-do-alimento-no-catalogo",
+      "quantidade": 150.5,
+      "unidade": "g"
+    }
+  ]
+}
+```
+
+> Consulte o contrato `contrato_planos_alimentares.md` original para o schema completo desta operação.
+
+---
+
+## 📌 Endpoint 5 — Editar Plano Alimentar *(NOVO)*
+
+```
+PATCH /api/nutricao/planos-alimentares/{cliente_id}/{plano_id}
+```
+
+Edição **parcial** do plano alimentar. Somente os campos enviados no body serão alterados — campos omitidos **não são modificados**.
+
+### Parâmetros de Path
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `cliente_id` | `integer` | ID do cliente. |
+| `plano_id` | `string` (UUID) | ID do plano a ser editado. |
+
+### Body (JSON) — todos os campos são opcionais
+
+```json
+{
+  "descricao": "Dieta Hipocalórica Fase 2",
+  "status": "ativo",
+  "dias_ativos": ["segunda", "quarta", "sexta"]
+}
+```
+
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|:-----------:|-----------|
+| `descricao` | `string` | Não | Novo nome/descrição do plano. |
+| `status` | `string` | Não | `"ativo"` ou `"rascunho"`. |
+| `dias_ativos` | `array[string]` | Não | Nova lista de dias ativos (substitui a anterior integralmente). |
+
+> ⚠️ **Atenção ao `dias_ativos`:** Se enviado, a lista **substitui completamente** a existente. Para remover todos os dias, envie `"dias_ativos": []`. Para não alterar os dias, **omita o campo**.
+
+### Resposta de Sucesso: `200 OK`
+
+Retorna o objeto completo do plano com os dados atualizados (ver schema acima).
+
+### Resposta de Erro: `404 Not Found`
+
+Quando o plano não existe ou o usuário não tem permissão de acesso (inclui intrusos).
+
+---
+
+## 📌 Endpoint 6 — Remover Plano Alimentar *(NOVO)*
+
+```
+DELETE /api/nutricao/planos-alimentares/{cliente_id}/{plano_id}
+```
+
+Remove **permanentemente** um plano alimentar e todas as suas refeições e alimentos vinculados.
+
+> ⚠️ **Atenção:** Esta operação é **irreversível**. Todas as refeições (`RefeicaoPlano`) e alimentos dentro delas (`AlimentoPlano`) são apagados em cascata. Não há soft-delete para planos.
+
+### Parâmetros de Path
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `cliente_id` | `integer` | ID do cliente. |
+| `plano_id` | `string` (UUID) | ID do plano a ser removido. |
+
+### Resposta de Sucesso: `204 No Content`
+
+Sem body. O plano foi removido com sucesso.
+
+### Resposta de Erro: `404 Not Found`
+
+Quando o plano não existe ou o usuário não tem permissão de acesso.
+
+---
+
+## 🗺️ Visão Geral dos Endpoints de Planos Alimentares
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `GET` | `/api/nutricao/planos-alimentares/{cliente_id}` | Lista todos os planos do cliente |
+| `POST` | `/api/nutricao/planos-alimentares/{cliente_id}` | Cria um novo plano |
+| `GET` | `/api/nutricao/planos-alimentares/{cliente_id}/{plano_id}` | Detalha um plano com refeições |
+| `POST` | `/api/nutricao/planos-alimentares/{cliente_id}/{plano_id}/refeicoes` | Adiciona refeição ao plano |
+| `PATCH` | `/api/nutricao/planos-alimentares/{cliente_id}/{plano_id}` | ✅ **NOVO** — Edição parcial do plano |
+| `DELETE` | `/api/nutricao/planos-alimentares/{cliente_id}/{plano_id}` | ✅ **NOVO** — Remove o plano permanentemente |
+
+---
+
+## 🚨 Resumo de Códigos HTTP
+
+| Código | Significado | Quando ocorre |
+|--------|-------------|---------------|
+| `200` | Sucesso | GET ou PATCH retornou/editou com sucesso. |
+| `201` | Criado | POST criou o recurso com sucesso. |
+| `204` | Sem Conteúdo | DELETE executado com sucesso (sem body). |
+| `400` | Erro de validação | Dados inválidos ou ausentes. |
+| `401` | Não Autenticado | Token JWT ausente, expirado ou inválido. |
+| `404` | Não Encontrado | Plano inexistente, já removido, ou usuário sem permissão. |
+
+---
+
+> **Instruções para a LLM de Frontend:**
+> - O `{plano_id}` é um **UUID (string)** — armazene e passe como string, nunca como number.
+> - O `{cliente_id}` é um **integer** — use o `id` numérico do usuário obtido no JWT ou no perfil.
+> - No `PATCH`, envie **somente os campos que o usuário alterou** — não reenvie o objeto inteiro.
+> - Para `dias_ativos` no `PATCH`: se omitido, os dias não mudam; se enviado (mesmo vazio `[]`), substitui completamente a lista.
+> - O `DELETE` retorna `204` **sem body** — não chame `response.json()` neste caso.
+> - Após um `DELETE` bem-sucedido, remova o item da lista local pelo `id` sem recarregar toda a listagem.
+> - Tanto profissionais (B2B) quanto clientes (B2C) usam **os mesmos endpoints** — o backend diferencia pelo token JWT automaticamente.
+> - O `status` aceita exatamente dois valores: `"ativo"` ou `"rascunho"` (lowercase).
