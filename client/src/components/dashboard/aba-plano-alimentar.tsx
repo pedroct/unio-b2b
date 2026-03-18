@@ -92,15 +92,8 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
   const [modalNovoPlanoAberto, setModalNovoPlanoAberto] = useState(false);
   const { data: planosLista, isLoading: isLoadingLista } = useQuery<ResumoPlanoAlimentar[]>({
     queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "planos-alimentares"],
-    queryFn: async () => {
-      const res = await fetch(
-        `/api/profissional/dashboard/pacientes/${pacienteId}/planos-alimentares`,
-        { credentials: "include" }
-      );
-      if (!res.ok) throw new Error("Erro ao carregar planos");
-      const raw = await res.json();
-      return (raw as any[]).map(normalizarResumoPlano);
-    },
+    enabled: !!pacienteId,
+    select: (raw: any) => (Array.isArray(raw) ? raw : []).map(normalizarResumoPlano),
   });
 
   const planoId = planoSelecionadoId || (planosLista && planosLista.length > 0 ? planosLista[0].id : "");
@@ -116,9 +109,17 @@ export function AbaPlanoAlimentar({ pacienteId }: AbaPlanoAlimentarProps) {
   const { data: plano, isLoading: isLoadingPlano } = useQuery<PlanoAlimentar>({
     queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "plano-alimentar", planoId, diaSelecionado],
     queryFn: async () => {
+      const token = (() => {
+        try {
+          const s = localStorage.getItem("unio_auth");
+          return s ? JSON.parse(s).tokens?.access ?? null : null;
+        } catch { return null; }
+      })();
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
       const res = await fetch(
         `/api/profissional/dashboard/pacientes/${pacienteId}/plano-alimentar?planoId=${planoId}&diaSemana=${diaSelecionado}`,
-        { credentials: "include" }
+        { headers, credentials: "include" }
       );
       if (!res.ok) throw new Error("Erro ao carregar plano alimentar");
       const raw = await res.json();
