@@ -1,0 +1,253 @@
+# Contrato de API — Busca de Alimentos
+
+> **Módulo:** Nutrição
+> **Namespace:** `/api/nutricao`
+> **Data:** 2026-03-18
+> **Canais:** B2C (Mobile/Web) · B2B (Web)
+
+---
+
+## ⚠️ Correção Crítica — Rota TBCA Inexistente
+
+> A rota `/api/nutricao/tbca/alimentos` **nunca foi implementada** no backend.
+> Qualquer chamada a ela retorna `404 Not Found`.
+> **Usar exclusivamente `/api/nutricao/catalogo/alimentos`** para busca de alimentos.
+
+---
+
+## 🔒 Autenticação
+
+Todos os endpoints exigem JWT:
+
+- **Header:** `Authorization: Bearer <token_jwt>`
+- **Erro:** `401 Unauthorized`
+
+---
+
+## 📌 Endpoint Principal — Busca Unificada de Alimentos
+
+```
+GET /api/nutricao/catalogo/alimentos
+```
+
+Endpoint único que agrega **todas as fontes** de dados nutricionais: TBCA, IBGE, USDA e alimentos manuais do usuário. Retorna resultados ranqueados por relevância quando o parâmetro `busca` é informado.
+
+### Query Parameters
+
+| Parâmetro | Tipo | Obrigatório | Default | Descrição |
+|-----------|------|:-----------:|:-------:|-----------|
+| `busca` | `string` | Não | — | Termo de busca livre na descrição do alimento. |
+| `fontes` | `string` (CSV) | Não | todas | Filtrar por fontes específicas (ex: `"TBCA,IBGE"`). |
+| `fonte` | `string` | Não | todas | Filtrar por fonte única (ex: `"TBCA"`). Ignorado se `fontes` for informado. |
+| `grupo` | `string` | Não | — | Código do grupo alimentar (ex: `"C"` para cereais). |
+| `limite` | `integer` | Não | `50` | Máximo de resultados por página. |
+| `offset` | `integer` | Não | `0` | Paginação — número de resultados a pular. |
+
+**Valores válidos para `fontes`/`fonte`:** `TBCA`, `IBGE`, `USDA`, `MANUAL`, `TACO`, `API_EXTERNA`
+
+### Exemplos de Chamadas
+
+```
+# Busca geral (todas as fontes)
+GET /api/nutricao/catalogo/alimentos?busca=banana&limite=20
+
+# Busca apenas na base TBCA
+GET /api/nutricao/catalogo/alimentos?busca=banana&fontes=TBCA&limite=20
+
+# Busca em múltiplas fontes
+GET /api/nutricao/catalogo/alimentos?busca=arroz&fontes=TBCA,IBGE&limite=20
+
+# Listar sem busca (paginação)
+GET /api/nutricao/catalogo/alimentos?limite=50&offset=0
+```
+
+### Resposta de Sucesso: `200 OK`
+
+```json
+{
+  "items": [
+    {
+      "id": "9561e5ec-1234-...",
+      "descricao": "Banana, prata, crua",
+      "fonte_dados": "TBCA",
+      "energia_kcal": 89.0,
+      "proteina_g": 1.1,
+      "carboidrato_g": 22.8,
+      "lipideos_g": 0.3,
+      "fibra_g": 2.6,
+      "porcao_base": 100.0,
+      "unidade_medida": "g",
+      "grupo_alimentar": "Frutas"
+    }
+  ],
+  "total": 42,
+  "limite": 20,
+  "offset": 0
+}
+```
+
+### Campos da Resposta — Cada Item
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | `string` (UUID) | Identificador do alimento. Usar como `alimento_catalogo_id` no diário. |
+| `descricao` | `string` | Nome do alimento. |
+| `fonte_dados` | `string` | Fonte de origem: `"TBCA"`, `"IBGE"`, `"USDA"`, `"MANUAL"`, etc. |
+| `energia_kcal` | `float` | Calorias por `porcao_base`. |
+| `proteina_g` | `float` | Proteínas (g) por `porcao_base`. |
+| `carboidrato_g` | `float` | Carboidratos totais (g) por `porcao_base`. |
+| `lipideos_g` | `float` | Gorduras totais (g) por `porcao_base`. |
+| `fibra_g` | `float` | Fibras alimentares (g) por `porcao_base`. Pode ser `null`. |
+| `porcao_base` | `float` | Quantidade de referência para os valores nutricionais (geralmente `100`). |
+| `unidade_medida` | `string` | Unidade da porção base: `"g"` ou `"ml"`. |
+| `grupo_alimentar` | `string` | Categoria/grupo do alimento. Pode ser `null`. |
+
+---
+
+## 📌 Endpoint Auxiliar — Alimentos Manuais do Usuário
+
+```
+GET /api/nutricao/catalogo/alimentos/meus
+```
+
+Lista exclusivamente os alimentos **criados manualmente pelo usuário autenticado**. Útil para evitar re-cadastro de alimentos já existentes.
+
+### Query Parameters
+
+| Parâmetro | Tipo | Default | Descrição |
+|-----------|------|:-------:|-----------|
+| `limite` | `integer` | `50` | Máximo de resultados. |
+| `offset` | `integer` | `0` | Paginação. |
+
+### Resposta: `200 OK`
+
+Mesmo formato paginado de `/catalogo/alimentos`. Os itens terão `fonte_dados: "MANUAL"`.
+
+---
+
+## 📌 Endpoint Auxiliar — Detalhes Completos de um Alimento
+
+```
+GET /api/nutricao/catalogo/alimentos/{alimento_id}
+```
+
+Retorna todos os micronutrientes e dados completos de um alimento específico.
+
+### Parâmetros de Path
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `alimento_id` | `string` (UUID) | ID obtido pelo endpoint de listagem/busca. |
+
+### Resposta de Sucesso: `200 OK`
+
+```json
+{
+  "id": "9561e5ec-...",
+  "descricao": "Banana, prata, crua",
+  "fonte_dados": "TBCA",
+  "energia_kcal": 89.0,
+  "proteina_g": 1.1,
+  "carboidrato_g": 22.8,
+  "lipideos_g": 0.3,
+  "fibra_g": 2.6,
+  "porcao_base": 100.0,
+  "unidade_medida": "g",
+  "valores_nutricionais": [
+    { "nutriente": "Sódio", "valor": 1.0, "unidade": "mg" },
+    { "nutriente": "Potássio", "valor": 358.0, "unidade": "mg" },
+    { "nutriente": "Vitamina C", "valor": 8.7, "unidade": "mg" }
+  ]
+}
+```
+
+### Resposta de Erro: `404 Not Found`
+
+```json
+{ "erro": "Alimento não encontrado" }
+```
+
+---
+
+## 📌 Endpoint Auxiliar — Busca por Código
+
+```
+GET /api/nutricao/catalogo/alimentos/codigo/{codigo}
+```
+
+Busca um alimento pelo código padronizado da fonte de dados.
+
+**Exemplos de código:**
+- TBCA: `BRC0001C`
+- USDA: `USDA_167512`
+
+---
+
+## 🗺️ Comparativo — Rotas Corretas vs Incorretas
+
+| ❌ Rota Inexistente | ✅ Rota Correta |
+|--------------------|----------------|
+| `/api/nutricao/tbca/alimentos` | `/api/nutricao/catalogo/alimentos?fontes=TBCA` |
+| `/api/nutricao/tbca/alimentos?busca=banana` | `/api/nutricao/catalogo/alimentos?busca=banana&fontes=TBCA` |
+| `/api/nutricao/ibge/alimentos` | `/api/nutricao/catalogo/alimentos?fontes=IBGE` |
+
+---
+
+## 🔗 Integração com o Diário Alimentar
+
+Após buscar e selecionar um alimento do catálogo, registrar o consumo com:
+
+```
+POST /api/nutricao/diario/registrar
+```
+
+**Body:**
+```json
+{
+  "alimento_catalogo_id": "9561e5ec-...",
+  "quantidade": 150.0,
+  "refeicao_id": 3,
+  "data_consumo": "2026-03-18T11:00:00"
+}
+```
+
+> O campo `alimento_catalogo_id` recebe o `id` (UUID) retornado pelo `/catalogo/alimentos`. **Não usar** `alimento_id` (inteiro) para alimentos do catálogo.
+
+---
+
+## 📐 Cálculo de Macros Proporcional
+
+Os valores nutricionais são referentes à `porcao_base` (geralmente `100g`). Para exibir macros proporcionais ao peso real pesado:
+
+```
+valor_proporcional = (valor_por_porcao_base / porcao_base) × quantidade_consumida
+```
+
+**Exemplo:**
+```
+Banana: energia_kcal=89, porcao_base=100g
+Quantidade pesada: 58.3g
+
+kcal = (89 / 100) × 58.3 = 51.89 ≈ 52 kcal
+prot = (1.1 / 100) × 58.3 = 0.64 ≈ 0,6g
+```
+
+---
+
+## 🚨 Resumo de Códigos HTTP
+
+| Código | Quando ocorre |
+|--------|---------------|
+| `200` | Busca executada com sucesso (pode retornar `items: []` sem erro). |
+| `401` | Token JWT ausente, expirado ou inválido. |
+| `404` | Alimento específico não encontrado (apenas no endpoint de detalhe). |
+
+---
+
+> **Instruções para a LLM de Frontend:**
+> - Use `/catalogo/alimentos?busca={query}` para toda busca de alimentos — substitui qualquer outra rota de busca que você conhecia.
+> - O `id` retornado é sempre **UUID (string)** — usar como `alimento_catalogo_id` no registro.
+> - Nomes longos podem ter vírgulas e parênteses (ex: `"Banana, prata, crua"`). Para busca por nome simplificado, extrair o texto antes da primeira `,` ou `(`.
+> - O campo `busca` faz match parcial — `"ban"` retorna `"Banana"`, `"Banana nanica"`, etc.
+> - Todos os campos numéricos na resposta usam **ponto** como separador decimal. Na formatação para o usuário, converter para vírgula (pt-BR).
+> - Campos `fibra_g`, `grupo_alimentar` e outros podem ser `null` — tratar defensivamente.

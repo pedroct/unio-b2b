@@ -26,6 +26,7 @@ function formatHorarioInterno(h: string): string {
 
 function toUpperFonte(fonte: string): FonteAlimento {
   const upper = (fonte || "TBCA").toUpperCase();
+  if (upper === "MANUAL") return "MEUS_ALIMENTOS";
   if (["TBCA", "TACO", "IBGE", "USDA", "SUPLEMENTOS", "MEUS_ALIMENTOS"].includes(upper)) {
     return upper as FonteAlimento;
   }
@@ -69,13 +70,13 @@ export function normalizarAlimentoTBCA(item: any): ResultadoBuscaNormalizado {
     id: String(item.id),
     nome: item.descricao ?? item.nome ?? "",
     grupo,
-    fonte: toUpperFonte(item.fonte_dados),
-    // staging não retorna macros por 100g na listagem — ficam null
+    fonte: toUpperFonte(item.fonte_dados ?? item.fonte),
+    // campos do contrato /catalogo/alimentos (sufixo _g) com fallback para legados
     caloriasPor100g: item.energia_kcal ?? item.calorias ?? null,
-    proteinaPor100g: item.proteinas ?? item.proteina ?? null,
-    carboidratoPor100g: item.carboidratos ?? item.carboidrato ?? null,
-    gorduraPor100g: item.lipideos ?? item.gorduras ?? item.gordura ?? null,
-    fibraPor100g: item.fibras ?? item.fibra ?? null,
+    proteinaPor100g: item.proteina_g ?? item.proteinas ?? item.proteina ?? null,
+    carboidratoPor100g: item.carboidrato_g ?? item.carboidratos ?? item.carboidrato ?? null,
+    gorduraPor100g: item.lipideos_g ?? item.lipideos ?? item.gorduras ?? item.gordura ?? null,
+    fibraPor100g: item.fibra_g ?? item.fibras ?? item.fibra ?? null,
     apresentacao: normalizarApresentacao(item.apresentacao),
   };
 }
