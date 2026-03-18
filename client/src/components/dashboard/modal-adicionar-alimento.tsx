@@ -204,7 +204,7 @@ export function ModalAdicionarAlimento({
     const qtd = parseFloat(quantidade);
 
     const alimento: AlimentoPlano = {
-      id: `${selecionado.id}-${Date.now()}`,
+      id: crypto.randomUUID(),
       nome: selecionado.nome,
       quantidade: qtd,
       unidade: "g",

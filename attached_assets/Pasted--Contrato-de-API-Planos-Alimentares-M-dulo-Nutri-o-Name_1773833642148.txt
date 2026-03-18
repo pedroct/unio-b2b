@@ -1,0 +1,314 @@
+# Contrato de API — Planos Alimentares
+
+> **Módulo:** Nutrição  
+> **Namespace:** `/api/nutricao`  
+> **Data:** 2026-03-18  
+> **Canais:** B2C (Mobile/Web), B2B (Dashboard Profissional)
+
+---
+
+## 🔒 Autenticação (Todos os Endpoints)
+
+Todos os endpoints deste contrato exigem autenticação JWT.
+
+- **Header:** `Authorization`
+- **Valor:** `Bearer <token_jwt>`
+- **Erro se ausente/inválido:** `401 Unauthorized`
+
+---
+
+## 🛡️ Regra de Permissão Multi-Canal
+
+O backend identifica automaticamente o perfil do chamador:
+
+| Cenário | Lógica aplicada |
+|---------|-----------------|
+| `request.user.id == cliente_id` | **Acesso B2C** — O próprio cliente está consultando seus planos. |
+| `request.user.id != cliente_id` | **Acesso B2B** — O profissional logado deve ser o dono (`profissional`) do plano. |
+
+> **Importante:** Um usuário que não seja o cliente nem o profissional vinculado receberá lista vazia (`[]`) ou `404 Not Found`, sem vazamento de dados.
+
+---
+
+## 📌 Endpoint 1 — Listar Planos Alimentares
+
+### Rota
+```
+GET /api/nutricao/planos-alimentares/{cliente_id}
+```
+
+### Parâmetros de Path
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `cliente_id` | `integer` | ID do usuário-cliente cujos planos serão listados. |
+
+### Resposta de Sucesso: `200 OK`
+
+Retorna um **array** de planos alimentares. Se não houver planos, retorna `[]`.
+
+```json
+[
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "cliente_id": 42,
+    "profissional_id": 7,
+    "descricao": "Dieta Hiperproteica",
+    "status": "ativo",
+    "refeicoes": [
+      {
+        "id": "f1e2d3c4-b5a6-7890-abcd-ef0987654321",
+        "nome": "Café da Manhã",
+        "horario": "07:30:00",
+        "observacao": "Antes do treino",
+        "alimentos": [
+          {
+            "id": "11223344-5566-7788-99aa-bbccddeeff00",
+            "alimento_id": "aabbccdd-eeff-0011-2233-445566778899",
+            "alimento_nome": "Ovos Mexidos",
+            "quantidade": "3.00",
+            "unidade": "unidade"
+          }
+        ]
+      }
+    ]
+  }
+]
+```
+
+### Detalhamento dos Campos (PlanoAlimentar)
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | `UUID` (string) | Identificador único do plano alimentar. |
+| `cliente_id` | `integer` | ID do usuário-cliente dono do plano. |
+| `profissional_id` | `integer` | ID do profissional que prescreveu o plano. |
+| `descricao` | `string` | Nome/descrição do plano (ex: "Dieta Hiperproteica"). |
+| `status` | `string` | `"ativo"` ou `"rascunho"`. |
+| `refeicoes` | `Array<Refeicao>` | Lista de refeições vinculadas ao plano (pode ser vazia). |
+
+### Detalhamento dos Campos (Refeição)
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | `UUID` (string) | Identificador único da refeição. |
+| `nome` | `string` | Nome da refeição (ex: "Almoço", "Lanche da Tarde"). |
+| `horario` | `string` (HH:MM:SS) | Horário sugerido para a refeição. |
+| `observacao` | `string` | Observações do profissional (pode ser vazio `""`). |
+| `alimentos` | `Array<AlimentoPlano>` | Lista de alimentos prescritos na refeição. |
+
+### Detalhamento dos Campos (Alimento do Plano)
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | `UUID` (string) | Identificador único do vínculo alimento-refeição. |
+| `alimento_id` | `UUID` (string) | ID do alimento na tabela de catálogo (TBCA/IBGE/USDA/MANUAL). |
+| `alimento_nome` | `string` | Nome/descrição do alimento (resolvido pelo backend). |
+| `quantidade` | `string` (Decimal) | Quantidade prescrita (ex: `"150.50"`). Retorna como string para preservar precisão decimal. |
+| `unidade` | `string` | Unidade de medida (ex: "g", "ml", "Fatia", "Colher de Sopa"). |
+
+---
+
+## 📌 Endpoint 2 — Criar Plano Alimentar
+
+### Rota
+```
+POST /api/nutricao/planos-alimentares/{cliente_id}
+```
+
+### Parâmetros de Path
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `cliente_id` | `integer` | ID do cliente para quem o plano será criado. |
+
+### Body (JSON)
+
+```json
+{
+  "descricao": "Dieta Low Carb",
+  "dias_ativos": ["segunda", "terca", "quarta", "quinta", "sexta"],
+  "status": "ativo"
+}
+```
+
+| Campo | Tipo | Obrigatório | Padrão | Descrição |
+|-------|------|:-----------:|:------:|-----------|
+| `descricao` | `string` | ✅ Sim | — | Descrição do plano (ex: "Dieta Hiperproteica"). |
+| `dias_ativos` | `Array<string>` | Não | `[]` | Dias da semana em que o plano é aplicado. |
+| `status` | `string` | Não | `"ativo"` | Status do plano. Valores possíveis: `"ativo"`, `"rascunho"`. |
+
+### Resposta de Sucesso: `201 Created`
+
+Retorna o plano criado no mesmo formato do Endpoint 1 (objeto único, não array).
+
+### Resposta de Erro: `400 Bad Request`
+
+```json
+{
+  "erro": "Descrição da falha"
+}
+```
+
+---
+
+## 📌 Endpoint 3 — Detalhes de um Plano Alimentar
+
+### Rota
+```
+GET /api/nutricao/planos-alimentares/{cliente_id}/{plano_id}
+```
+
+### Parâmetros de Path
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `cliente_id` | `integer` | ID do cliente dono do plano. |
+| `plano_id` | `string` (UUID) | ID específico do plano alimentar. |
+
+### Resposta de Sucesso: `200 OK`
+
+Retorna um **objeto único** do plano alimentar completo (mesmo formato dos itens do Endpoint 1).
+
+### Resposta de Erro: `404 Not Found`
+
+Retornado quando o `plano_id` não existe ou o usuário logado não tem permissão para acessá-lo.
+
+---
+
+## 📌 Endpoint 4 — Adicionar Refeição ao Plano
+
+### Rota
+```
+POST /api/nutricao/planos-alimentares/{cliente_id}/{plano_id}/refeicoes
+```
+
+### Parâmetros de Path
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `cliente_id` | `integer` | ID do cliente dono do plano. |
+| `plano_id` | `string` (UUID) | ID do plano alimentar onde a refeição será adicionada. |
+
+### Body (JSON)
+
+```json
+{
+  "nome": "Almoço",
+  "horario": "12:30:00",
+  "observacao": "Sem pele no frango",
+  "alimentos": [
+    {
+      "id": "uuid-gerado-pelo-frontend",
+      "alimento_id": "uuid-do-alimento-no-catalogo",
+      "quantidade": 150.5,
+      "unidade": "g"
+    },
+    {
+      "id": "uuid-gerado-pelo-frontend-2",
+      "alimento_id": "uuid-do-outro-alimento",
+      "quantidade": 200,
+      "unidade": "ml"
+    }
+  ]
+}
+```
+
+| Campo | Tipo | Obrigatório | Padrão | Descrição |
+|-------|------|:-----------:|:------:|-----------|
+| `nome` | `string` | ✅ Sim | — | Nome da refeição (ex: "Café da Manhã"). |
+| `horario` | `string` (HH:MM:SS) | ✅ Sim | — | Horário sugerido. |
+| `observacao` | `string` | Não | `""` | Observações livres do profissional. |
+| `alimentos` | `Array<AlimentoIn>` | Não | `[]` | Lista de alimentos a vincular. |
+
+### Detalhamento do Objeto `AlimentoIn`
+
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|:-----------:|-----------|
+| `id` | `string` | ✅ Sim | ID gerado pelo frontend para o vínculo alimento-refeição. |
+| `alimento_id` | `UUID` (string) | ✅ Sim | ID do alimento no catálogo (TBCA, IBGE, USDA ou MANUAL do cliente). |
+| `quantidade` | `number` (Decimal) | ✅ Sim | Quantidade prescrita. |
+| `unidade` | `string` | ✅ Sim | Unidade de medida ("g", "ml", "Fatia", etc.). |
+
+### Resposta de Sucesso: `201 Created`
+
+Retorna a refeição criada com seus alimentos populados:
+
+```json
+{
+  "id": "f1e2d3c4-b5a6-7890-abcd-ef0987654321",
+  "nome": "Almoço",
+  "horario": "12:30:00",
+  "observacao": "Sem pele no frango",
+  "alimentos": [
+    {
+      "id": "11223344-5566-7788-99aa-bbccddeeff00",
+      "alimento_id": "aabbccdd-eeff-0011-2233-445566778899",
+      "alimento_nome": "Frango Grelhado",
+      "quantidade": "150.50",
+      "unidade": "g"
+    }
+  ]
+}
+```
+
+### Resposta de Erro: `400 Bad Request`
+
+```json
+{
+  "erro": "Alimento manual 'Brigadeiro do João' não pertence ao cliente. Somente alimentos TBCA, IBGE, USDA ou manuais do próprio cliente são permitidos."
+}
+```
+
+### Resposta de Erro: `404 Not Found`
+
+Retornado quando o `plano_id` não existe, o `alimento_id` não existe, ou o usuário logado não tem permissão.
+
+---
+
+## 🗂️ Fontes de Alimentos Aceitas
+
+Os alimentos vinculáveis a uma refeição podem vir de qualquer tabela:
+
+| Fonte | Código | Observação |
+|-------|--------|------------|
+| TBCA | `"TBCA"` | Tabela Brasileira de Composição de Alimentos |
+| IBGE | `"IBGE"` | Pesquisa de Orçamentos Familiares |
+| USDA | `"USDA"` | Base americana Foundation Foods |
+| Manual | `"MANUAL"` | ⚠️ Somente alimentos criados pelo próprio `cliente_id` do plano |
+
+> **Regra de segurança:** Se `alimento.fonte_dados == "MANUAL"` e `alimento.criado_por_id != cliente_id`, o backend rejeita com `400`.
+
+---
+
+## 🚨 Resumo de Códigos HTTP
+
+| Código | Significado | Quando ocorre |
+|--------|-------------|---------------|
+| `200` | Sucesso | GET retornou dados. |
+| `201` | Criado | POST criou recurso com sucesso. |
+| `400` | Erro de Validação | Payload inválido ou alimento manual de outro usuário. |
+| `401` | Não Autenticado | Token JWT ausente, expirado ou inválido. |
+| `404` | Não Encontrado | Recurso inexistente ou sem permissão de acesso. |
+| `422` | Erro de Tipagem | Parâmetros de path/query com tipo incorreto. |
+
+---
+
+## ⚠️ Breaking Change — Migração de Rotas
+
+As rotas anteriores foram **removidas**. Todo frontend deve atualizar:
+
+| Rota Antiga (REMOVIDA) | Rota Nova |
+|-------------------------|-----------|
+| `GET /api/profissional/dashboard/clientes/{id}/planos-alimentares` | `GET /api/nutricao/planos-alimentares/{id}` |
+| `POST /api/profissional/dashboard/clientes/{id}/planos-alimentares` | `POST /api/nutricao/planos-alimentares/{id}` |
+| `GET /api/profissional/dashboard/clientes/{id}/plano-alimentar` | `GET /api/nutricao/planos-alimentares/{id}/{plano_id}` |
+| `POST /api/profissional/dashboard/clientes/{id}/planos-alimentares/{pid}/refeicoes` | `POST /api/nutricao/planos-alimentares/{id}/{pid}/refeicoes` |
+
+---
+
+> **Instrução para a LLM de Frontend:**  
+> - Use `cliente_id` no path para todos os endpoints. O backend resolve automaticamente se o token é de cliente (B2C) ou profissional (B2B).  
+> - No endpoint de criar refeição, gere UUIDs no frontend para o campo `id` de cada `AlimentoIn`, pois o backend **não gera** esse ID automaticamente.  
+> - O campo `quantidade` retorna como `string` (ex: `"150.50"`), portanto faça `parseFloat()` ao exibir na UI.  
+> - Para obter o "plano ativo mais recente", chame o endpoint de listagem (Endpoint 1) e pegue o primeiro item — a API já retorna ordenado por data de criação descendente.

@@ -191,7 +191,15 @@ export async function registerRoutes(
     return planoId.startsWith(`plano-${pacienteId}-`);
   }
 
-  // GET /planos-alimentares — proxy para staging + merge com planos criados localmente
+  // ─── Planos Alimentares ─────────────────────────────────────────────────────
+  // Contrato: /api/nutricao/planos-alimentares/{cliente_id}
+  //   GET  → lista planos (staging + local DB)
+  //   POST → cria plano (staging primary, local DB fallback)
+  //   GET  /{plano_id} → detalhe do plano
+  //   POST /{plano_id}/refeicoes → adiciona refeição
+  // ────────────────────────────────────────────────────────────────────────────
+
+  // GET /planos-alimentares — proxy para nova rota staging + merge com planos locais
   app.get("/api/profissional/dashboard/pacientes/:id/planos-alimentares", async (req, res) => {
     const token = extractBearerToken(req);
     const pacienteId = req.params.id;
@@ -200,26 +208,27 @@ export async function registerRoutes(
     if (token) {
       try {
         const result = await stagingPassthrough(
-          `/api/profissional/dashboard/clientes/${pacienteId}/planos-alimentares`,
+          `/api/nutricao/planos-alimentares/${pacienteId}`,
           { bearerToken: token }
         );
         if (result.ok && Array.isArray(result.data)) {
           stagingPlanos = result.data;
+        } else if (result.ok && result.data) {
+          // Às vezes vem como objeto com paginação
+          stagingPlanos = Array.isArray(result.data.results) ? result.data.results : [];
         }
       } catch (err: any) {
         console.error("[planos-alimentares] staging error:", err.message);
       }
     }
 
-    // Planos criados localmente pelo profissional
-    const locaisLocais = await storage.listarPlanosAlimentaresCriados(pacienteId);
-    const merged = [...stagingPlanos, ...locaisLocais];
+    // Planos criados localmente (DB local, fallback quando staging não tinha POST)
+    const locais = await storage.listarPlanosAlimentaresCriados(pacienteId);
+    const merged = [...stagingPlanos, ...locais];
     return res.json(merged);
   });
 
-  // POST /planos-alimentares — criação local (staging não expõe endpoint POST para esta rota)
-  // O staging só permite GET para listagem de planos. Planos criados aqui são armazenados
-  // localmente e mesclados com os planos do staging na listagem.
+  // POST /planos-alimentares — cria no staging (nova rota); fallback local se staging falhar
   app.post("/api/profissional/dashboard/pacientes/:id/planos-alimentares", async (req, res) => {
     const { descricao, diasAtivos } = req.body;
     if (!descricao || typeof descricao !== "string" || descricao.trim().length === 0) {
@@ -229,11 +238,43 @@ export async function registerRoutes(
     const diasValidados = Array.isArray(diasAtivos)
       ? [...new Set((diasAtivos as string[]).filter((d) => validos.includes(d)))]
       : [];
+
+    const token = extractBearerToken(req);
+    if (token) {
+      try {
+        const result = await stagingPassthrough(
+          `/api/nutricao/planos-alimentares/${req.params.id}`,
+          {
+            method: "POST",
+            bearerToken: token,
+            body: {
+              descricao: descricao.trim(),
+              dias_ativos: diasValidados,
+              status: "rascunho",
+            },
+          }
+        );
+        console.log(`[criar-plano] staging ${result.status}`, JSON.stringify(result.data));
+        if (result.ok) {
+          return res.status(201).json(result.data);
+        }
+        // Se staging retornou erro de validação (400/422), propaga ao cliente
+        if (result.status === 400 || result.status === 422) {
+          return res.status(result.status).json(result.data ?? { message: "Erro de validação." });
+        }
+        // Outros erros: cai no fallback local
+        console.warn("[criar-plano] staging falhou, usando fallback local:", result.status);
+      } catch (err: any) {
+        console.warn("[criar-plano] staging exception, usando fallback local:", err.message);
+      }
+    }
+
+    // Fallback: persistência local (PostgreSQL local)
     const plano = await storage.criarPlanoAlimentar(req.params.id, descricao.trim(), diasValidados as any);
     return res.status(201).json(plano);
   });
 
-  // GET /plano-alimentar — proxy para staging se for plano do staging, local se for plano criado
+  // GET /plano-alimentar — detalhe via nova rota staging; fallback local
   app.get("/api/profissional/dashboard/pacientes/:id/plano-alimentar", async (req, res) => {
     const planoId = req.query.planoId as string;
     const diaSemana = (req.query.diaSemana as string) || "segunda";
@@ -243,21 +284,21 @@ export async function registerRoutes(
       return res.status(400).json({ message: "planoId é obrigatório." });
     }
 
-    // Plano criado localmente
+    // Plano local (DB local) — tem prefixo "plano-{pacienteId}-"
     if (isLocalPlanId(planoId, pacienteId)) {
       const plano = await storage.getPlanoAlimentar(pacienteId, planoId, diaSemana as any);
       if (!plano) return res.status(404).json({ message: "Plano alimentar não encontrado." });
       return res.json(plano);
     }
 
-    // Plano do staging
+    // Plano do staging — usa nova rota GET /{cliente_id}/{plano_id}
     const token = extractBearerToken(req);
     if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
 
     try {
       const result = await stagingPassthrough(
-        `/api/profissional/dashboard/clientes/${pacienteId}/plano-alimentar`,
-        { bearerToken: token, params: { planoId } }
+        `/api/nutricao/planos-alimentares/${pacienteId}/${planoId}`,
+        { bearerToken: token }
       );
       if (!result.ok) {
         return res.status(result.status).json(result.data ?? { message: "Erro ao buscar plano." });
@@ -269,7 +310,7 @@ export async function registerRoutes(
     }
   });
 
-  // PUT .../dias — local (não existe no staging)
+  // PUT .../dias — somente planos locais
   app.put("/api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/dias", async (req, res) => {
     const { diasAtivos } = req.body;
     if (!Array.isArray(diasAtivos)) {
@@ -281,7 +322,7 @@ export async function registerRoutes(
     return res.json({ diasAtivos: updated });
   });
 
-  // PUT .../descricao — local (não existe no staging)
+  // PUT .../descricao — somente planos locais
   app.put("/api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/descricao", async (req, res) => {
     const { descricao } = req.body;
     if (!descricao || typeof descricao !== "string" || descricao.trim().length === 0) {
@@ -291,7 +332,7 @@ export async function registerRoutes(
     return res.json({ descricao: updated });
   });
 
-  // POST .../refeicoes — proxy para staging se plano do staging; local se plano criado
+  // POST .../refeicoes — nova rota staging para planos do staging; local DB para planos locais
   app.post("/api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/refeicoes", async (req, res) => {
     const { nome, horario, alimentos, observacao } = req.body;
     if (!nome || typeof nome !== "string" || nome.trim().length === 0) {
@@ -304,7 +345,7 @@ export async function registerRoutes(
     const pacienteId = req.params.id;
     const planoId = req.params.planoId;
 
-    // Plano criado localmente
+    // Plano local
     if (isLocalPlanId(planoId, pacienteId)) {
       const refeicao = await storage.addRefeicao(pacienteId, planoId, {
         nome: nome.trim(),
@@ -316,40 +357,41 @@ export async function registerRoutes(
       return res.status(201).json(refeicao);
     }
 
-    // Plano do staging — usa alimento_id conforme spec
+    // Plano do staging — nova rota POST /{cliente_id}/{plano_id}/refeicoes
+    // Spec: id é OBRIGATÓRIO (gerado pelo frontend); alimento_id é UUID do catálogo
     const token = extractBearerToken(req);
     if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
 
     try {
       const alimentosStaging = Array.isArray(alimentos)
         ? alimentos.map((a: any) => ({
-            // Não enviamos 'id' — o staging gera o ID do registro no banco.
-            // a.alimento_id vem de montarPayloadRefeicao (campo alimento_id do AlimentoPlano)
-            alimento_id: a.alimento_id ?? a.alimento_tbca_id ?? a.id,
+            id: a.id,                                               // UUID gerado pelo frontend (obrigatório)
+            alimento_id: a.alimento_id ?? a.alimento_tbca_id,      // UUID do catálogo
             quantidade: Number(a.quantidade),
             unidade: a.unidade ?? "g",
           }))
         : [];
 
       const result = await stagingPassthrough(
-        `/api/profissional/dashboard/clientes/${pacienteId}/planos-alimentares/${planoId}/refeicoes`,
+        `/api/nutricao/planos-alimentares/${pacienteId}/${planoId}/refeicoes`,
         {
           method: "POST",
           bearerToken: token,
           body: {
             nome: nome.trim(),
             horario,
-            observacao: observacao?.trim() || undefined,
+            observacao: observacao?.trim() || "",
             alimentos: alimentosStaging,
           },
         }
       );
       if (!result.ok) {
+        console.error("[refeicoes] staging error:", result.status, JSON.stringify(result.data));
         return res.status(result.status).json(result.data ?? { message: "Erro ao salvar refeição." });
       }
       return res.status(201).json(result.data);
     } catch (err: any) {
-      console.error("[refeicoes] staging error:", err.message);
+      console.error("[refeicoes] staging exception:", err.message);
       return res.status(502).json({ message: "Erro ao conectar com o servidor." });
     }
   });
