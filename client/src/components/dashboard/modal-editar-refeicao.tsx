@@ -225,6 +225,16 @@ export function ModalEditarRefeicao({
     setForm((prev) => ({ ...prev, alimentos: prev.alimentos.filter((a) => a.id !== id) }));
   }
 
+  function handleUpdateQuantidade(id: string, quantidade: number) {
+    if (isNaN(quantidade) || quantidade <= 0) return;
+    setForm((prev) => ({
+      ...prev,
+      alimentos: prev.alimentos.map((a) =>
+        a.id === id ? { ...a, quantidade } : a
+      ),
+    }));
+  }
+
   function handleAlimentoAdicionado(alimento: AlimentoPlano) {
     setForm((prev) => ({ ...prev, alimentos: [...prev.alimentos, alimento] }));
     setErrors((prev) => ({ ...prev, alimentos: undefined }));
@@ -347,7 +357,19 @@ export function ModalEditarRefeicao({
                     {form.alimentos.map((alimento) => (
                       <tr key={alimento.id} data-testid={`item-editar-alimento-${alimento.id}`}>
                         <td className="px-3 py-2 text-foreground">{alimento.nome}</td>
-                        <td className="px-2 py-2 text-center tabular-nums">{alimento.quantidade}</td>
+                        <td className="px-1 py-1 text-center">
+                          <input
+                            type="number"
+                            min={0.1}
+                            step={0.1}
+                            value={alimento.quantidade}
+                            onChange={(e) =>
+                              handleUpdateQuantidade(alimento.id, parseFloat(e.target.value))
+                            }
+                            className="w-16 text-center tabular-nums rounded border border-input bg-background px-1.5 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                            data-testid={`input-quantidade-${alimento.id}`}
+                          />
+                        </td>
                         <td className="px-3 py-2 text-muted-foreground">{alimento.unidade}</td>
                         <td className="px-1 py-2">
                           <Button
