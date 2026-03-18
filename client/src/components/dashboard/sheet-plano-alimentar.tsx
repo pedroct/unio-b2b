@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { fetchWithAuth } from "@/lib/queryClient";
 import {
   Sheet,
   SheetContent,
@@ -154,9 +155,8 @@ export function SheetPlanoAlimentar({
   const { data: planosLista, isLoading: isLoadingLista } = useQuery<ResumoPlanoAlimentar[]>({
     queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "planos-alimentares"],
     queryFn: async () => {
-      const res = await fetch(
-        `/api/profissional/dashboard/pacientes/${pacienteId}/planos-alimentares`,
-        { credentials: "include" }
+      const res = await fetchWithAuth(
+        `/api/profissional/dashboard/pacientes/${pacienteId}/planos-alimentares`
       );
       if (!res.ok) throw new Error("Erro ao carregar planos");
       const raw = await res.json();
@@ -176,9 +176,8 @@ export function SheetPlanoAlimentar({
   const { data: plano, isLoading: isLoadingPlano } = useQuery<PlanoAlimentar>({
     queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "plano-alimentar", planoIdAtual, diaSemanaParaQuery],
     queryFn: async () => {
-      const res = await fetch(
-        `/api/profissional/dashboard/pacientes/${pacienteId}/plano-alimentar?planoId=${planoIdAtual}&diaSemana=${diaSemanaParaQuery}`,
-        { credentials: "include" }
+      const res = await fetchWithAuth(
+        `/api/profissional/dashboard/pacientes/${pacienteId}/plano-alimentar?planoId=${planoIdAtual}&diaSemana=${diaSemanaParaQuery}`
       );
       if (!res.ok) throw new Error("Erro ao carregar plano");
       const raw = await res.json();

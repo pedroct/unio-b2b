@@ -1,6 +1,7 @@
 import React from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
+import { fetchWithAuth } from "@/lib/queryClient";
 import { ArrowLeft, Save, Droplets, Flame } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -71,7 +72,7 @@ export default function PatientSettingsPage() {
 
   const mutation = useMutation({
     mutationFn: async (data: PatientGoals) => {
-      const res = await fetch(`/api/profissional/pacientes/${patientId}/metas`, {
+      const res = await fetchWithAuth(`/api/profissional/pacientes/${patientId}/metas`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

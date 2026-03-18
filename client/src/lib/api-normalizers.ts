@@ -9,6 +9,7 @@ import type {
   FonteAlimento,
   ApresentacaoAlimento,
 } from "@shared/schema";
+import { fetchWithAuth } from "./queryClient";
 
 function safeParseFloat(value: any): number {
   if (typeof value === "number") return isNaN(value) ? 0 : value;
@@ -155,13 +156,6 @@ export function normalizarResumoPlano(raw: any): ResumoPlanoAlimentar {
   };
 }
 
-function getAuthToken(): string | null {
-  try {
-    const s = localStorage.getItem("unio_auth");
-    return s ? JSON.parse(s).tokens?.access ?? null : null;
-  } catch { return null; }
-}
-
 export interface EnriquecimentoPlano {
   nutrientes: NutrientesPlano;
   planoEnriquecido: PlanoAlimentar;
@@ -190,15 +184,11 @@ export async function calcularNutrientesPlano(plano: PlanoAlimentar): Promise<En
     return { nutrientes: zeroNutrientes, planoEnriquecido: plano };
   }
 
-  const token = getAuthToken();
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
   const resultados = await Promise.all(
     foods.map(({ a }) =>
-      fetch("/api/nutricao/catalogo/calcular", {
+      fetchWithAuth("/api/nutricao/catalogo/calcular", {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ alimento_id: a.alimentoTbcaId, quantidade_consumida: a.quantidade }),
       })
         .then((r) => (r.ok ? r.json() : null))

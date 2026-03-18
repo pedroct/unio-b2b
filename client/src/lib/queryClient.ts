@@ -1,11 +1,26 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// ---------------------------------------------------------------------------
+// Token helpers
+// ---------------------------------------------------------------------------
+
 function getAccessToken(): string | null {
   try {
     const stored = localStorage.getItem("unio_auth");
     if (stored) {
       const data = JSON.parse(stored);
       return data.tokens?.access || null;
+    }
+  } catch {}
+  return null;
+}
+
+function getRefreshToken(): string | null {
+  try {
+    const stored = localStorage.getItem("unio_auth");
+    if (stored) {
+      const data = JSON.parse(stored);
+      return data.tokens?.refresh || null;
     }
   } catch {}
   return null;
@@ -20,30 +35,87 @@ function buildAuthHeaders(extra?: Record<string, string>): Record<string, string
   return headers;
 }
 
-async function tryRefreshToken(): Promise<boolean> {
-  try {
-    const stored = localStorage.getItem("unio_auth");
-    if (!stored) return false;
-    const data = JSON.parse(stored);
-    const refreshToken = data.tokens?.refresh;
-    if (!refreshToken) return false;
+// ---------------------------------------------------------------------------
+// Unauthorized handler — clears session and redirects to login
+// ---------------------------------------------------------------------------
 
-    const res = await fetch("/api/auth/refresh", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh: refreshToken }),
-    });
+let _refreshing: Promise<boolean> | null = null;
 
-    if (!res.ok) return false;
-
-    const newTokens = await res.json();
-    data.tokens = { ...data.tokens, ...newTokens };
-    localStorage.setItem("unio_auth", JSON.stringify(data));
-    return true;
-  } catch {
-    return false;
-  }
+export function handleUnauthorized(): void {
+  localStorage.removeItem("unio_auth");
+  window.location.replace("/");
 }
+
+// ---------------------------------------------------------------------------
+// Token refresh — singleton promise to avoid parallel refresh races
+// ---------------------------------------------------------------------------
+
+async function tryRefreshToken(): Promise<boolean> {
+  if (_refreshing) return _refreshing;
+
+  _refreshing = (async () => {
+    try {
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) return false;
+
+      const res = await fetch("/api/auth/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh: refreshToken }),
+      });
+
+      if (!res.ok) return false;
+
+      const newTokens = await res.json();
+      const stored = localStorage.getItem("unio_auth");
+      if (!stored) return false;
+      const data = JSON.parse(stored);
+      data.tokens = { ...data.tokens, ...newTokens };
+      localStorage.setItem("unio_auth", JSON.stringify(data));
+      return true;
+    } catch {
+      return false;
+    } finally {
+      _refreshing = null;
+    }
+  })();
+
+  return _refreshing;
+}
+
+// ---------------------------------------------------------------------------
+// fetchWithAuth — wraps fetch with automatic refresh + redirect on 401
+// ---------------------------------------------------------------------------
+
+export async function fetchWithAuth(
+  url: string,
+  init: RequestInit = {}
+): Promise<Response> {
+  const headers = buildAuthHeaders(
+    (init.headers as Record<string, string>) ?? {}
+  );
+  let res = await fetch(url, { ...init, headers, credentials: "include" });
+
+  if (res.status === 401) {
+    const refreshed = await tryRefreshToken();
+    if (refreshed) {
+      const retryHeaders = buildAuthHeaders(
+        (init.headers as Record<string, string>) ?? {}
+      );
+      res = await fetch(url, { ...init, headers: retryHeaders, credentials: "include" });
+    }
+    if (res.status === 401) {
+      handleUnauthorized();
+      throw new Error("401: Sessão expirada. Faça login novamente.");
+    }
+  }
+
+  return res;
+}
+
+// ---------------------------------------------------------------------------
+// throwIfResNotOk
+// ---------------------------------------------------------------------------
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -52,35 +124,27 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// apiRequest — mutations / imperative calls
+// ---------------------------------------------------------------------------
+
 export async function apiRequest(
   method: string,
   url: string,
-  data?: unknown | undefined,
+  data?: unknown,
 ): Promise<Response> {
-  const headers = buildAuthHeaders(data ? { "Content-Type": "application/json" } : {});
-  let res = await fetch(url, {
+  const res = await fetchWithAuth(url, {
     method,
-    headers,
+    headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
   });
-
-  if (res.status === 401) {
-    const refreshed = await tryRefreshToken();
-    if (refreshed) {
-      const retryHeaders = buildAuthHeaders(data ? { "Content-Type": "application/json" } : {});
-      res = await fetch(url, {
-        method,
-        headers: retryHeaders,
-        body: data ? JSON.stringify(data) : undefined,
-        credentials: "include",
-      });
-    }
-  }
-
   await throwIfResNotOk(res);
   return res;
 }
+
+// ---------------------------------------------------------------------------
+// getQueryFn — default queryFn for useQuery with queryKey-based URL
+// ---------------------------------------------------------------------------
 
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
@@ -88,36 +152,24 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const headers = buildAuthHeaders();
-    const res = await fetch(queryKey.join("/") as string, {
-      headers,
-      credentials: "include",
-    });
-
-    if (res.status === 401) {
-      const refreshed = await tryRefreshToken();
-      if (refreshed) {
-        const retryHeaders = buildAuthHeaders();
-        const retryRes = await fetch(queryKey.join("/") as string, {
-          headers: retryHeaders,
-          credentials: "include",
-        });
-
-        if (unauthorizedBehavior === "returnNull" && retryRes.status === 401) {
-          return null;
-        }
-        await throwIfResNotOk(retryRes);
-        return await retryRes.json();
-      }
-
-      if (unauthorizedBehavior === "returnNull") {
+    try {
+      const res = await fetchWithAuth(queryKey.join("/") as string);
+      await throwIfResNotOk(res);
+      return await res.json();
+    } catch (err: any) {
+      if (
+        err?.message?.startsWith("401") &&
+        unauthorizedBehavior === "returnNull"
+      ) {
         return null;
       }
+      throw err;
     }
-
-    await throwIfResNotOk(res);
-    return await res.json();
   };
+
+// ---------------------------------------------------------------------------
+// QueryClient
+// ---------------------------------------------------------------------------
 
 export const queryClient = new QueryClient({
   defaultOptions: {

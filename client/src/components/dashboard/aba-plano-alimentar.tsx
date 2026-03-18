@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { formatFoodName, formatNutrient, formatUnit, formatHorario } from "@/lib/formatters";
 import { normalizarPlanoAlimentar, normalizarResumoPlano, calcularNutrientesPlano } from "@/lib/api-normalizers";
+import { fetchWithAuth } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -120,17 +121,8 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
   const { data: plano, isLoading: isLoadingPlano, isFetching: isFetchingPlano } = useQuery<PlanoAlimentar>({
     queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "plano-alimentar", planoId, diaSelecionado],
     queryFn: async () => {
-      const token = (() => {
-        try {
-          const s = localStorage.getItem("unio_auth");
-          return s ? JSON.parse(s).tokens?.access ?? null : null;
-        } catch { return null; }
-      })();
-      const headers: Record<string, string> = { ...(token ? { Authorization: `Bearer ${token}` } : {}) };
-
-      const res = await fetch(
-        `/api/profissional/dashboard/pacientes/${pacienteId}/plano-alimentar?planoId=${planoId}&diaSemana=${diaSelecionado}`,
-        { headers, credentials: "include" }
+      const res = await fetchWithAuth(
+        `/api/profissional/dashboard/pacientes/${pacienteId}/plano-alimentar?planoId=${planoId}&diaSemana=${diaSelecionado}`
       );
       if (!res.ok) throw new Error("Erro ao carregar plano alimentar");
       const raw = await res.json();

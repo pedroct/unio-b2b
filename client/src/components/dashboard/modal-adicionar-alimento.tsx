@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { formatFoodName, formatNutrient } from "@/lib/formatters";
 import { normalizarListagemCatalogo, normalizarAlimentoTBCA, type ResultadoBuscaNormalizado } from "@/lib/api-normalizers";
+import { fetchWithAuth } from "@/lib/queryClient";
 import { FONTES_ALIMENTO } from "@shared/schema";
 import type { AlimentoPlano, FonteAlimento, ResumoMacros, ApresentacaoAlimento } from "@shared/schema";
 
@@ -110,14 +111,6 @@ export function ModalAdicionarAlimento({
     setMacros(null);
   }
 
-  function getAuthHeader(): Record<string, string> {
-    try {
-      const s = localStorage.getItem("unio_auth");
-      const token = s ? JSON.parse(s).tokens?.access : null;
-      return token ? { Authorization: `Bearer ${token}` } : {};
-    } catch { return {}; }
-  }
-
   const executarBusca = useCallback(async (termo: string, origem: FiltroOrigem) => {
     setBuscaRealizada(true);
 
@@ -125,9 +118,7 @@ export function ModalAdicionarAlimento({
     if (origem === "MEUS_ALIMENTOS") {
       setBuscando(true);
       try {
-        const res = await fetch(`/api/nutricao/catalogo/alimentos/meus?limite=50`, {
-          headers: getAuthHeader(),
-        });
+        const res = await fetchWithAuth(`/api/nutricao/catalogo/alimentos/meus?limite=50`);
         if (res.ok) {
           const dados = await res.json();
           const lista = Array.isArray(dados) ? dados : (dados?.items ?? []);
@@ -157,9 +148,7 @@ export function ModalAdicionarAlimento({
       if (origem !== "TODAS") {
         params.set("fontes", origem);
       }
-      const resCatalogo = await fetch(`/api/nutricao/catalogo/alimentos?${params}`, {
-        headers: getAuthHeader(),
-      });
+      const resCatalogo = await fetchWithAuth(`/api/nutricao/catalogo/alimentos?${params}`);
       if (resCatalogo.ok) {
         const dados = await resCatalogo.json();
         setResultados(normalizarListagemCatalogo(dados));
@@ -186,9 +175,9 @@ export function ModalAdicionarAlimento({
   const calcularMacrosRemoto = useCallback(async (alimentoId: string, qtd: number) => {
     setCalculando(true);
     try {
-      const res = await fetch("/api/nutricao/catalogo/calcular", {
+      const res = await fetchWithAuth("/api/nutricao/catalogo/calcular", {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...getAuthHeader() },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ alimento_id: alimentoId, quantidade_consumida: qtd }),
       });
       if (res.ok) {
