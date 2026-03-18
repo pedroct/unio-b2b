@@ -1,0 +1,242 @@
+# Contrato de API — Refeições do Usuário
+
+> **Módulo:** Nutrição  
+> **Namespace:** `/api/nutricao`  
+> **Data:** 2026-03-18  
+> **Canais:** B2C (Mobile/Web)
+
+---
+
+## 🔒 Autenticação (Todos os Endpoints)
+
+Todos os endpoints deste contrato exigem autenticação JWT do **próprio usuário**.
+
+- **Header:** `Authorization`
+- **Valor:** `Bearer <token_jwt>`
+- **Erro se ausente/inválido:** `401 Unauthorized`
+
+> Os endpoints de refeição operam **sempre no contexto do usuário autenticado** — não há `{usuario_id}` no path. O backend usa o token para isolar os dados.
+
+---
+
+## 📚 Contexto — O que é uma Refeição?
+
+A **Refeição** representa um slot de horário personalizado no diário alimentar do usuário (ex: "Café da Manhã", "Almoço", "Lanche da Tarde"). Ela é a base onde os **registros alimentares** são vinculados.
+
+Os endpoints abaixo gerenciam esses slots. Para registrar alimentos *dentro* de uma refeição, use os endpoints do Diário Alimentar.
+
+---
+
+## 📌 Endpoint 1 — Listar Refeições
+
+```
+GET /api/nutricao/refeicoes
+```
+
+### Resposta de Sucesso: `200 OK`
+
+```json
+[
+  {
+    "id": 1,
+    "nome": "Café da Manhã",
+    "horario_lembrete": "07:00:00",
+    "ordem": 1,
+    "ativa": true
+  },
+  {
+    "id": 2,
+    "nome": "Almoço",
+    "horario_lembrete": "12:00:00",
+    "ordem": 3,
+    "ativa": true
+  }
+]
+```
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | `integer` | Identificador único da refeição. |
+| `nome` | `string` | Nome da refeição. |
+| `horario_lembrete` | `string` (HH:MM:SS) \| `null` | Horário do lembrete. Pode ser `null`. |
+| `ordem` | `integer` | Posição de exibição na lista (ordenação crescente). |
+| `ativa` | `boolean` | Se `false`, a refeição foi removida (soft-delete) e não aparece nesta listagem. |
+
+> A listagem já vem ordenada por `ordem` ascendente. Apenas refeições com `ativa = true` são retornadas.
+
+---
+
+## 📌 Endpoint 2 — Criar Refeição
+
+```
+POST /api/nutricao/refeicoes
+```
+
+### Body (JSON)
+
+```json
+{
+  "nome": "Pré-Treino",
+  "horario_lembrete": "16:30:00",
+  "ordem": 4
+}
+```
+
+| Campo | Tipo | Obrigatório | Padrão | Descrição |
+|-------|------|:-----------:|:------:|-----------|
+| `nome` | `string` | ✅ Sim | — | Nome da refeição. |
+| `horario_lembrete` | `string` (HH:MM:SS) | Não | `null` | Horário para lembrete. |
+| `ordem` | `integer` | Não | `99` | Posição na lista. |
+
+### Resposta de Sucesso: `201 Created`
+
+Retorna o objeto da refeição criada no mesmo formato do Endpoint 1 (objeto único).
+
+---
+
+## 📌 Endpoint 3 — Criar Refeições Padrão
+
+```
+POST /api/nutricao/refeicoes/criar-padrao
+```
+
+Cria um conjunto pré-definido de 6 refeições para o usuário, caso ainda não existam. **Operação idempotente** — pode ser chamada mais de uma vez sem duplicar.
+
+### Refeições criadas automaticamente
+
+| Nome | Horário | Ordem |
+|------|---------|-------|
+| Café da Manhã | 07:00 | 1 |
+| Lanche da Manhã | 10:00 | 2 |
+| Almoço | 12:00 | 3 |
+| Lanche da Tarde | 15:00 | 4 |
+| Jantar | 19:00 | 5 |
+| Ceia | 21:00 | 6 |
+
+### Resposta de Sucesso: `200 OK`
+
+Retorna a lista completa de refeições no mesmo formato do Endpoint 1.
+
+---
+
+## 📌 Endpoint 4 — Editar Refeição *(NOVO)*
+
+```
+PATCH /api/nutricao/refeicoes/{refeicao_id}
+```
+
+Edição **parcial** de uma refeição. Somente os campos enviados no body serão alterados — campos omitidos **não são modificados**.
+
+### Parâmetros de Path
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `refeicao_id` | `integer` | ID da refeição a ser editada. |
+
+### Body (JSON) — todos os campos são opcionais
+
+```json
+{
+  "nome": "Café Reforçado",
+  "horario_lembrete": "07:30:00",
+  "ordem": 1,
+  "ativa": true
+}
+```
+
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|:-----------:|-----------|
+| `nome` | `string` | Não | Novo nome da refeição. |
+| `horario_lembrete` | `string` (HH:MM:SS) | Não | Novo horário de lembrete. |
+| `ordem` | `integer` | Não | Nova posição na ordenação. |
+| `ativa` | `boolean` | Não | Pode ser usado para **reativar** uma refeição removida. |
+
+> **Uso do campo `ativa`:** Enviar `"ativa": false` via PATCH equivale a um soft-delete manual. Prefira usar o endpoint DELETE (Endpoint 5) para remoção semântica.
+
+### Resposta de Sucesso: `200 OK`
+
+Retorna o objeto completo da refeição com os dados atualizados:
+
+```json
+{
+  "id": 1,
+  "nome": "Café Reforçado",
+  "horario_lembrete": "07:30:00",
+  "ordem": 1,
+  "ativa": true
+}
+```
+
+### Resposta de Erro: `404 Not Found`
+
+```json
+{
+  "erro": "Refeição não encontrada ou não pertence ao usuário."
+}
+```
+
+> Retornado quando o `refeicao_id` não existe **ou** a refeição pertence a outro usuário (isolamento total por token).
+
+---
+
+## 📌 Endpoint 5 — Remover Refeição *(NOVO)*
+
+```
+DELETE /api/nutricao/refeicoes/{refeicao_id}
+```
+
+Remove uma refeição do usuário via **soft-delete** — a refeição é marcada como `ativa = false` e desaparece da listagem, mas **não é apagada do banco**, preservando o histórico de registros alimentares vinculados.
+
+### Parâmetros de Path
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `refeicao_id` | `integer` | ID da refeição a ser removida. |
+
+### Resposta de Sucesso: `204 No Content`
+
+Sem body. A remoção foi realizada com sucesso.
+
+### Resposta de Erro: `404 Not Found`
+
+```json
+{
+  "erro": "Refeição não encontrada ou não pertence ao usuário."
+}
+```
+
+> Retornado quando o `refeicao_id` não existe, a refeição já estava inativa, **ou** pertence a outro usuário.
+
+---
+
+## 🚨 Resumo de Códigos HTTP
+
+| Código | Significado | Quando ocorre |
+|--------|-------------|---------------|
+| `200` | Sucesso | GET ou PATCH retornou/editou com sucesso. |
+| `201` | Criado | POST criou recurso com sucesso. |
+| `204` | Sem Conteúdo | DELETE executado com sucesso (sem body). |
+| `401` | Não Autenticado | Token JWT ausente, expirado ou inválido. |
+| `404` | Não Encontrado | Refeição inexistente, já removida ou de outro usuário. |
+| `422` | Erro de Tipagem | Parâmetros com tipo incorreto (ex: `refeicao_id` não numérico). |
+
+---
+
+## 🗺️ Visão Geral dos Endpoints de Refeição
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `GET` | `/api/nutricao/refeicoes` | Lista refeições ativas do usuário |
+| `POST` | `/api/nutricao/refeicoes` | Cria nova refeição personalizada |
+| `POST` | `/api/nutricao/refeicoes/criar-padrao` | Cria as 6 refeições padrão (idempotente) |
+| `PATCH` | `/api/nutricao/refeicoes/{refeicao_id}` | ✅ **NOVO** — Edição parcial de uma refeição |
+| `DELETE` | `/api/nutricao/refeicoes/{refeicao_id}` | ✅ **NOVO** — Remove (soft-delete) uma refeição |
+
+---
+
+> **Instruções para a LLM de Frontend:**
+> - Para o fluxo de **onboarding**, chame `POST /criar-padrao` logo após o cadastro do usuário para garantir que ele já tenha refeições disponíveis.
+> - No `PATCH`, envie **apenas os campos que o usuário alterou** — não reenvie o objeto inteiro, para evitar sobrescrever campos que não foram editados.
+> - O `DELETE` retorna `204` **sem body**. Não tente fazer `response.json()` neste caso — a resposta não tem conteúdo.
+> - Após um `DELETE` bem-sucedido, atualize a lista local removendo o item pelo `id`, sem necessidade de nova chamada ao `GET`.
+> - O campo `id` é um **integer** (não UUID) — use-o como `Number` ou `int`, não como `string`.

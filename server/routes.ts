@@ -488,6 +488,87 @@ export async function registerRoutes(
     }
   });
 
+  // ─── Refeições do Usuário — slots do diário alimentar (B2C, token do usuário) ─
+
+  app.get("/api/nutricao/refeicoes", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+    try {
+      const result = await stagingPassthrough("/api/nutricao/refeicoes", { bearerToken: token });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[refeicoes/list] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao buscar refeições." });
+    }
+  });
+
+  app.post("/api/nutricao/refeicoes/criar-padrao", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+    try {
+      const result = await stagingPassthrough("/api/nutricao/refeicoes/criar-padrao", {
+        method: "POST",
+        bearerToken: token,
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[refeicoes/criar-padrao] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao criar refeições padrão." });
+    }
+  });
+
+  app.post("/api/nutricao/refeicoes", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+    try {
+      const result = await stagingPassthrough("/api/nutricao/refeicoes", {
+        method: "POST",
+        bearerToken: token,
+        body: req.body,
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[refeicoes/create] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao criar refeição." });
+    }
+  });
+
+  app.patch("/api/nutricao/refeicoes/:id", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(422).json({ message: "refeicao_id deve ser um número inteiro." });
+    try {
+      const result = await stagingPassthrough(`/api/nutricao/refeicoes/${id}`, {
+        method: "PATCH",
+        bearerToken: token,
+        body: req.body,
+      });
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[refeicoes/patch] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao editar refeição." });
+    }
+  });
+
+  app.delete("/api/nutricao/refeicoes/:id", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(422).json({ message: "refeicao_id deve ser um número inteiro." });
+    try {
+      const result = await stagingPassthrough(`/api/nutricao/refeicoes/${id}`, {
+        method: "DELETE",
+        bearerToken: token,
+      });
+      if (result.status === 204) return res.status(204).end();
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[refeicoes/delete] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao remover refeição." });
+    }
+  });
+
   // ─── Catálogo Nutricional — todos exigem JWTAuth, usamos token do usuário ────
 
   app.get("/api/nutricao/catalogo/fontes", async (req, res) => {
