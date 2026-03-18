@@ -118,13 +118,14 @@ export function normalizarRefeicao(raw: any): Refeicao {
 export function normalizarPlanoAlimentar(raw: any): PlanoAlimentar {
   const refeicoes = (raw.refeicoes ?? []).map(normalizarRefeicao);
 
-  const caloriasTotal = raw.nutrientes?.calorias ?? 0;
-  const nutrientesFallback: NutrientesPlano = {
-    calorias: caloriasTotal,
-    proteina: { gramas: 0, percentual: 0 },
-    carboidrato: { gramas: 0, percentual: 0 },
-    gordura: { gramas: 0, percentual: 0 },
-    fibra: 0,
+  // Sempre constrói um NutrientesPlano completo, mesmo que raw.nutrientes seja parcial
+  const rn = raw.nutrientes;
+  const nutrientes: NutrientesPlano = {
+    calorias:    Number(rn?.calorias    ?? 0),
+    proteina:    rn?.proteina    ?? { gramas: 0, percentual: 0 },
+    carboidrato: rn?.carboidrato ?? { gramas: 0, percentual: 0 },
+    gordura:     rn?.gordura     ?? { gramas: 0, percentual: 0 },
+    fibra:       Number(rn?.fibra ?? 0),
   };
 
   return {
@@ -138,7 +139,7 @@ export function normalizarPlanoAlimentar(raw: any): PlanoAlimentar {
     diasAtivos: raw.diasAtivos ?? raw.dias_ativos ?? [],
     dataCriacao: raw.dataCriacao ?? raw.data_criacao ?? "",
     refeicoes,
-    nutrientes: raw.nutrientes ?? nutrientesFallback,
+    nutrientes,
   };
 }
 
@@ -161,10 +162,16 @@ function getAuthToken(): string | null {
   } catch { return null; }
 }
 
-// Calcula os nutrientes totais de um plano chamando /calcular para cada alimento.
+export interface EnriquecimentoPlano {
+  nutrientes: NutrientesPlano;
+  planoEnriquecido: PlanoAlimentar;
+}
+
+// Calcula os nutrientes totais de um plano chamando /calcular para cada alimento
+// e enriquece cada AlimentoPlano com o campo `calorias`.
 // Usado após qualquer alteração local no plano (editar/excluir refeição).
-export async function calcularNutrientesPlano(plano: PlanoAlimentar): Promise<NutrientesPlano> {
-  const zero: NutrientesPlano = {
+export async function calcularNutrientesPlano(plano: PlanoAlimentar): Promise<EnriquecimentoPlano> {
+  const zeroNutrientes: NutrientesPlano = {
     calorias: 0,
     proteina:    { gramas: 0, percentual: 0 },
     carboidrato: { gramas: 0, percentual: 0 },
@@ -172,48 +179,73 @@ export async function calcularNutrientesPlano(plano: PlanoAlimentar): Promise<Nu
     fibra: 0,
   };
 
-  const foods = plano.refeicoes.flatMap((r) =>
-    r.alimentos.filter((a) => a.alimentoTbcaId && a.quantidade > 0)
+  // Monta lista plana de alimentos com índice de refeição + posição
+  const foods = plano.refeicoes.flatMap((r, ri) =>
+    r.alimentos
+      .map((a, ai) => ({ a, ri, ai }))
+      .filter(({ a }) => a.alimentoTbcaId && a.quantidade > 0)
   );
-  if (foods.length === 0) return zero;
+
+  if (foods.length === 0) {
+    return { nutrientes: zeroNutrientes, planoEnriquecido: plano };
+  }
 
   const token = getAuthToken();
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const resultados = await Promise.all(
-    foods.map((f) =>
+    foods.map(({ a }) =>
       fetch("/api/nutricao/catalogo/calcular", {
         method: "POST",
         headers,
-        body: JSON.stringify({ alimento_id: f.alimentoTbcaId, quantidade_consumida: f.quantidade }),
+        body: JSON.stringify({ alimento_id: a.alimentoTbcaId, quantidade_consumida: a.quantidade }),
       })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null)
     )
   );
 
+  // Acumula totais e registra calorias por alimento
   let calorias = 0, proteina = 0, carboidrato = 0, gordura = 0, fibra = 0;
-  for (const dado of resultados) {
-    const m = dado?.resumo_macros;
-    if (!m) continue;
-    calorias    += Number(m.calorias    ?? m.energia_kcal  ?? 0);
+  const calPorAlimento = new Map<string, number>(); // id → kcal
+
+  foods.forEach(({ a }, idx) => {
+    const m = resultados[idx]?.resumo_macros;
+    if (!m) return;
+    const kcal = Number(m.calorias ?? m.energia_kcal ?? 0);
+    calorias    += kcal;
     proteina    += Number(m.proteinas   ?? m.proteina_g    ?? 0);
     carboidrato += Number(m.carboidratos ?? m.carboidrato_g ?? 0);
     gordura     += Number(m.gorduras    ?? m.lipideos_g    ?? 0);
     fibra       += Number(m.fibras      ?? m.fibra_g       ?? 0);
-  }
+    calPorAlimento.set(a.id, Math.round(kcal));
+  });
 
   const totalMacros = proteina + carboidrato + gordura;
   const pct = (g: number) => totalMacros > 0 ? Math.round((g / totalMacros) * 100) : 0;
 
-  return {
+  const nutrientes: NutrientesPlano = {
     calorias: Math.round(calorias),
     proteina:    { gramas: Math.round(proteina * 10) / 10,    percentual: pct(proteina) },
     carboidrato: { gramas: Math.round(carboidrato * 10) / 10, percentual: pct(carboidrato) },
     gordura:     { gramas: Math.round(gordura * 10) / 10,     percentual: pct(gordura) },
     fibra: Math.round(fibra * 10) / 10,
   };
+
+  // Enriquece os alimentos do plano com o campo `calorias`
+  const planoEnriquecido: PlanoAlimentar = {
+    ...plano,
+    refeicoes: plano.refeicoes.map((r) => ({
+      ...r,
+      alimentos: r.alimentos.map((a) => ({
+        ...a,
+        calorias: calPorAlimento.has(a.id) ? calPorAlimento.get(a.id) : a.calorias,
+      })),
+    })),
+  };
+
+  return { nutrientes, planoEnriquecido };
 }
 
 export function montarPayloadRefeicao(

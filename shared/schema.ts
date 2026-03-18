@@ -171,6 +171,7 @@ export interface AlimentoPlano {
   unidade: string;
   grupo?: string;
   alimentoTbcaId?: string;
+  calorias?: number;
 }
 
 export interface Refeicao {

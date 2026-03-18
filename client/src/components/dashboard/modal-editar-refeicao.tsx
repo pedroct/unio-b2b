@@ -219,9 +219,9 @@ export function ModalEditarRefeicao({
     // Recalcula nutrientes após editar refeição
     const planoAtualizado = queryClient.getQueryData<PlanoAlimentar>(queryKey);
     if (planoAtualizado) {
-      calcularNutrientesPlano(planoAtualizado).then((nutrientes) => {
+      calcularNutrientesPlano(planoAtualizado).then(({ nutrientes, planoEnriquecido }) => {
         queryClient.setQueryData(queryKey, (old: PlanoAlimentar | undefined) =>
-          old ? { ...old, nutrientes } : old
+          old ? { ...planoEnriquecido, nutrientes } : old
         );
       });
     }

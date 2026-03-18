@@ -135,11 +135,12 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
       if (!res.ok) throw new Error("Erro ao carregar plano alimentar");
       const raw = await res.json();
       const planoNorm = normalizarPlanoAlimentar(raw);
-      const nutrientes = await calcularNutrientesPlano(planoNorm);
-      return { ...planoNorm, nutrientes };
+      const { nutrientes, planoEnriquecido } = await calcularNutrientesPlano(planoNorm);
+      return { ...planoEnriquecido, nutrientes };
     },
     enabled: !!planoId,
     staleTime: 0,
+    gcTime: 0,
   });
 
   const isLoading = isLoadingLista || isLoadingPlano;
@@ -183,9 +184,9 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
   );
 
   const pieData = [
-    { name: "Proteína", value: plano.nutrientes.proteina.gramas, color: "#5B8C6F" },
-    { name: "Carboidrato", value: plano.nutrientes.carboidrato.gramas, color: "#D9A441" },
-    { name: "Gordura", value: plano.nutrientes.gordura.gramas, color: "#D97952" },
+    { name: "Proteína",    value: plano.nutrientes?.proteina?.gramas    ?? 0, color: "#5B8C6F" },
+    { name: "Carboidrato", value: plano.nutrientes?.carboidrato?.gramas ?? 0, color: "#D9A441" },
+    { name: "Gordura",     value: plano.nutrientes?.gordura?.gramas     ?? 0, color: "#D97952" },
   ];
 
   return (
@@ -250,9 +251,9 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
                 // Recalcula nutrientes após excluir refeição
                 const planoAtualizado = queryClient.getQueryData<PlanoAlimentar>(queryKey);
                 if (planoAtualizado) {
-                  calcularNutrientesPlano(planoAtualizado).then((nutrientes) => {
+                  calcularNutrientesPlano(planoAtualizado).then(({ nutrientes, planoEnriquecido }) => {
                     queryClient.setQueryData(queryKey, (old: PlanoAlimentar | undefined) =>
-                      old ? { ...old, nutrientes } : old
+                      old ? { ...planoEnriquecido, nutrientes } : old
                     );
                   });
                 }
@@ -445,6 +446,7 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
                       <th className="px-4 py-2 text-left font-medium">Alimento</th>
                       <th className="px-3 py-2 text-center font-medium w-16">Qtd.</th>
                       <th className="px-4 py-2 text-left font-medium">Unidade</th>
+                      <th className="px-4 py-2 text-right font-medium w-20">Kcal</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -457,9 +459,26 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
                         <td className="px-4 py-2.5 text-foreground">{formatFoodName(alimento.nome)}</td>
                         <td className="px-3 py-2.5 text-center text-foreground tabular-nums">{alimento.quantidade}</td>
                         <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">{formatUnit(alimento.unidade)}</td>
+                        <td className="px-4 py-2.5 text-right tabular-nums text-foreground">
+                          {alimento.calorias != null ? alimento.calorias : "—"}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
+                  {refeicao.alimentos.length > 0 && (
+                    <tfoot>
+                      <tr className="border-t bg-muted/20">
+                        <td colSpan={3} className="px-4 py-2 text-xs font-medium text-muted-foreground text-right">
+                          Total da refeição
+                        </td>
+                        <td className="px-4 py-2 text-right text-xs font-semibold tabular-nums text-foreground" data-testid={`total-kcal-${refeicao.id}`}>
+                          {refeicao.alimentos.every((a) => a.calorias == null)
+                            ? "—"
+                            : `${refeicao.alimentos.reduce((s, a) => s + (a.calorias ?? 0), 0)} kcal`}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  )}
                 </table>
                 <div className="px-4 pb-1">
                   <Button
@@ -515,7 +534,7 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <Flame className="h-4 w-4 text-primary mb-0.5" />
                     <span className="text-lg font-bold" data-testid="text-total-calorias">
-                      {plano.nutrientes.calorias.toLocaleString("pt-BR")}
+                      {(plano.nutrientes?.calorias ?? 0).toLocaleString("pt-BR")}
                     </span>
                     <span className="text-[10px] text-muted-foreground">kcal</span>
                   </div>
@@ -526,22 +545,22 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
                 {[
                   {
                     nome: "Proteína",
-                    gramas: plano.nutrientes.proteina.gramas,
-                    percentual: plano.nutrientes.proteina.percentual,
+                    gramas: plano.nutrientes?.proteina?.gramas ?? 0,
+                    percentual: plano.nutrientes?.proteina?.percentual ?? 0,
                     color: "#5B8C6F",
                     testId: "ptn",
                   },
                   {
                     nome: "Carboidrato",
-                    gramas: plano.nutrientes.carboidrato.gramas,
-                    percentual: plano.nutrientes.carboidrato.percentual,
+                    gramas: plano.nutrientes?.carboidrato?.gramas ?? 0,
+                    percentual: plano.nutrientes?.carboidrato?.percentual ?? 0,
                     color: "#D9A441",
                     testId: "cho",
                   },
                   {
                     nome: "Gordura",
-                    gramas: plano.nutrientes.gordura.gramas,
-                    percentual: plano.nutrientes.gordura.percentual,
+                    gramas: plano.nutrientes?.gordura?.gramas ?? 0,
+                    percentual: plano.nutrientes?.gordura?.percentual ?? 0,
                     color: "#D97952",
                     testId: "lip",
                   },
@@ -578,7 +597,7 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
                   </span>
                 </div>
                 <span className="text-sm font-semibold">
-                  {plano.nutrientes.fibra}g
+                  {plano.nutrientes?.fibra ?? 0}g
                 </span>
               </div>
 
