@@ -35,13 +35,7 @@ import {
   UtensilsCrossed,
   Flame,
 } from "lucide-react";
-import {
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-} from "recharts";
+import { PieChart, Pie, Cell, Tooltip } from "recharts";
 import { EmptyState } from "@/components/empty-state";
 import { ModalNovaRefeicao } from "@/components/dashboard/modal-nova-refeicao";
 import { ModalEditarRefeicao } from "@/components/dashboard/modal-editar-refeicao";
@@ -132,15 +126,63 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
           return s ? JSON.parse(s).tokens?.access ?? null : null;
         } catch { return null; }
       })();
-      const headers: Record<string, string> = {};
-      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const headers: Record<string, string> = { ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+
       const res = await fetch(
         `/api/profissional/dashboard/pacientes/${pacienteId}/plano-alimentar?planoId=${planoId}&diaSemana=${diaSelecionado}`,
         { headers, credentials: "include" }
       );
       if (!res.ok) throw new Error("Erro ao carregar plano alimentar");
       const raw = await res.json();
-      return normalizarPlanoAlimentar(raw);
+      const planoNorm = normalizarPlanoAlimentar(raw);
+
+      // Coleta todos os alimentos com UUID e quantidade válidos
+      const todosFoods = planoNorm.refeicoes.flatMap((ref) =>
+        ref.alimentos
+          .filter((a) => a.alimentoTbcaId && a.quantidade > 0)
+          .map((a) => ({ alimento_id: a.alimentoTbcaId!, quantidade: a.quantidade }))
+      );
+
+      if (todosFoods.length === 0) return planoNorm;
+
+      // Chama /calcular para cada alimento em paralelo (endpoint existente)
+      const resultados = await Promise.all(
+        todosFoods.map((f) =>
+          fetch("/api/nutricao/catalogo/calcular", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...headers },
+            body: JSON.stringify({ alimento_id: f.alimento_id, quantidade_consumida: f.quantidade }),
+          })
+            .then((r) => (r.ok ? r.json() : null))
+            .catch(() => null)
+        )
+      );
+
+      // Agrega os macros de todos os alimentos
+      let calorias = 0, proteina = 0, carboidrato = 0, gordura = 0, fibra = 0;
+      for (const dado of resultados) {
+        const m = dado?.resumo_macros;
+        if (!m) continue;
+        calorias    += Number(m.calorias    ?? m.energia_kcal ?? 0);
+        proteina    += Number(m.proteinas   ?? m.proteina_g   ?? 0);
+        carboidrato += Number(m.carboidratos ?? m.carboidrato_g ?? 0);
+        gordura     += Number(m.gorduras    ?? m.lipideos_g   ?? 0);
+        fibra       += Number(m.fibras      ?? m.fibra_g      ?? 0);
+      }
+
+      const totalMacros = proteina + carboidrato + gordura;
+      const pct = (g: number) => totalMacros > 0 ? Math.round((g / totalMacros) * 100) : 0;
+
+      return {
+        ...planoNorm,
+        nutrientes: {
+          calorias: Math.round(calorias),
+          proteina:    { gramas: Math.round(proteina * 10) / 10,    percentual: pct(proteina) },
+          carboidrato: { gramas: Math.round(carboidrato * 10) / 10, percentual: pct(carboidrato) },
+          gordura:     { gramas: Math.round(gordura * 10) / 10,     percentual: pct(gordura) },
+          fibra: Math.round(fibra * 10) / 10,
+        },
+      };
     },
     enabled: !!planoId,
   });
@@ -481,33 +523,31 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
             <CardContent>
               <div className="flex flex-col items-center">
                 <div className="relative">
-                  <ResponsiveContainer width={180} height={180}>
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={55}
-                        outerRadius={78}
-                        paddingAngle={3}
-                        dataKey="value"
-                        strokeWidth={0}
-                      >
-                        {pieData.map((entry) => (
-                          <Cell key={entry.name} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value: number) => [`${value}g`, ""]}
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "8px",
-                          fontSize: "12px",
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <PieChart width={180} height={180}>
+                    <Pie
+                      data={pieData}
+                      cx={90}
+                      cy={90}
+                      innerRadius={55}
+                      outerRadius={78}
+                      paddingAngle={3}
+                      dataKey="value"
+                      strokeWidth={0}
+                    >
+                      {pieData.map((entry) => (
+                        <Cell key={entry.name} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => [`${value}g`, ""]}
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        fontSize: "12px",
+                      }}
+                    />
+                  </PieChart>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <Flame className="h-4 w-4 text-primary mb-0.5" />
                     <span className="text-lg font-bold" data-testid="text-total-calorias">
