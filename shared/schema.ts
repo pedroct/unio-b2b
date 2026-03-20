@@ -255,6 +255,7 @@ export interface NutrientesPlano {
 export interface PlanoAlimentar {
   id: string;
   pacienteId: string;
+  profissionalId?: number;
   descricao: string;
   status: "ativo" | "rascunho";
   diaSemana: DiaSemana;

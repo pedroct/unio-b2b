@@ -133,6 +133,7 @@ export function normalizarPlanoAlimentar(raw: any): PlanoAlimentar {
     id: raw.id ?? "",
     // staging usa cliente_id; mocks usam paciente_id ou pacienteId
     pacienteId: String(raw.cliente_id ?? raw.paciente_id ?? raw.pacienteId ?? ""),
+    profissionalId: raw.profissional_id != null ? Number(raw.profissional_id) : undefined,
     descricao: raw.descricao ?? "",
     status: raw.status ?? "rascunho",
     diaSemana: raw.diaSemana ?? raw.dia_semana ?? ("segunda" as DiaSemana),

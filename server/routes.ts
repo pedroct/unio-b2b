@@ -324,6 +324,31 @@ export async function registerRoutes(
     }
   });
 
+  // PUT /planos-alimentares/:planoId — atualização completa do plano (inclui refeicoes e alimentos)
+  // Contrato: PATCH staging /api/nutricao/planos-alimentares/{cliente_id}/{plano_id}
+  // Body: { id, cliente_id, profissional_id, descricao, status, refeicoes: [...] }
+  app.put("/api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId", async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+
+    const pacienteId = req.params.id;
+    const planoId = req.params.planoId;
+
+    try {
+      const result = await stagingPassthrough(
+        `/api/nutricao/planos-alimentares/${pacienteId}/${planoId}`,
+        { method: "PATCH", bearerToken: token, body: req.body }
+      );
+      if (!result.ok) {
+        return res.status(result.status).json(result.data ?? { message: "Erro ao atualizar plano." });
+      }
+      return res.json(result.data);
+    } catch (err: any) {
+      console.error("[put-plano-full] staging exception:", err.message);
+      return res.status(502).json({ message: "Erro ao conectar com o servidor." });
+    }
+  });
+
   // DELETE /planos-alimentares/:planoId — remoção permanente (204 No Content)
   app.delete("/api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId", async (req, res) => {
     const token = extractBearerToken(req);

@@ -21,10 +21,9 @@ import {
 } from "@/components/ui/select";
 import { UtensilsCrossed, Plus, X, Check, ChevronDown } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { montarPayloadRefeicao } from "@/lib/api-normalizers";
 import { useToast } from "@/hooks/use-toast";
 import { HORARIOS_REFEICAO, DESCRICOES_REFEICAO_PADRAO } from "@shared/schema";
-import type { AlimentoPlano, Refeicao } from "@shared/schema";
+import type { AlimentoPlano, Refeicao, PlanoAlimentar } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { ModalAdicionarAlimento } from "./modal-adicionar-alimento";
 
@@ -165,16 +164,57 @@ export function ModalEditarRefeicao({
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const payload = montarPayloadRefeicao(
-        data.descricao,
-        data.horario,
-        data.alimentos,
-        data.observacao,
+      const plan = queryClient.getQueryData<PlanoAlimentar>([
+        "/api/profissional/dashboard/pacientes",
+        pacienteId,
+        "plano-alimentar",
+        planoId,
+        diaSelecionado,
+      ]);
+
+      const updatedRefeicao: Refeicao = {
+        ...refeicao,
+        nome: data.descricao,
+        horario: data.horario,
+        alimentos: data.alimentos,
+        observacao: data.observacao,
+      };
+
+      const toStagingAlimento = (a: AlimentoPlano) => ({
+        id: a.id,
+        alimento_id: a.alimentoTbcaId ?? a.id,
+        alimento_nome: a.nome,
+        quantidade: a.quantidade,
+        unidade: a.unidade,
+      });
+
+      const toStagingRefeicao = (r: Refeicao) => ({
+        id: r.id,
+        nome: r.nome,
+        horario: r.horario.length === 5 ? `${r.horario}:00` : r.horario,
+        observacao: r.observacao ?? "",
+        alimentos: r.alimentos.map(toStagingAlimento),
+      });
+
+      const allRefeicoes = (plan?.refeicoes ?? [refeicao]).map((r) =>
+        r.id === refeicao.id ? updatedRefeicao : r,
       );
+
+      const body: Record<string, unknown> = {
+        id: planoId,
+        cliente_id: parseInt(pacienteId),
+        descricao: plan?.descricao ?? "",
+        status: plan?.status ?? "ativo",
+        refeicoes: allRefeicoes.map(toStagingRefeicao),
+      };
+      if (plan?.profissionalId != null) {
+        body.profissional_id = plan.profissionalId;
+      }
+
       const res = await apiRequest(
-        "PATCH",
-        `/api/nutricao/refeicoes/${refeicao.id}`,
-        payload,
+        "PUT",
+        `/api/profissional/dashboard/pacientes/${pacienteId}/planos-alimentares/${planoId}`,
+        body,
       );
       return res.json();
     },
