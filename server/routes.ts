@@ -224,7 +224,7 @@ export async function registerRoutes(
   // GET /planos-alimentares — proxy direto ao staging
   app.get("/api/profissional/dashboard/pacientes/:id/planos-alimentares", async (req, res) => {
     const token = extractBearerToken(req);
-    if (!token) return res.json([]);
+    if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
 
     try {
       const result = await stagingPassthrough(
@@ -232,8 +232,8 @@ export async function registerRoutes(
         { bearerToken: token }
       );
       if (!result.ok) {
-        console.error("[planos-alimentares] staging error:", result.status);
-        return res.json([]);
+        console.error("[planos-alimentares] staging error:", result.status, JSON.stringify(result.data));
+        return res.status(result.status).json(result.data ?? { message: "Erro ao buscar planos." });
       }
       const data = Array.isArray(result.data)
         ? result.data
@@ -243,7 +243,7 @@ export async function registerRoutes(
       return res.json(data);
     } catch (err: any) {
       console.error("[planos-alimentares] staging exception:", err.message);
-      return res.json([]);
+      return res.status(502).json({ message: "Erro ao conectar com o servidor." });
     }
   });
 
