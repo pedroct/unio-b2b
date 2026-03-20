@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -19,11 +20,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UtensilsCrossed, Plus, X, Check, ChevronDown } from "lucide-react";
-import { queryClient } from "@/lib/queryClient";
-import { calcularNutrientesPlano } from "@/lib/api-normalizers";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { montarPayloadRefeicao } from "@/lib/api-normalizers";
 import { useToast } from "@/hooks/use-toast";
 import { HORARIOS_REFEICAO, DESCRICOES_REFEICAO_PADRAO } from "@shared/schema";
-import type { AlimentoPlano, Refeicao, PlanoAlimentar } from "@shared/schema";
+import type { AlimentoPlano, Refeicao } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { ModalAdicionarAlimento } from "./modal-adicionar-alimento";
 
@@ -160,8 +161,46 @@ export function ModalEditarRefeicao({
     observacao: refeicao.observacao ?? "",
   });
   const [errors, setErrors] = useState<{ horario?: string; descricao?: string; alimentos?: string }>({});
-  const [isSaving, setIsSaving] = useState(false);
   const [modalAlimentoAberta, setModalAlimentoAberta] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: async (data: FormData) => {
+      const payload = montarPayloadRefeicao(
+        data.descricao,
+        data.horario,
+        data.alimentos,
+        data.observacao,
+      );
+      const res = await apiRequest(
+        "PATCH",
+        `/api/nutricao/refeicoes/${refeicao.id}`,
+        payload,
+      );
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey as string[];
+          return (
+            key[0] === "/api/profissional/dashboard/pacientes" &&
+            key[1] === pacienteId &&
+            (key[2] === "plano-alimentar" || key[2] === "planos-alimentares")
+          );
+        },
+      });
+      toast({ title: "Refeição atualizada com sucesso" });
+      onOpenChange(false);
+      onSuccess?.();
+    },
+    onError: () => {
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar as alterações. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
 
   useEffect(() => {
     if (open) {
@@ -186,50 +225,9 @@ export function ModalEditarRefeicao({
     return Object.keys(newErrors).length === 0;
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!validate()) return;
-    setIsSaving(true);
-
-    const queryKey = [
-      "/api/profissional/dashboard/pacientes",
-      pacienteId,
-      "plano-alimentar",
-      planoId,
-      diaSelecionado,
-    ];
-
-    queryClient.setQueryData(queryKey, (old: PlanoAlimentar | undefined) => {
-      if (!old) return old;
-      return {
-        ...old,
-        refeicoes: old.refeicoes.map((r) =>
-          r.id === refeicao.id
-            ? {
-                ...r,
-                nome: form.descricao,
-                horario: form.horario,
-                alimentos: form.alimentos,
-                observacao: form.observacao,
-              }
-            : r
-        ),
-      };
-    });
-
-    // Recalcula nutrientes após editar refeição
-    const planoAtualizado = queryClient.getQueryData<PlanoAlimentar>(queryKey);
-    if (planoAtualizado) {
-      calcularNutrientesPlano(planoAtualizado).then(({ nutrientes, planoEnriquecido }) => {
-        queryClient.setQueryData(queryKey, (old: PlanoAlimentar | undefined) =>
-          old ? { ...planoEnriquecido, nutrientes } : old
-        );
-      });
-    }
-
-    setIsSaving(false);
-    toast({ title: "Refeição atualizada com sucesso" });
-    onOpenChange(false);
-    onSuccess?.();
+    await mutation.mutateAsync(form);
   }
 
   function handleRemoveAlimento(id: string) {
@@ -423,7 +421,7 @@ export function ModalEditarRefeicao({
             type="button"
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            disabled={isSaving}
+            disabled={mutation.isPending}
             data-testid="button-cancelar-editar-refeicao"
           >
             Cancelar
@@ -431,10 +429,10 @@ export function ModalEditarRefeicao({
           <Button
             type="button"
             onClick={handleSave}
-            disabled={!formCompleto || isSaving}
+            disabled={!formCompleto || mutation.isPending}
             data-testid="button-salvar-editar-refeicao"
           >
-            {isSaving ? "Salvando..." : "Salvar alterações"}
+            {mutation.isPending ? "Salvando..." : "Salvar alterações"}
           </Button>
         </DialogFooter>
       </DialogContent>
