@@ -1,0 +1,1183 @@
+{
+"event_id": "7e539b562401447cb1753f5db0a22ec0",
+"project": 4510991485370448,
+"release": null,
+"dist": null,
+"platform": "javascript",
+"message": "",
+"datetime": "2026-03-20T03:20:13.012000+00:00",
+"tags": [
+[
+"browser",
+"Firefox 148.0"
+],
+[
+"browser.name",
+"Firefox"
+],
+[
+"environment",
+"production"
+],
+[
+"handled",
+"no"
+],
+[
+"level",
+"error"
+],
+[
+"mechanism",
+"auto.browser.global_handlers.onunhandledrejection"
+],
+[
+"os",
+"Windows >=10"
+],
+[
+"os.name",
+"Windows"
+],
+[
+"replayId",
+"82bb1e567c894763aad36cb168b5973b"
+],
+[
+"user",
+"ip:186.247.84.251"
+],
+[
+"transaction",
+"/prescricao-alimentar/10/plano/159df183-2e56-449d-9759-38f67c9a5e7d"
+],
+[
+"url",
+"https://fcea5078-86db-4bde-a10b-895d8f9b1557-00-2ed1tdwsnc28r.janeway.replit.dev/prescricao-alimentar/10/plano/159df183-2e56-449d-9759-38f67c9a5e7d"
+]
+],
+"_dsc": {
+"environment": "production",
+"org_id": "4509900352389120",
+"public_key": "dfc3148aa0f743b234a9c9e009b51a95",
+"release": null,
+"replay_id": null,
+"sample_rand": "0.5682512462174898",
+"sample_rate": "1.0",
+"sampled": true,
+"trace_id": "31301cf38c2c483e855543331de0849b",
+"transaction": null
+},
+"_metrics": {
+"bytes.ingested.event": 25407,
+"bytes.stored.event": 26935
+},
+"breadcrumbs": {
+"values": [
+{
+"timestamp": 1773966448.652,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "ae2116b9ea0f1fa9",
+"method": "GET",
+"response_body_size": 324,
+"status_code": 200,
+"url": "/api/profissional/pacientes/10"
+}
+},
+{
+"timestamp": 1773966448.67,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "98107d9fdaf640ff",
+"method": "GET",
+"response_body_size": 1218,
+"status_code": 200,
+"url": "/api/profissional/dashboard/pacientes/10/planos-alimentares"
+}
+},
+{
+"timestamp": 1773966448.67,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "9d89a91aeac9c91b",
+"method": "GET",
+"response_body_size": 1066,
+"status_code": 200,
+"url": "/api/profissional/dashboard/pacientes/10/plano-alimentar?planoId=159df183-2e56-449d-9759-38f67c9a5e7d&diaSemana=segunda"
+}
+},
+{
+"timestamp": 1773966449.017,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "8cd2a78025a2f8de",
+"method": "POST",
+"request_body_size": 80,
+"response_body_size": 2706,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773966449.021,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "9c359ab1c8e3598b",
+"method": "POST",
+"request_body_size": 81,
+"response_body_size": 730,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773966449.024,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "828550648749bd11",
+"method": "POST",
+"request_body_size": 81,
+"response_body_size": 622,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773966449.432,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "8770b34e7e89b0dd",
+"method": "POST",
+"request_body_size": 81,
+"response_body_size": 730,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773966449.841,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "9ba97f1ff1e23282",
+"method": "GET",
+"response_body_size": 808,
+"status_code": 200,
+"url": "/api/nutricao/planos-alimentares/10/159df183-2e56-449d-9759-38f67c9a5e7d/refeicoes/cb605de0-cb42-498c-9299-43aca945b667/progresso?data=2026-03-20"
+}
+},
+{
+"timestamp": 1773966451.589,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "9c87497fa2fc526b",
+"method": "GET",
+"response_body_size": 394,
+"status_code": 200,
+"url": "/api/nutricao/planos-alimentares/10/159df183-2e56-449d-9759-38f67c9a5e7d/refeicoes/cc79bd55-3864-4495-a30d-b6e595623906/progresso?data=2026-03-20"
+}
+},
+{
+"timestamp": 1773966452.626,
+"type": "default",
+"category": "sentry.transaction",
+"level": "info",
+"message": "9d7379dadc8b40d7895fde68cc958c33",
+"event_id": "9d7379dadc8b40d7895fde68cc958c33"
+},
+{
+"timestamp": 1773966485.156,
+"type": "default",
+"category": "ui.click",
+"level": "info",
+"message": "button.inline-flex.items-center.justify-center.gap-2.whitespace-nowrap.rounded-md.text-sm.font-medium.focus-visible:outline-none.focus-visible:ring-1.focus-visible:ring-ring.disabled:pointer-events-none.disabled:opacity-50.[&_svg]:pointer-events-none.[&_svg]:size-4.[&_svg]:shrink-0.hover-elevate.active-elevate-2.border.border-transparent.h-9.w-9[aria-label=\"Editar refeição\"][title=\"Editar refeição\"]"
+},
+{
+"timestamp": 1773966487.069,
+"type": "default",
+"category": "ui.click",
+"level": "info",
+"message": "input.w-16.text-center.tabular-nums.rounded.border.border-input.bg-background.px-1.5.py-1.text-sm.focus:outline-none.focus:ring-1.focus:ring-ring[type=\"number\"]"
+},
+{
+"timestamp": 1773966488.176,
+"type": "default",
+"category": "ui.input",
+"level": "info",
+"message": "input.w-16.text-center.tabular-nums.rounded.border.border-input.bg-background.px-1.5.py-1.text-sm.focus:outline-none.focus:ring-1.focus:ring-ring[type=\"number\"]"
+},
+{
+"timestamp": 1773966493.356,
+"type": "default",
+"category": "ui.click",
+"level": "info",
+"message": "button.inline-flex.items-center.justify-center.gap-2.whitespace-nowrap.font-medium.focus-visible:outline-none.focus-visible:ring-1.focus-visible:ring-ring.disabled:pointer-events-none.disabled:opacity-50.[&_svg]:pointer-events-none.[&_svg]:size-4.[&_svg]:shrink-0.hover-elevate.active-elevate-2.border.[border-color:var(--button-outline)].shadow-xs.active:shadow-none.min-h-8.rounded-md.px-3.text-xs[type=\"button\"]"
+},
+{
+"timestamp": 1773966494.838,
+"type": "default",
+"category": "ui.click",
+"level": "info",
+"message": "input.flex.h-9.w-full.rounded-md.border.border-input.bg-background.px-3.py-2.text-base.ring-offset-background.file:border-0.file:bg-transparent.file:text-sm.file:font-medium.file:text-foreground.placeholder:text-muted-foreground.focus-visible:outline-none.focus-visible:ring-2.focus-visible:ring-ring.focus-visible:ring-offset-2.disabled:cursor-not-allowed.disabled:opacity-50.md:text-sm.pl-9"
+},
+{
+"timestamp": 1773966497.01,
+"type": "default",
+"category": "ui.input",
+"level": "info",
+"message": "input.flex.h-9.w-full.rounded-md.border.border-input.bg-background.px-3.py-2.text-base.ring-offset-background.file:border-0.file:bg-transparent.file:text-sm.file:font-medium.file:text-foreground.placeholder:text-muted-foreground.focus-visible:outline-none.focus-visible:ring-2.focus-visible:ring-ring.focus-visible:ring-offset-2.disabled:cursor-not-allowed.disabled:opacity-50.md:text-sm.pl-9"
+},
+{
+"timestamp": 1773966498.605,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "a7a8f79a4348767d",
+"method": "GET",
+"response_body_size": 13289,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/alimentos?busca=ta&limite=30"
+}
+},
+{
+"timestamp": 1773966499.03,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "b4588ac28c2b2cb4",
+"method": "GET",
+"response_body_size": 2586,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/alimentos?busca=tapioca&limite=30"
+}
+},
+{
+"timestamp": 1773966500.518,
+"type": "default",
+"category": "ui.click",
+"level": "info",
+"message": "div.flex-1.min-w-0.overflow-hidden"
+},
+{
+"timestamp": 1773966501.19,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "8688e723ebcc3773",
+"method": "POST",
+"request_body_size": 81,
+"response_body_size": 516,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773966502.068,
+"type": "default",
+"category": "ui.click",
+"level": "info",
+"message": "input.flex.h-9.rounded-md.border.border-input.bg-background.px-3.py-2.text-base.ring-offset-background.file:border-0.file:bg-transparent.file:text-sm.file:font-medium.file:text-foreground.placeholder:text-muted-foreground.focus-visible:outline-none.focus-visible:ring-2.focus-visible:ring-ring.focus-visible:ring-offset-2.disabled:cursor-not-allowed.disabled:opacity-50.md:text-sm.w-24.tabular-nums[type=\"number\"]"
+},
+{
+"timestamp": 1773966502.835,
+"type": "default",
+"category": "ui.input",
+"level": "info",
+"message": "input.flex.h-9.rounded-md.border.border-input.bg-background.px-3.py-2.text-base.ring-offset-background.file:border-0.file:bg-transparent.file:text-sm.file:font-medium.file:text-foreground.placeholder:text-muted-foreground.focus-visible:outline-none.focus-visible:ring-2.focus-visible:ring-ring.focus-visible:ring-offset-2.disabled:cursor-not-allowed.disabled:opacity-50.md:text-sm.w-24.tabular-nums[type=\"number\"]"
+},
+{
+"timestamp": 1773966503.648,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "9754374c13581f30",
+"method": "POST",
+"request_body_size": 80,
+"response_body_size": 515,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773966504.388,
+"type": "default",
+"category": "ui.input",
+"level": "info",
+"message": "input.flex.h-9.rounded-md.border.bg-background.px-3.py-2.text-base.ring-offset-background.file:border-0.file:bg-transparent.file:text-sm.file:font-medium.file:text-foreground.placeholder:text-muted-foreground.focus-visible:outline-none.focus-visible:ring-2.focus-visible:ring-ring.focus-visible:ring-offset-2.disabled:cursor-not-allowed.disabled:opacity-50.md:text-sm.w-24.tabular-nums.border-destructive[type=\"number\"]"
+},
+{
+"timestamp": 1773966505.174,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "b8b1ccc26cb96f13",
+"method": "POST",
+"request_body_size": 80,
+"response_body_size": 515,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773966509.532,
+"type": "default",
+"category": "ui.click",
+"level": "info",
+"message": "button.inline-flex.items-center.justify-center.gap-2.whitespace-nowrap.rounded-md.text-sm.font-medium.focus-visible:outline-none.focus-visible:ring-1.focus-visible:ring-ring.disabled:pointer-events-none.disabled:opacity-50.[&_svg]:pointer-events-none.[&_svg]:size-4.[&_svg]:shrink-0.hover-elevate.active-elevate-2.bg-primary.text-primary-foreground.border.border-primary-border.min-h-9.px-4.py-2[type=\"button\"]"
+},
+{
+"timestamp": 1773966529.663,
+"type": "default",
+"category": "ui.click",
+"level": "info",
+"message": "button.inline-flex.items-center.justify-center.gap-2.whitespace-nowrap.rounded-md.text-sm.font-medium.focus-visible:outline-none.focus-visible:ring-1.focus-visible:ring-ring.disabled:pointer-events-none.disabled:opacity-50.[&_svg]:pointer-events-none.[&_svg]:size-4.[&_svg]:shrink-0.hover-elevate.active-elevate-2.bg-primary.text-primary-foreground.border.border-primary-border.min-h-9.px-4.py-2[type=\"button\"]"
+},
+{
+"timestamp": 1773966530.429,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "ad52e37cd2e1230c",
+"method": "POST",
+"request_body_size": 81,
+"response_body_size": 730,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773966530.435,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "8f64cc85a4411f1d",
+"method": "POST",
+"request_body_size": 80,
+"response_body_size": 515,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773966530.449,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "bef640f93bff7e81",
+"method": "POST",
+"request_body_size": 80,
+"response_body_size": 725,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773966530.451,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "81c3be5dfe19fb15",
+"method": "POST",
+"request_body_size": 80,
+"response_body_size": 2706,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773966530.459,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "ab4700e0a0c08107",
+"method": "POST",
+"request_body_size": 81,
+"response_body_size": 622,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773966715.877,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/index.css",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/index.css"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773966715.879,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/dashboard/modal-editar-refeicao.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/dashboard/modal-editar-refeicao.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773966726.434,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/index.css",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/index.css"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773966726.435,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/dashboard/modal-editar-refeicao.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/dashboard/modal-editar-refeicao.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773966740.61,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/index.css",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/index.css"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773966740.611,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/dashboard/modal-editar-refeicao.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/dashboard/modal-editar-refeicao.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773966757.888,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/index.css",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/index.css"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773966757.888,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/dashboard/modal-editar-refeicao.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/dashboard/modal-editar-refeicao.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967176.815,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/pages/login.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/pages/login.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967176.816,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/pages/patient-settings.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/pages/patient-settings.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967176.816,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/dashboard/aba-plano-alimentar.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/dashboard/aba-plano-alimentar.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967176.817,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/longevidade/aba-cardiometabolico.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/longevidade/aba-cardiometabolico.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967176.817,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/longevidade/aba-cockpit.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/longevidade/aba-cockpit.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967176.817,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/longevidade/aba-recuperacao-sono.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/longevidade/aba-recuperacao-sono.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967176.817,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/longevidade/aba-performance-funcional.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/longevidade/aba-performance-funcional.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967176.818,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/dashboard/modal-editar-refeicao.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/dashboard/modal-editar-refeicao.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967176.818,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/dashboard/modal-nova-refeicao.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/dashboard/modal-nova-refeicao.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967176.818,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/longevidade/card-score.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/longevidade/card-score.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967176.819,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/dashboard/modal-adicionar-alimento.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/dashboard/modal-adicionar-alimento.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967177.929,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "b9c482bb5226cef3",
+"method": "GET",
+"response_body_size": 394,
+"status_code": 200,
+"url": "/api/nutricao/planos-alimentares/10/159df183-2e56-449d-9759-38f67c9a5e7d/refeicoes/cc79bd55-3864-4495-a30d-b6e595623906/progresso?data=2026-03-20"
+}
+},
+{
+"timestamp": 1773967177.939,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "82b1ee1abfab0ad2",
+"method": "GET",
+"response_body_size": 1066,
+"status_code": 200,
+"url": "/api/profissional/dashboard/pacientes/10/plano-alimentar?planoId=159df183-2e56-449d-9759-38f67c9a5e7d&diaSemana=segunda"
+}
+},
+{
+"timestamp": 1773967177.958,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "b67e8b76670c6fde",
+"method": "GET",
+"response_body_size": 808,
+"status_code": 200,
+"url": "/api/nutricao/planos-alimentares/10/159df183-2e56-449d-9759-38f67c9a5e7d/refeicoes/cb605de0-cb42-498c-9299-43aca945b667/progresso?data=2026-03-20"
+}
+},
+{
+"timestamp": 1773967178.289,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "953cae2dc342b411",
+"method": "POST",
+"request_body_size": 81,
+"response_body_size": 730,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773967178.341,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "be05ad73950a73e0",
+"method": "POST",
+"request_body_size": 81,
+"response_body_size": 730,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773967178.343,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "9363673c7ff24b01",
+"method": "POST",
+"request_body_size": 81,
+"response_body_size": 622,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773967179.989,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "b2015f5d45821b4d",
+"method": "POST",
+"request_body_size": 80,
+"response_body_size": 2706,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773967186.388,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/index.css",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/index.css"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967186.389,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/pages/prescricao-alimentar-planos.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/pages/prescricao-alimentar-planos.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967186.389,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/dashboard/aba-plano-alimentar.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/dashboard/aba-plano-alimentar.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967186.389,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/dashboard/modal-novo-plano.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/dashboard/modal-novo-plano.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967186.389,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/dashboard/modal-nova-refeicao.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/dashboard/modal-nova-refeicao.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967186.389,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/dashboard/modal-adicionar-alimento.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/dashboard/modal-adicionar-alimento.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967186.39,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/dashboard/modal-editar-refeicao.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/dashboard/modal-editar-refeicao.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967186.817,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "80ec580c799345c7",
+"method": "GET",
+"response_body_size": 1066,
+"status_code": 200,
+"url": "/api/profissional/dashboard/pacientes/10/plano-alimentar?planoId=159df183-2e56-449d-9759-38f67c9a5e7d&diaSemana=segunda"
+}
+},
+{
+"timestamp": 1773967187.16,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "adfaa06d91d68d31",
+"method": "POST",
+"request_body_size": 80,
+"response_body_size": 2706,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773967187.192,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "bc98baa37527702d",
+"method": "POST",
+"request_body_size": 81,
+"response_body_size": 730,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773967187.563,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "99ae860d0c921d91",
+"method": "POST",
+"request_body_size": 81,
+"response_body_size": 730,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773967187.569,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "bd3de949c99a7197",
+"method": "POST",
+"request_body_size": 81,
+"response_body_size": 622,
+"status_code": 200,
+"url": "/api/nutricao/catalogo/calcular"
+}
+},
+{
+"timestamp": 1773967219.07,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/index.css",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/index.css"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967219.07,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/dashboard/modal-editar-refeicao.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/dashboard/modal-editar-refeicao.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967238.939,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/index.css",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/index.css"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773967238.939,
+"type": "default",
+"category": "console",
+"level": "debug",
+"message": "[vite] hot updated: /src/components/dashboard/modal-editar-refeicao.tsx",
+"data": {
+"arguments": [
+"[vite]",
+"hot updated: /src/components/dashboard/modal-editar-refeicao.tsx"
+],
+"logger": "console"
+}
+},
+{
+"timestamp": 1773976803.772,
+"type": "default",
+"category": "ui.click",
+"level": "info",
+"message": "button.inline-flex.items-center.justify-center.gap-2.whitespace-nowrap.rounded-md.text-sm.font-medium.focus-visible:outline-none.focus-visible:ring-1.focus-visible:ring-ring.disabled:pointer-events-none.disabled:opacity-50.[&_svg]:pointer-events-none.[&_svg]:size-4.[&_svg]:shrink-0.hover-elevate.active-elevate-2.border.border-transparent.h-9.w-9[aria-label=\"Editar refeição\"][title=\"Editar refeição\"]"
+},
+{
+"timestamp": 1773976805.593,
+"type": "default",
+"category": "ui.click",
+"level": "info",
+"message": "input.w-16.text-center.tabular-nums.rounded.border.border-input.bg-background.px-1.5.py-1.text-sm.focus:outline-none.focus:ring-1.focus:ring-ring[type=\"number\"]"
+},
+{
+"timestamp": 1773976808.366,
+"type": "default",
+"category": "ui.input",
+"level": "info",
+"message": "input.w-16.text-center.tabular-nums.rounded.border.border-input.bg-background.px-1.5.py-1.text-sm.focus:outline-none.focus:ring-1.focus:ring-ring[type=\"number\"]"
+},
+{
+"timestamp": 1773976811.369,
+"type": "default",
+"category": "ui.click",
+"level": "info",
+"message": "button.inline-flex.items-center.justify-center.gap-2.whitespace-nowrap.rounded-md.text-sm.font-medium.focus-visible:outline-none.focus-visible:ring-1.focus-visible:ring-ring.disabled:pointer-events-none.disabled:opacity-50.[&_svg]:pointer-events-none.[&_svg]:size-4.[&_svg]:shrink-0.hover-elevate.active-elevate-2.bg-primary.text-primary-foreground.border.border-primary-border.min-h-9.px-4.py-2[type=\"button\"]"
+},
+{
+"timestamp": 1773976812.971,
+"type": "http",
+"category": "fetch",
+"level": "info",
+"data": {
+"__span": "b23863f4f99fc3e4",
+"method": "PUT",
+"request_body_size": 1024,
+"response_body_size": 47098,
+"status_code": 200,
+"url": "/api/profissional/dashboard/pacientes/10/planos-alimentares/159df183-2e56-449d-9759-38f67c9a5e7d"
+}
+}
+]
+},
+"contexts": {
+"browser": {
+"browser": "Firefox 148.0",
+"name": "Firefox",
+"version": "148.0",
+"type": "browser"
+},
+"culture": {
+"calendar": "gregory",
+"locale": "pt-BR",
+"timezone": "America/Sao_Paulo",
+"type": "culture"
+},
+"os": {
+"os": "Windows >=10",
+"name": "Windows",
+"version": ">=10",
+"type": "os"
+},
+"react": {
+"type": "react",
+"version": "18.3.1"
+},
+"trace": {
+"trace_id": "31301cf38c2c483e855543331de0849b",
+"span_id": "a595086226d2078f",
+"status": "unknown",
+"client_sample_rate": 1,
+"type": "trace"
+}
+},
+"culprit": "/prescricao-alimentar/10/plano/159df183-2e56-449d-9759-38f67c9a5e7d",
+"environment": "production",
+"exception": {
+"values": [
+{
+"type": "SyntaxError",
+"value": "JSON.parse: unexpected character at line 1 column 1 of the JSON data",
+"mechanism": {
+"type": "auto.browser.global_handlers.onunhandledrejection",
+"handled": false
+}
+}
+]
+},
+"fingerprint": [
+"{{ default }}"
+],
+"grouping_config": {
+"enhancements": "KLUv_SAd6QAAkwORuGFsbC1wbGF0Zm9ybXM6MjAyNi0wMS0yMJA#KLUv_SAd6QAAkwORuGFsbC1wbGF0Zm9ybXM6MjAyNi0wMS0yMJA#KLUv_SAd6QAAkwORuGFsbC1wbGF0Zm9ybXM6MjAyNi0wMS0yMJA",
+"id": "newstyle:2026-01-20"
+},
+"hashes": [
+"b5a0e8fdc933279a3c79f04b57912a6e"
+],
+"ingest_path": [
+{
+"version": "26.3.1",
+"public_key": "7pLPdtCQBMLtodCJ3yOtI9MDBUWfX0k5eDa4ZP4CX6A"
+}
+],
+"key_id": "838220",
+"level": "error",
+"logger": "",
+"metadata": {
+"type": "SyntaxError",
+"value": "JSON.parse: unexpected character at line 1 column 1 of the JSON data"
+},
+"nodestore_insert": 1773976824.57714,
+"received": 1773976816.564,
+"request": {
+"url": "https://fcea5078-86db-4bde-a10b-895d8f9b1557-00-2ed1tdwsnc28r.janeway.replit.dev/prescricao-alimentar/10/plano/159df183-2e56-449d-9759-38f67c9a5e7d",
+"headers": [
+[
+"Referer",
+"https://fcea5078-86db-4bde-a10b-895d8f9b1557-00-2ed1tdwsnc28r.janeway.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fprescricao-alimentar%2F10%2Fplano%2F159df183-2e56-449d-9759-38f67c9a5e7d&id=default-start-application"
+],
+[
+"User-Agent",
+"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:148.0) Gecko/20100101 Firefox/148.0"
+]
+]
+},
+"sdk": {
+"name": "sentry.javascript.react",
+"version": "10.42.0",
+"integrations": [
+"InboundFilters",
+"FunctionToString",
+"ConversationId",
+"BrowserApiErrors",
+"Breadcrumbs",
+"GlobalHandlers",
+"LinkedErrors",
+"Dedupe",
+"HttpContext",
+"CultureContext",
+"BrowserSession",
+"BrowserTracing",
+"Replay"
+],
+"packages": [
+{
+"name": "npm:@sentry/react",
+"version": "10.42.0"
+}
+],
+"settings": {
+"infer_ip": "auto"
+}
+},
+"timestamp": 1773976813.012,
+"title": "SyntaxError: JSON.parse: unexpected character at line 1 column 1 of the JSON data",
+"transaction": "/prescricao-alimentar/10/plano/159df183-2e56-449d-9759-38f67c9a5e7d",
+"type": "error",
+"user": {
+"ip_address": "186.247.84.251",
+"sentry_user": "ip:186.247.84.251",
+"geo": {
+"country_code": "BR",
+"city": "Ananindeua",
+"subdivision": "Pará",
+"region": "Brazil"
+}
+},
+"version": "7",
+"location": null
+}
