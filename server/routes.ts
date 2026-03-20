@@ -335,10 +335,12 @@ export async function registerRoutes(
     const planoId = req.params.planoId;
 
     try {
+      console.log("[put-plano-full] body enviado ao staging:", JSON.stringify(req.body, null, 2));
       const result = await stagingPassthrough(
         `/api/nutricao/planos-alimentares/${pacienteId}/${planoId}`,
         { method: "PATCH", bearerToken: token, body: req.body }
       );
+      console.log("[put-plano-full] staging response:", JSON.stringify(result.data, null, 2));
       if (!result.ok) {
         console.error("[put-plano-full] staging error:", result.status, JSON.stringify(result.data));
         return res.status(result.status).json(result.data ?? { message: "Erro ao atualizar plano." });

@@ -184,7 +184,7 @@ export function ModalEditarRefeicao({
         id: a.id,
         alimento_id: a.alimentoTbcaId ?? a.id,
         alimento_nome: a.nome,
-        quantidade: a.quantidade,
+        quantidade: String(a.quantidade),
         unidade: a.unidade,
       });
 
@@ -241,8 +241,9 @@ export function ModalEditarRefeicao({
     },
   });
 
+  const prevOpenRef = useRef(false);
   useEffect(() => {
-    if (open) {
+    if (open && !prevOpenRef.current) {
       setForm({
         horario: refeicao.horario,
         descricao: refeicao.nome,
@@ -251,7 +252,8 @@ export function ModalEditarRefeicao({
       });
       setErrors({});
     }
-  }, [open, refeicao]);
+    prevOpenRef.current = open;
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const formCompleto = form.horario !== "" && form.descricao.trim() !== "" && form.alimentos.length > 0;
 
