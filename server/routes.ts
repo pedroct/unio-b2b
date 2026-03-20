@@ -402,7 +402,7 @@ export async function registerRoutes(
   // POST .../refeicoes — staging /api/nutricao
   // Spec: id de cada AlimentoIn é OBRIGATÓRIO (UUID gerado pelo frontend)
   app.post("/api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/refeicoes", async (req, res) => {
-    const { nome, horario, alimentos, observacao } = req.body;
+    const { nome, horario, alimentos, observacao, substituta_de } = req.body;
     if (!nome || typeof nome !== "string" || nome.trim().length === 0) {
       return res.status(400).json({ message: "nome é obrigatório." });
     }
@@ -422,19 +422,20 @@ export async function registerRoutes(
         }))
       : [];
 
+    const body: Record<string, unknown> = {
+      nome: nome.trim(),
+      horario,
+      observacao: observacao?.trim() || "",
+      alimentos: alimentosPayload,
+    };
+    if (substituta_de && typeof substituta_de === "string") {
+      body.substituta_de = substituta_de;
+    }
+
     try {
       const result = await stagingPassthrough(
         `/api/nutricao/planos-alimentares/${req.params.id}/${req.params.planoId}/refeicoes`,
-        {
-          method: "POST",
-          bearerToken: token,
-          body: {
-            nome: nome.trim(),
-            horario,
-            observacao: observacao?.trim() || "",
-            alimentos: alimentosPayload,
-          },
-        }
+        { method: "POST", bearerToken: token, body }
       );
       if (!result.ok) {
         console.error("[refeicoes] staging error:", result.status, JSON.stringify(result.data));

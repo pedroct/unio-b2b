@@ -109,6 +109,9 @@ interface RefeicaoCardProps {
   dataReferencia: string;
   onEditar: () => void;
   onExcluir: () => void;
+  onAdicionarSubstituta: () => void;
+  onEditarSubstituta: (sub: Refeicao) => void;
+  onExcluirSubstituta: (sub: Refeicao) => void;
 }
 
 function StatusIcon({ status }: { status: string | undefined }) {
@@ -118,7 +121,10 @@ function StatusIcon({ status }: { status: string | undefined }) {
   return <XCircle className="h-3.5 w-3.5 text-muted-foreground/50" />;
 }
 
-function RefeicaoCard({ refeicao, pacienteId, planoId, dataReferencia, onEditar, onExcluir }: RefeicaoCardProps) {
+function RefeicaoCard({
+  refeicao, pacienteId, planoId, dataReferencia,
+  onEditar, onExcluir, onAdicionarSubstituta, onEditarSubstituta, onExcluirSubstituta,
+}: RefeicaoCardProps) {
   const { toast } = useToast();
 
   const progressoQueryKey = [
@@ -305,8 +311,66 @@ function RefeicaoCard({ refeicao, pacienteId, planoId, dataReferencia, onEditar,
             </tfoot>
           )}
         </table>
+        {/* Substitutas */}
+        {refeicao.substitutas && refeicao.substitutas.length > 0 && (
+          <div className="mx-4 mb-2 space-y-2">
+            {refeicao.substitutas.map((sub, idx) => (
+              <div
+                key={sub.id}
+                className="rounded-lg border border-dashed bg-muted/20"
+                data-testid={`card-substituta-${sub.id}`}
+              >
+                <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      Substituta {idx + 1}
+                    </span>
+                    <span className="text-xs text-foreground font-medium">{sub.nome}</span>
+                    <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      {sub.horario}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" title="Editar substituta"
+                      onClick={() => onEditarSubstituta(sub)}
+                      data-testid={`button-editar-substituta-${sub.id}`}>
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" title="Excluir substituta"
+                      onClick={() => onExcluirSubstituta(sub)}
+                      data-testid={`button-excluir-substituta-${sub.id}`}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+                {sub.alimentos.length > 0 && (
+                  <table className="w-full text-xs">
+                    <tbody className="divide-y divide-border/50">
+                      {sub.alimentos.map((a) => (
+                        <tr key={a.id} className="text-muted-foreground">
+                          <td className="px-3 py-1.5">{formatFoodName(a.nome)}</td>
+                          <td className="px-2 py-1.5 text-center tabular-nums">{a.quantidade}</td>
+                          <td className="px-3 py-1.5">{formatUnit(a.unidade)}</td>
+                          <td className="px-3 py-1.5 text-right tabular-nums">
+                            {a.calorias != null ? `${a.calorias} kcal` : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+                {sub.observacao && (
+                  <p className="px-3 pb-2 text-xs text-muted-foreground italic">{sub.observacao}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="px-4 pb-1">
-          <Button variant="link" size="sm" className="px-0 mt-2"
+          <Button variant="link" size="sm" className="px-0 mt-2 text-muted-foreground hover:text-foreground"
+            onClick={onAdicionarSubstituta}
             data-testid={`button-substituir-${refeicao.id}`}>
             <ArrowRightLeft className="h-3 w-3 mr-1.5" />
             Adicionar substituta
@@ -327,7 +391,8 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
   const [modalNovaRefeicaoAberta, setModalNovaRefeicaoAberta] = useState(false);
   const [modalNovoPlanoAberto, setModalNovoPlanoAberto] = useState(false);
   const [refeicaoEditando, setRefeicaoEditando] = useState<Refeicao | null>(null);
-  const [refeicaoExcluindo, setRefeicaoExcluindo] = useState<Refeicao | null>(null);
+  const [refeicaoExcluindo, setRefeicaoExcluindo] = useState<{ refeicao: Refeicao; paiId?: string } | null>(null);
+  const [refeicaoParaSubstituta, setRefeicaoParaSubstituta] = useState<Refeicao | null>(null);
   const { data: planosLista, isLoading: isLoadingLista } = useQuery<ResumoPlanoAlimentar[]>({
     queryKey: ["/api/profissional/dashboard/pacientes", pacienteId, "planos-alimentares"],
     enabled: !!pacienteId,
@@ -418,6 +483,26 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
         />
       )}
 
+      {refeicaoParaSubstituta && (
+        <ModalNovaRefeicao
+          open={!!refeicaoParaSubstituta}
+          onOpenChange={(open) => { if (!open) setRefeicaoParaSubstituta(null); }}
+          pacienteId={pacienteId}
+          planoId={planoId}
+          planoDescricao={plano.descricao}
+          substitutaDe={refeicaoParaSubstituta.id}
+          nomeRefeicaoPai={refeicaoParaSubstituta.nome}
+          onSuccess={() => {
+            queryClient.invalidateQueries({
+              predicate: (q) => {
+                const k = q.queryKey as string[];
+                return k[0] === "/api/profissional/dashboard/pacientes" && k[2] === "plano-alimentar";
+              },
+            });
+          }}
+        />
+      )}
+
       {refeicaoEditando && (
         <ModalEditarRefeicao
           open={!!refeicaoEditando}
@@ -436,10 +521,13 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
       >
         <AlertDialogContent data-testid="dialog-confirmar-exclusao">
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir refeição</AlertDialogTitle>
+            <AlertDialogTitle>
+              {refeicaoExcluindo?.paiId ? "Excluir refeição substituta" : "Excluir refeição"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir a refeição{" "}
-              <strong>{refeicaoExcluindo?.nome}</strong>? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir{" "}
+              {refeicaoExcluindo?.paiId ? "a refeição substituta " : "a refeição "}
+              <strong>{refeicaoExcluindo?.refeicao.nome}</strong>? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -449,8 +537,9 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirmar-exclusao"
-              onClick={() => {
+              onClick={async () => {
                 if (!refeicaoExcluindo) return;
+                const { refeicao: r, paiId } = refeicaoExcluindo;
                 const queryKey = [
                   "/api/profissional/dashboard/pacientes",
                   pacienteId,
@@ -458,23 +547,46 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
                   planoId,
                   diaSelecionado,
                 ];
-                queryClient.setQueryData(queryKey, (old: PlanoAlimentar | undefined) => {
-                  if (!old) return old;
-                  return {
-                    ...old,
-                    refeicoes: old.refeicoes.filter((r) => r.id !== refeicaoExcluindo.id),
-                  };
-                });
-                // Recalcula nutrientes após excluir refeição
-                const planoAtualizado = queryClient.getQueryData<PlanoAlimentar>(queryKey);
-                if (planoAtualizado) {
-                  calcularNutrientesPlano(planoAtualizado).then(({ nutrientes, planoEnriquecido }) => {
-                    queryClient.setQueryData(queryKey, (old: PlanoAlimentar | undefined) =>
-                      old ? { ...planoEnriquecido, nutrientes } : old
-                    );
-                  });
+
+                try {
+                  await fetchWithAuth(
+                    `/api/profissional/dashboard/pacientes/${pacienteId}/planos-alimentares/${planoId}/refeicoes/${r.id}`,
+                    { method: "DELETE" }
+                  );
+                } catch {
+                  // Se API falhar, ainda atualiza o cache otimisticamente
                 }
-                toast({ title: "Refeição excluída com sucesso" });
+
+                if (paiId) {
+                  // Substituta: remover de refeicao.substitutas do pai
+                  queryClient.setQueryData(queryKey, (old: PlanoAlimentar | undefined) => {
+                    if (!old) return old;
+                    return {
+                      ...old,
+                      refeicoes: old.refeicoes.map((ref) =>
+                        ref.id === paiId
+                          ? { ...ref, substitutas: (ref.substitutas ?? []).filter((s) => s.id !== r.id) }
+                          : ref
+                      ),
+                    };
+                  });
+                  toast({ title: "Refeição substituta excluída" });
+                } else {
+                  // Refeição principal
+                  queryClient.setQueryData(queryKey, (old: PlanoAlimentar | undefined) => {
+                    if (!old) return old;
+                    return { ...old, refeicoes: old.refeicoes.filter((ref) => ref.id !== r.id) };
+                  });
+                  const planoAtualizado = queryClient.getQueryData<PlanoAlimentar>(queryKey);
+                  if (planoAtualizado) {
+                    calcularNutrientesPlano(planoAtualizado).then(({ nutrientes, planoEnriquecido }) => {
+                      queryClient.setQueryData(queryKey, (old: PlanoAlimentar | undefined) =>
+                        old ? { ...planoEnriquecido, nutrientes } : old
+                      );
+                    });
+                  }
+                  toast({ title: "Refeição excluída com sucesso" });
+                }
                 setRefeicaoExcluindo(null);
               }}
             >
@@ -625,7 +737,10 @@ export function AbaPlanoAlimentar({ pacienteId, initialPlanoId }: AbaPlanoAlimen
               planoId={planoId}
               dataReferencia={dataReferencia}
               onEditar={() => setRefeicaoEditando(refeicao)}
-              onExcluir={() => setRefeicaoExcluindo(refeicao)}
+              onExcluir={() => setRefeicaoExcluindo({ refeicao })}
+              onAdicionarSubstituta={() => setRefeicaoParaSubstituta(refeicao)}
+              onEditarSubstituta={(sub) => setRefeicaoEditando(sub)}
+              onExcluirSubstituta={(sub) => setRefeicaoExcluindo({ refeicao: sub, paiId: refeicao.id })}
             />
           ))}
         </div>

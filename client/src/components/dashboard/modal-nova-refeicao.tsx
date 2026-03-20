@@ -34,6 +34,8 @@ interface ModalNovaRefeicaoProps {
   pacienteId: string;
   planoId: string;
   planoDescricao: string;
+  substitutaDe?: string;
+  nomeRefeicaoPai?: string;
   onSuccess?: () => void;
 }
 
@@ -157,12 +159,16 @@ export function ModalNovaRefeicao({
   pacienteId,
   planoId,
   planoDescricao,
+  substitutaDe,
+  nomeRefeicaoPai,
   onSuccess,
 }: ModalNovaRefeicaoProps) {
   const { toast } = useToast();
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
   const [errors, setErrors] = useState<{ horario?: string; descricao?: string; alimentos?: string }>({});
   const [modalAlimentoAberta, setModalAlimentoAberta] = useState(false);
+
+  const isSubstituta = !!substitutaDe;
 
   useEffect(() => {
     if (open) {
@@ -173,12 +179,10 @@ export function ModalNovaRefeicao({
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const payload = montarPayloadRefeicao(
-        data.descricao,
-        data.horario,
-        data.alimentos,
-        data.observacao,
-      );
+      const payload: Record<string, unknown> = {
+        ...montarPayloadRefeicao(data.descricao, data.horario, data.alimentos, data.observacao),
+        ...(substitutaDe ? { substituta_de: substitutaDe } : {}),
+      };
       const res = await apiRequest(
         "POST",
         `/api/profissional/dashboard/pacientes/${pacienteId}/planos-alimentares/${planoId}/refeicoes`,
@@ -222,7 +226,7 @@ export function ModalNovaRefeicao({
     if (!validate()) return;
     try {
       await mutation.mutateAsync(form);
-      if (keepOpen) {
+      if (keepOpen && !isSubstituta) {
         toast({
           title: "Refeição adicionada",
           description: "Refeição adicionada. Preencha a próxima.",
@@ -231,7 +235,7 @@ export function ModalNovaRefeicao({
         setErrors({});
       } else {
         toast({
-          title: "Refeição adicionada com sucesso",
+          title: isSubstituta ? "Refeição substituta adicionada" : "Refeição adicionada com sucesso",
         });
         onOpenChange(false);
       }
@@ -271,10 +275,12 @@ export function ModalNovaRefeicao({
       >
         <DialogHeader>
           <DialogTitle className="font-serif text-xl" data-testid="text-modal-titulo">
-            Nova refeição
+            {isSubstituta ? "Adicionar refeição substituta" : "Nova refeição"}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            {planoDescricao}
+            {isSubstituta && nomeRefeicaoPai
+              ? `Substituta de "${nomeRefeicaoPai}" · ${planoDescricao}`
+              : planoDescricao}
           </DialogDescription>
         </DialogHeader>
 
@@ -440,15 +446,17 @@ export function ModalNovaRefeicao({
             Cancelar
           </Button>
           <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleSave(true)}
-              disabled={!formCompleto || mutation.isPending}
-              data-testid="button-salvar-e-continuar"
-            >
-              {mutation.isPending ? "Salvando..." : "Salvar e adicionar outra"}
-            </Button>
+            {!isSubstituta && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleSave(true)}
+                disabled={!formCompleto || mutation.isPending}
+                data-testid="button-salvar-e-continuar"
+              >
+                {mutation.isPending ? "Salvando..." : "Salvar e adicionar outra"}
+              </Button>
+            )}
             <Button
               type="button"
               onClick={() => handleSave(false)}
