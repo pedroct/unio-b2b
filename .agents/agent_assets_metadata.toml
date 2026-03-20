@@ -6,3 +6,9 @@ id = "2Leb51cyyQ_chPRM_lIwp"
 uri = "file://README.md"
 type = "text"
 title = "README.md — UNIO Performance OS"
+
+[[outputs]]
+id = "bICPN718-SN7k_F6KPTbU"
+uri = "file://contratos-backend/CONTRATO_ENDPOINT_EDITAR_REFEICAO.md"
+type = "text"
+title = "Contrato Backend — Editar Refeição no Plano Alimentar"
