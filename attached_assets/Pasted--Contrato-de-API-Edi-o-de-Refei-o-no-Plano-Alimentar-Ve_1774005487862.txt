@@ -1,0 +1,208 @@
+# Contrato de API — Edição de Refeição no Plano Alimentar
+
+**Versão:** 1.0  
+**Data:** 2026-03-20  
+**Responsável:** Backend Unio  
+**Status:** ✅ Disponível em Staging (`staging.unio.tec.br`)  
+**Tag:** `nutricao` / `planos-alimentares`
+
+---
+
+## Visão Geral
+
+Dois novos endpoints para o painel web do profissional editar refeições dentro de planos alimentares de clientes:
+
+| Método | Endpoint | Descrição |
+|---|---|---|
+| `PUT` | `/api/nutricao/planos-alimentares/{cliente_id}/{plano_id}/refeicoes/{refeicao_id}` | Substitui completamente uma refeição (campos + alimentos) |
+| `DELETE` | `/api/nutricao/planos-alimentares/{cliente_id}/{plano_id}/refeicoes/{refeicao_id}` | Remove permanentemente uma refeição do plano |
+
+---
+
+## Autenticação
+
+> **Obrigatória em ambos os endpoints.** JWT Bearer Token no header.
+
+```
+Authorization: Bearer <access_token>
+```
+
+**Controle de acesso:**
+- Profissional vinculado ao plano do cliente → acesso permitido
+- O próprio cliente → acesso permitido
+- Qualquer outro usuário → `404 Not Found` (bloqueia sem revelar existência do recurso)
+
+---
+
+## Parâmetros de Path (comuns aos dois endpoints)
+
+| Parâmetro | Tipo | Descrição |
+|---|---|---|
+| `cliente_id` | `integer` | ID do usuário cliente dono do plano |
+| `plano_id` | `string` (UUID) | ID do plano alimentar |
+| `refeicao_id` | `string` (UUID) | ID da refeição a ser editada ou removida |
+
+---
+
+## Endpoint 1 — `PUT .../refeicoes/{refeicao_id}`
+
+### Descrição
+
+Substitui **completamente** uma refeição existente de um plano alimentar.
+
+**Comportamento:**
+- Atualiza `nome`, `horario` e `observacao` da refeição
+- Remove **todos** os alimentos antigos vinculados à refeição
+- Cria os novos alimentos conforme o array `alimentos` do payload
+- O `refeicao_id` (UUID) é **preservado** — não muda após a edição
+- Operação atômica: se qualquer alimento for inválido, nada é alterado
+
+### Request
+
+**Content-Type:** `application/json`
+
+```json
+{
+  "nome": "Café da manhã",
+  "horario": "07:00:00",
+  "observacao": "Comer devagar",
+  "alimentos": [
+    {
+      "id": "2a7de2a6-a2ae-4728-837f-235128844470",
+      "alimento_id": "b541c940-693e-414f-8b3c-343c02d4b7a5",
+      "quantidade": 30,
+      "unidade": "g"
+    }
+  ]
+}
+```
+
+### Campos do Body
+
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `nome` | `string` | **Sim** | Nome da refeição |
+| `horario` | `string` (`HH:MM:SS`) | **Sim** | Horário da refeição |
+| `observacao` | `string` | Não | Observação visível ao cliente. Default: `""` |
+| `alimentos` | `array` | Não | Lista completa de alimentos. Default: `[]` (limpa todos os alimentos) |
+
+### Campos de cada item em `alimentos`
+
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `id` | `string` (UUID) | **Sim** | ID do registro `AlimentoPlano`. Gerado pelo frontend (novo UUID para cada alimento) |
+| `alimento_id` | `string` (UUID) | **Sim** | ID do alimento no catálogo (TBCA, IBGE, USDA ou Manual do cliente) |
+| `quantidade` | `number` | **Sim** | Quantidade prescrita |
+| `unidade` | `string` | **Sim** | Unidade de medida (ex: `"g"`, `"ml"`, `"unidade"`, `"Colher de Sopa"`) |
+
+> **Importante:** `alimentos` é um **replace total**. Enviar `[]` remove todos os alimentos. Enviar a lista completa com os itens desejados recria tudo do zero.
+
+### Response — `200 OK`
+
+```json
+{
+  "id": "cc79bd55-3864-4495-a30d-b6e595623906",
+  "nome": "Café da manhã",
+  "horario": "07:00:00",
+  "observacao": "Comer devagar",
+  "alimentos": [
+    {
+      "id": "2a7de2a6-a2ae-4728-837f-235128844470",
+      "alimento_id": "b541c940-693e-414f-8b3c-343c02d4b7a5",
+      "alimento_nome": "Abacate",
+      "quantidade": "30.00",
+      "unidade": "g"
+    }
+  ]
+}
+```
+
+### Campos da Response
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | `string` (UUID) | ID da refeição — **mesmo ID do path, não muda** |
+| `nome` | `string` | Nome atualizado |
+| `horario` | `string` (`HH:MM:SS`) | Horário atualizado |
+| `observacao` | `string` | Observação atualizada |
+| `alimentos` | `array` | Lista de alimentos recriados |
+| `alimentos[].id` | `string` (UUID) | ID do `AlimentoPlano` (o mesmo enviado no request) |
+| `alimentos[].alimento_id` | `string` (UUID) | ID do alimento no catálogo |
+| `alimentos[].alimento_nome` | `string` | Nome do alimento resolvido do catálogo |
+| `alimentos[].quantidade` | `string` (decimal) | Quantidade como string decimal (ex: `"30.00"`) |
+| `alimentos[].unidade` | `string` | Unidade de medida |
+
+### Respostas de Erro — PUT
+
+| Status | Condição |
+|---|---|
+| `400 Bad Request` | Body inválido ou `alimento_id` inexistente no catálogo |
+| `400 Bad Request` | Alimento manual que não pertence ao cliente do plano |
+| `401 Unauthorized` | Token ausente ou expirado |
+| `404 Not Found` | `cliente_id`, `plano_id` ou `refeicao_id` não encontrado, ou profissional sem vínculo |
+
+---
+
+## Endpoint 2 — `DELETE .../refeicoes/{refeicao_id}`
+
+### Descrição
+
+Remove permanentemente uma refeição específica de um plano alimentar.  
+Todos os alimentos vinculados (`AlimentoPlano`) são removidos em cascade automaticamente.
+
+### Request
+
+Sem body. Apenas os parâmetros de path.
+
+```
+DELETE /api/nutricao/planos-alimentares/42/cc79bd55.../refeicoes/abc123...
+Authorization: Bearer <access_token>
+```
+
+### Response — `204 No Content`
+
+Sem body. Status `204` indica sucesso.
+
+### Respostas de Erro — DELETE
+
+| Status | Condição |
+|---|---|
+| `401 Unauthorized` | Token ausente ou expirado |
+| `404 Not Found` | `cliente_id`, `plano_id` ou `refeicao_id` não encontrado, ou profissional sem vínculo |
+
+---
+
+## Fluxos de Integração Recomendados
+
+### Fluxo PUT (preferencial)
+
+```
+1. Usuário edita refeição na tela
+2. Frontend monta payload com estado completo da refeição
+   - Gerar novo UUID para cada AlimentoPlano novo
+   - Reutilizar o mesmo UUID para alimentos que já existem (ou simplesmente gerar novos para todos)
+3. PUT /api/nutricao/planos-alimentares/{cid}/{pid}/refeicoes/{rid}
+4. 200 OK → invalidar cache local do plano → exibir toast "Salvo"
+5. Erro → exibir mensagem de erro com detalhe retornado pela API
+```
+
+### Fluxo DELETE + POST (alternativo — para remover e recriar)
+
+```
+1. DELETE /api/nutricao/planos-alimentares/{cid}/{pid}/refeicoes/{rid}
+2. 204 OK
+3. POST /api/nutricao/planos-alimentares/{cid}/{pid}/refeicoes (com nova refeição)
+4. 201 OK com novo refeicao_id
+⚠️ Desvantagem: o refeicao_id muda, perdendo vínculo com histórico de progresso
+```
+
+---
+
+## Notas de Implementação para o Frontend
+
+1. **`alimentos` é always-replace:** não há PATCH por item. Envie sempre a lista completa com todos os alimentos desejados.
+2. **UUIDs dos alimentos:** gere um novo UUID (`crypto.randomUUID()`) para cada item novo em `alimentos[].id`. Para edições onde o item já existia, pode reutilizar o UUID anterior ou gerar um novo — o backend não faz distinção.
+3. **`quantidade` na resposta é string decimal:** `"30.00"` — parse como `parseFloat()` se precisar operar.
+4. **`horario` sem timezone:** formato `"HH:MM:SS"`, sem offset. Exibir diretamente ao usuário.
+5. **Erros `400` de alimento manual:** acontece quando o profissional tenta prescrever um alimento que foi criado manualmente por **outro** cliente. A mensagem de erro virá no campo `"erro"` do JSON de resposta.
+6. **Transação atômica no PUT:** se o backend retornar erro em qualquer alimento, **nenhuma alteração** é persistida. O estado anterior da refeição é mantido.

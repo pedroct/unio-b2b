@@ -45,7 +45,7 @@ Eu prefiro que a terminologia do frontend utilize "Cliente(s)" para telas estrut
 - **Aba Cardiometabólico:** Análise detalhada com sparklines de 30 dias, grid 2x2 por eixo fisiológico e cópia expandida.
 - **Aba Recuperação & Sono (V3.1):** Score header de recuperação + 5 biomarcadores detalhados (sono total, sono REM, sono profundo, HRV noturna, FC noturna). Endpoint: `/clientes/:id/recuperacao-sono`. Estado vazio: "Aguardando dados do Apple Health".
 - **Aba Performance & Funcionalidade (V3.1):** Score header funcional + 4 biomarcadores (volume treino, velocidade caminhada, estabilidade, força) + gráfico de zonas de FC (4 zonas com barra empilhada) + tabela de exercícios com filtro de intervalo (7d/30d/90d) e filtro por tipo de exercício. Cards de resumo por tipo clicáveis, tabela com colunas Sessão/Início/Duração/Calorias/Distância/Elevação/METs/Fonte, formatação adaptativa. Endpoint: `/clientes/:id/performance-funcional?intervalo=7d|30d|90d`. `heart_rate_zones` e `historico_exercicios` podem ser null.
-- **Prescrição Alimentar:** Ferramenta completa para nutricionistas com múltiplos planos por cliente, edição de descrição, dias ativos, refeições e adição de alimentos de um catálogo.
+- **Prescrição Alimentar:** Ferramenta completa para nutricionistas com múltiplos planos por cliente, edição de descrição, dias ativos, refeições (PUT replace-total com alimentos incluídos), adição de alimentos de um catálogo e exclusão de refeições.
 
 ## External Dependencies
 - **API Real de Staging:** `staging.unio.tec.br` para o módulo de Nutrição e autenticação.
@@ -89,3 +89,12 @@ Ambos os prefixos `/api/painel-longevidade/` e `/api/longevidade/` são aceitos 
 - `GET /api/nutricao/catalogo/alimentos/:id` — Detalhe do alimento
 - `POST /api/nutricao/catalogo/calcular` — Cálculo de nutrientes
 - `GET /api/nutricao/catalogo/fontes|grupos|tipos|nutrientes` — Metadados do catálogo
+- `GET /api/profissional/dashboard/pacientes/:id/planos-alimentares` — Lista planos (retorna array; 401 propagado corretamente)
+- `POST /api/profissional/dashboard/pacientes/:id/planos-alimentares` — Cria plano
+- `PUT /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId` — Atualiza metadados do plano (descricao/status/dias_ativos); staging ignora `refeicoes`
+- `DELETE /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId` — Exclui plano
+- `GET /api/profissional/dashboard/pacientes/:id/plano-alimentar?planoId=` — Detalhe do plano
+- `POST /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/refeicoes` — Cria refeição no plano (id dos alimentos gerado pelo frontend via `crypto.randomUUID()`)
+- `PUT /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/refeicoes/:refeicaoId` — Replace completo da refeição (nome, horario, observacao, alimentos). `alimentos` é always-replace; `quantidade` como number; staging gera novos IDs de AlimentoPlano.
+- `DELETE /api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/refeicoes/:refeicaoId` — Exclui refeição (204 No Content); cascade nos AlimentoPlano.
+- `GET /api/nutricao/planos-alimentares/:clienteId/:planoId/refeicoes/:refeicaoId/progresso?data=YYYY-MM-DD` — Progresso diário da refeição

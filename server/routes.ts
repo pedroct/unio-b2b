@@ -447,6 +447,84 @@ export async function registerRoutes(
     }
   });
 
+  // PUT .../refeicoes/:refeicaoId — replace completo da refeição (alimentos incluídos)
+  // Spec: id de cada AlimentoIn pode ser novo UUID; o backend faz replace total dos alimentos
+  app.put(
+    "/api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/refeicoes/:refeicaoId",
+    async (req, res) => {
+      const { nome, horario, observacao, alimentos } = req.body;
+      if (!nome || typeof nome !== "string" || nome.trim().length === 0) {
+        return res.status(400).json({ message: "nome é obrigatório." });
+      }
+      if (!horario || typeof horario !== "string") {
+        return res.status(400).json({ message: "horario é obrigatório." });
+      }
+
+      const token = extractBearerToken(req);
+      if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+
+      const { id: pacienteId, planoId, refeicaoId } = req.params;
+
+      const alimentosPayload = Array.isArray(alimentos)
+        ? alimentos.map((a: any) => ({
+            id: a.id,
+            alimento_id: a.alimento_id ?? a.alimentoTbcaId,
+            quantidade: Number(a.quantidade),
+            unidade: a.unidade ?? "g",
+          }))
+        : [];
+
+      try {
+        const result = await stagingPassthrough(
+          `/api/nutricao/planos-alimentares/${pacienteId}/${planoId}/refeicoes/${refeicaoId}`,
+          {
+            method: "PUT",
+            bearerToken: token,
+            body: {
+              nome: nome.trim(),
+              horario: horario.length === 5 ? `${horario}:00` : horario,
+              observacao: observacao?.trim() ?? "",
+              alimentos: alimentosPayload,
+            },
+          }
+        );
+        if (!result.ok) {
+          console.error("[put-refeicao] staging error:", result.status, JSON.stringify(result.data));
+          return res.status(result.status).json(result.data ?? { message: "Erro ao atualizar refeição." });
+        }
+        return res.json(result.data);
+      } catch (err: any) {
+        console.error("[put-refeicao] staging exception:", err.message);
+        return res.status(502).json({ message: "Erro ao conectar com o servidor." });
+      }
+    }
+  );
+
+  // DELETE .../refeicoes/:refeicaoId — remove permanentemente a refeição
+  app.delete(
+    "/api/profissional/dashboard/pacientes/:id/planos-alimentares/:planoId/refeicoes/:refeicaoId",
+    async (req, res) => {
+      const token = extractBearerToken(req);
+      if (!token) return res.status(401).json({ message: "Token de autenticação ausente." });
+
+      const { id: pacienteId, planoId, refeicaoId } = req.params;
+
+      try {
+        const result = await stagingPassthrough(
+          `/api/nutricao/planos-alimentares/${pacienteId}/${planoId}/refeicoes/${refeicaoId}`,
+          { method: "DELETE", bearerToken: token }
+        );
+        if (result.status === 204) return res.status(204).end();
+        return res
+          .status(result.status)
+          .json(result.data ?? { message: "Erro ao excluir refeição." });
+      } catch (err: any) {
+        console.error("[delete-refeicao] staging exception:", err.message);
+        return res.status(502).json({ message: "Erro ao conectar com o servidor." });
+      }
+    }
+  );
+
   // GET progresso da refeição no dia
   app.get(
     "/api/nutricao/planos-alimentares/:clienteId/:planoId/refeicoes/:refeicaoId/progresso",
