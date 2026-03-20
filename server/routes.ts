@@ -340,9 +340,11 @@ export async function registerRoutes(
         { method: "PATCH", bearerToken: token, body: req.body }
       );
       if (!result.ok) {
+        console.error("[put-plano-full] staging error:", result.status, JSON.stringify(result.data));
         return res.status(result.status).json(result.data ?? { message: "Erro ao atualizar plano." });
       }
-      return res.json(result.data);
+      // Staging pode retornar 200 com body vazio (null) — enviar objeto explícito
+      return res.json(result.data ?? { ok: true });
     } catch (err: any) {
       console.error("[put-plano-full] staging exception:", err.message);
       return res.status(502).json({ message: "Erro ao conectar com o servidor." });

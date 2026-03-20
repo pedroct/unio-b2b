@@ -211,12 +211,11 @@ export function ModalEditarRefeicao({
         body.profissional_id = plan.profissionalId;
       }
 
-      const res = await apiRequest(
+      await apiRequest(
         "PUT",
         `/api/profissional/dashboard/pacientes/${pacienteId}/planos-alimentares/${planoId}`,
         body,
       );
-      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
