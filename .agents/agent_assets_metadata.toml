@@ -12,3 +12,9 @@ id = "bICPN718-SN7k_F6KPTbU"
 uri = "file://contratos-backend/CONTRATO_ENDPOINT_EDITAR_REFEICAO.md"
 type = "text"
 title = "Contrato Backend — Editar Refeição no Plano Alimentar"
+
+[[outputs]]
+id = "7BU6-BjSKSolDAMFE8PLF"
+uri = "file://contratos-backend/CONTRATO_ENDPOINT_HISTORICO_SONO.md"
+type = "text"
+title = "SPEC Backend — Histórico de Estágios de Sono"
