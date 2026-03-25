@@ -127,7 +127,7 @@ function CustomTooltip({ active, payload, label }: {
 }
 
 function GraficoEstagiosSono({ pacienteId }: { pacienteId: string }) {
-  const [intervalo, setIntervalo] = useState<Intervalo>("7d");
+  const [intervalo, setIntervalo] = useState<Intervalo>("hoje");
 
   const { data, isLoading, isError } = useQuery<RespostaHistoricoSono>({
     queryKey: ["/api/painel-longevidade/clientes", pacienteId, "sono/historico", intervalo],
