@@ -138,7 +138,7 @@ function GraficoEstagiosSono({ pacienteId }: { pacienteId: string }) {
       if (!res.ok) throw new Error("Erro ao buscar histórico de sono");
       return res.json();
     },
-    staleTime: 60_000,
+    staleTime: 0,
   });
 
   const historico = data?.historico ?? [];
