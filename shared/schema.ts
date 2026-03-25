@@ -428,6 +428,36 @@ export interface RespostaRecuperacaoSono {
   };
 }
 
+export interface HistoricoSonoItem {
+  data: string;
+  total_min: number | null;
+  sem_dormir_min: number | null;
+  rem_min: number | null;
+  essencial_min: number | null;
+  profundo_min: number | null;
+  hora_inicio: string | null;
+  hora_fim: string | null;
+  fonte: string | null;
+}
+
+export interface ResumoSono {
+  media_total_min: number | null;
+  media_sem_dormir_min: number | null;
+  media_rem_min: number | null;
+  media_essencial_min: number | null;
+  media_profundo_min: number | null;
+  noites_sem_dados: number;
+}
+
+export interface RespostaHistoricoSono {
+  cliente_id: number | string;
+  intervalo: string;
+  data_referencia: string;
+  total_noites_com_dados: number;
+  historico: HistoricoSonoItem[];
+  resumo: ResumoSono;
+}
+
 export interface SessaoExercicio {
   id: number;
   tipo: string;

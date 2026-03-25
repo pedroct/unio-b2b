@@ -1,0 +1,250 @@
+# Contrato de API — Histórico de Estágios de Sono
+
+**Módulo:** Painel de Longevidade — Aba Recuperação & Sono  
+**Base URL:** `https://staging.unio.tec.br`  
+**Data do contrato:** 2026-03-25 (atualizado Fase 2)  
+**Status:** ✅ Fase 2 implementada e deployada em staging (commit `17763c3`)
+
+---
+
+## Endpoint
+
+```
+GET /api/painel-longevidade/clientes/{cliente_id}/sono/historico
+```
+
+### Autenticação
+
+| Header | Valor |
+|---|---|
+| `Authorization` | `Bearer {jwt_profissional}` |
+
+O JWT deve pertencer a um **profissional de saúde** vinculado ao cliente.  
+Usuários comuns (clientes) receberão `403`.
+
+---
+
+## Parâmetros de Query
+
+| Parâmetro | Tipo | Obrigatório | Default | Valores aceitos |
+|---|---|---|---|---|
+| `intervalo` | `string` | Não | `7d` | [hoje](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nutricao/api.py#1534-1556), `7d`, `30d`, `180d` |
+
+> [!NOTE]
+> Qualquer valor fora dos aceitos retorna `400` com mensagem descritiva.
+
+---
+
+## Respostas
+
+### `200 OK` — Sucesso
+
+```json
+{
+  "cliente_id": 10,
+  "intervalo": "7d",
+  "data_referencia": "2026-03-25",
+  "total_noites_com_dados": 4,
+  "historico": [
+    {
+      "data": "2026-03-19",
+      "total_min": 420,
+      "sem_dormir_min": null,
+      "rem_min": 85,
+      "essencial_min": 245,
+      "profundo_min": 90,
+      "hora_inicio": null,
+      "hora_fim": null,
+      "fonte": "apple_health"
+    },
+    {
+      "data": "2026-03-20",
+      "total_min": null,
+      "sem_dormir_min": null,
+      "rem_min": null,
+      "essencial_min": null,
+      "profundo_min": null,
+      "hora_inicio": null,
+      "hora_fim": null,
+      "fonte": null
+    }
+  ],
+  "resumo": {
+    "media_total_min": 410,
+    "media_sem_dormir_min": null,
+    "media_rem_min": 80,
+    "media_essencial_min": 240,
+    "media_profundo_min": 88,
+    "noites_sem_dados": 3
+  }
+}
+```
+
+### `400 Bad Request` — Intervalo inválido
+
+```json
+{
+  "detail": "Intervalo inválido: '90d'. Valores aceitos: 180d, 30d, 7d, hoje"
+}
+```
+
+### `403 Forbidden` — Sem permissão
+
+```json
+{
+  "detail": "Acesso restrito a profissionais de saude vinculados."
+}
+```
+
+### `404 Not Found` — Cliente não existe
+
+```json
+{
+  "detail": "Cliente não encontrado."
+}
+```
+
+---
+
+## Schema de Resposta (200)
+
+### [HistoricoSonoResponse](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/painel_longevidade/api.py#1659-1668)
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `cliente_id` | [int](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/painel_longevidade/api.py#1310-1322) | ID do cliente |
+| `intervalo` | `string` | Intervalo solicitado ([hoje](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nutricao/api.py#1534-1556), `7d`, `30d`, `180d`) |
+| [data_referencia](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nutricao/schemas.py#1063-1066) | `string` (ISO 8601) | Data de referência do cálculo (hoje no fuso `America/Fortaleza`) |
+| `total_noites_com_dados` | [int](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/painel_longevidade/api.py#1310-1322) | Quantas noites têm dados de sono no intervalo |
+| [historico](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nutricao/services.py#1813-1823) | `HistoricoSonoItem[]` | Lista ordenada por data (da mais antiga para a mais recente) |
+| [resumo](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nutricao/api.py#1534-1556) | [ResumoSono](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/painel_longevidade/api.py#1648-1657) | Médias calculadas apenas sobre as noites **com dados** |
+
+### [HistoricoSonoItem](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/painel_longevidade/api.py#1634-1646)
+
+| Campo | Tipo | Nullable | Descrição |
+|---|---|---|---|
+| [data](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/painel_longevidade/utils.py#16-19) | `string` (ISO 8601) | ❌ | Data da noite (ex: `"2026-03-25"`) |
+| `total_min` | `int \| null` | ✅ | Total de sono em minutos |
+| `sem_dormir_min` | `int \| null` | ✅ | Tempo acordado dentro da sessão ⚠️ |
+| `rem_min` | `int \| null` | ✅ | Sono REM em minutos |
+| `essencial_min` | `int \| null` | ✅ | Sono essencial (Core) em minutos |
+| `profundo_min` | `int \| null` | ✅ | Sono profundo em minutos |
+| `hora_inicio` | `string \| null` | ✅ | Horário de início da sessão (HH:MM) ⚠️ |
+| `hora_fim` | `string \| null` | ✅ | Horário de fim da sessão (HH:MM) ⚠️ |
+| [fonte](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nutricao/api.py#1994-2004) | `string \| null` | ✅ | Origem dos dados (ex: `"apple_health"`) |
+
+### [ResumoSono](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/painel_longevidade/api.py#1648-1657)
+
+| Campo | Tipo | Nullable | Descrição |
+|---|---|---|---|
+| `media_total_min` | `int \| null` | ✅ | Média de sono total (minutos) |
+| `media_sem_dormir_min` | `int \| null` | ✅ | Média de tempo acordado ⚠️ |
+| `media_rem_min` | `int \| null` | ✅ | Média de sono REM (minutos) |
+| `media_essencial_min` | `int \| null` | ✅ | Média de sono essencial (minutos) |
+| `media_profundo_min` | `int \| null` | ✅ | Média de sono profundo (minutos) |
+| `noites_sem_dados` | [int](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/painel_longevidade/api.py#1310-1322) | ❌ | Número de noites sem registro no intervalo |
+
+---
+
+## Regras de Negócio
+
+### 1. Agrupamento por noite
+Os dados são agrupados pela **data local** (`America/Fortaleza`, UTC-3) em que o registro foi feito.
+
+### 2. Preenchimento de gaps (gap-filling)
+Para intervalos `7d`, `30d`, `180d`, o array [historico](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nutricao/services.py#1813-1823) contém **todos os dias** do intervalo, inclusive os que não têm dados. Dias sem dados retornam um objeto com [data](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/painel_longevidade/utils.py#16-19) preenchida e **todos os outros campos `null`**.
+
+Isso permite renderizar barras vazias no gráfico.
+
+### 3. Fallback para "hoje"
+Quando `intervalo=hoje` e **não há dados do dia corrente**, o endpoint retorna automaticamente os dados da **noite mais recente** disponível no banco.
+
+### 4. Campo derivado: `essencial_min`
+Calculado como:
+
+```
+essencial_min = total_min - rem_min - profundo_min
+```
+
+Se o resultado for negativo, é fixado em `0`.
+
+### 5. Médias do resumo
+As médias são calculadas **exclusivamente sobre noites com dados** (ignora noites `null`). O campo `noites_sem_dados` informa quantas noites foram ignoradas.
+
+---
+
+## Disponibilidade dos Campos
+
+> [!NOTE]
+> A Fase 2 do backend está implementada (commit `17763c3`). Os campos que dependiam do iOS agora são **populados automaticamente** quando o app iOS envia os novos `metric_type` (`sleep_core`, `sleep_awake`) e os metadados de sessão (`sleep_start`, `sleep_end`, `source_name`).
+
+| Campo | Backend | Disponibilidade |
+|---|---|---|
+| `total_min` | ✅ Pronto | Disponível desde Fase 1 |
+| `rem_min` | ✅ Pronto | Disponível desde Fase 1 |
+| `profundo_min` | ✅ Pronto | Disponível desde Fase 1 |
+| `essencial_min` | ✅ Pronto | Usa `sleep_core` real quando disponível; fallback para `total - rem - deep` |
+| `sem_dormir_min` | ✅ Pronto | Populado quando iOS envia `sleep_awake` |
+| `hora_inicio` | ✅ Pronto | Populado quando iOS envia `sleep_start` (formato `HH:MM`) |
+| `hora_fim` | ✅ Pronto | Populado quando iOS envia `sleep_end` (formato `HH:MM`) |
+| [fonte](file://wsl.localhost/Ubuntu-24.04/home/pedroctdev/apps/unio-be/apps/nutricao/api.py#1994-2004) | ✅ Pronto | Usa `source_name` do iOS quando disponível; fallback `"apple_health"` |
+
+---
+
+## Exemplo de Consumo (Frontend)
+
+```typescript
+const fetchSleepHistory = async (clienteId: number, intervalo: string = '7d') => {
+  const response = await fetch(
+    `${API_BASE}/api/painel-longevidade/clientes/${clienteId}/sono/historico?intervalo=${intervalo}`,
+    {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail);
+  }
+
+  return response.json(); // HistoricoSonoResponse
+};
+```
+
+### Renderização do gráfico de barras empilhadas
+
+```typescript
+// Cada item do histórico mapeia para uma barra
+historico.forEach(noite => {
+  if (noite.total_min === null) {
+    // Renderizar barra vazia / sem dados
+    return;
+  }
+  
+  // Empilhar os estágios (de baixo para cima):
+  // 1. profundo_min  (azul escuro)
+  // 2. essencial_min (azul claro)  — Core Sleep
+  // 3. rem_min       (roxo)
+  // 4. sem_dormir_min (cinza)      — null na Fase 1, tratar como 0
+});
+```
+
+---
+
+## cURL de Teste (Staging)
+
+```bash
+# Autenticar como profissional
+TOKEN=$(curl -s -X POST https://staging.unio.tec.br/api/auth/pair \
+  -H "Content-Type: application/json" \
+  -d '{"email":"EMAIL_PROFISSIONAL","password":"SENHA"}' \
+  | jq -r '.access')
+
+# Buscar histórico 7 dias
+curl -s "https://staging.unio.tec.br/api/painel-longevidade/clientes/10/sono/historico?intervalo=7d" \
+  -H "Authorization: Bearer $TOKEN" | jq .
+
+# Testar validação
+curl -s "https://staging.unio.tec.br/api/painel-longevidade/clientes/10/sono/historico?intervalo=90d" \
+  -H "Authorization: Bearer $TOKEN" | jq .
+```

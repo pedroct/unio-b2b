@@ -660,6 +660,24 @@ export async function registerRoutes(
     }
   });
 
+  app.get(["/api/painel-longevidade/clientes/:id/sono/historico", "/api/longevidade/clientes/:id/sono/historico"], async (req, res) => {
+    const token = extractBearerToken(req);
+    if (!token) {
+      return res.status(401).json({ message: "Token de autenticação ausente." });
+    }
+    try {
+      const intervalo = req.query.intervalo ? String(req.query.intervalo) : "7d";
+      const result = await stagingPassthrough(
+        `/api/painel-longevidade/clientes/${req.params.id}/sono/historico`,
+        { bearerToken: token, params: { intervalo } }
+      );
+      return res.status(result.status).json(result.data);
+    } catch (err: any) {
+      console.error("[longevidade/sono/historico] proxy error:", err.message);
+      return res.status(502).json({ message: "Erro ao buscar histórico de sono." });
+    }
+  });
+
   app.get(["/api/painel-longevidade/clientes/:id/performance-funcional", "/api/longevidade/clientes/:id/performance-funcional"], async (req, res) => {
     const token = extractBearerToken(req);
     if (!token) {
